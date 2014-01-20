@@ -5,6 +5,11 @@ websocket.onopen = function(evt) { onOpen(evt);};
 websocket.onerror = function(evt) { onError(evt);};
 websocket.onmessage = function(evt) { onMessage(evt);};
 
+function save()
+{
+	text = document.getElementById('Text1').value;
+	websocket.send(text);
+}
 function onError(evt)
 {
 	writeToScreen('<span style="Color: red;">ERROR:</span>'+evt.data);
