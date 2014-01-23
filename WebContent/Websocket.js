@@ -5,6 +5,18 @@ websocket.onopen = function(evt) { onOpen(evt);};
 websocket.onerror = function(evt) { onError(evt);};
 websocket.onmessage = function(evt) { onMessage(evt);};
 
+function save()
+{
+	var data = document.getElementById('Text1').value;
+	
+	var json = JSON.stringify(
+			{
+				"method":"test1",
+				"data"	:data
+			}		
+			);
+	websocket.send(json);
+}
 function onError(evt)
 {
 	writeToScreen('<span style="Color: red;">ERROR:</span>'+evt.data);
