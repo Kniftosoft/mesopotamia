@@ -29,7 +29,13 @@ function writeToScreen(message){
 
 function onOpen(evt){
     writeToScreen("Connected to " + wsuri);
-    websocket.send("Hello Socket");
+    var json = JSON.stringify(
+			{
+				"method":"test1",
+				"data"	:"Hello Socket"
+			}		
+			);
+    websocket.send(json);
 }
 function onMessage(evt) {
     console.log("received: " + evt.data);

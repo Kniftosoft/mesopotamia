@@ -24,6 +24,7 @@ public class Endpoint {
 	public void onMessage(String message,Session peer)
 	{
 		JsonObject answer = new JsonObject();
+		answer.addProperty("data", message);
 		try
 		{
 			try
