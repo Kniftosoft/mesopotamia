@@ -5,7 +5,7 @@ import java.lang.String;
 import javax.persistence.*;
 
 /**
- * Entity implementation class for Entity: Maschine
+ * Entity implementation class for Entity: Machine
  *
  */
 @Entity
@@ -18,7 +18,7 @@ public class Maschine implements Serializable {
 	private String Name;
 	private String Standort;
 	private int Auftragsnr;
-	private int Auftragsgrösse;
+	private int Auftragsgrosse;
 	private int Zustand;
 	private static final long serialVersionUID = 1L;
 
@@ -53,12 +53,12 @@ public class Maschine implements Serializable {
 	public void setAuftragsnr(int Auftragsnr) {
 		this.Auftragsnr = Auftragsnr;
 	}   
-	public int getAuftragsgrösse() {
-		return this.Auftragsgrösse;
+	public int getAuftragsgrosse() {
+		return this.Auftragsgrosse;
 	}
 
-	public void setAuftragsgrösse(int Auftragsgröße) {
-		this.Auftragsgrösse = Auftragsgröße;
+	public void setAuftragsgrosse(int Auftragsgrosse) {
+		this.Auftragsgrosse = Auftragsgrosse;
 	}   
 	public int getZustand() {
 		return this.Zustand;
