@@ -4,16 +4,18 @@
    
   <!-- JDBC -->
   <jdbc-connection-pool
-      name="java:app/jdbc/mesopotamia_pool"
-      datasource-classname="com.mysql.jdbc.jdbc2.optional.MysqlDataSource">
+     name="java:app/Euphratis_pool"
+      res-type="javax.sql.DataSource"
+      datasource-classname="com.mysql.jdbc.jdbc2.optional.MysqlDataSource"
+      allow-non-component-callers = "false">
     <property name="serverName" value="localhost"/>
     <property name="portNumber" value="3306"/>
-    <property name="databaseName" value="mesopotamia"/>
+    <property name="databaseName" value="euphratis"/>
     <property name="User" value="root"/>
-    <property name="Password" value=""/>
-    <property name="URL" value="jdbc:mysql://localhost:3306/mesopotamia"/>
+    <property name="Password" value="coffee"/>
+    <property name="URL" value="jdbc:mysql://localhost:3306/euphratis"/>
     <property name="driverClass" value="com.mysql.jdbc.Driver"/>
   </jdbc-connection-pool>
-  <jdbc-resource enabled="true" jndi-name="java:app/jdbc/mesopotamia_pool" pool-name="java:app/jdbc/mesopotamia_pool"/>
+  <jdbc-resource enabled="true" jndi-name="java:app/Euphratis" pool-name="Euphratis_pool"/>
    
 </resources>
