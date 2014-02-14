@@ -3,7 +3,7 @@
 <head>
 <meta charset="ISO-8859-1">
 <title>Insert title here</title>
-
+<script src="Websocket.js" type="text/javascript"></script>
 </head>
 <body>
 	<h1>MESOPOTAMIA WEB INTERFACE</h1>
@@ -11,6 +11,12 @@
 		<input maxlength="15" id="Text1" size="16">
 		<input name="Save" value="Save" type="submit" size="5" onclick=javascript:save()>
 	</div>
-	<script src="Websocket.js" type="text/javascript"></script>
+	<form id="loginform" action="javascript:login()">
+		<label for="username">Username</label></br>
+		<input type="text" id="username"></br>
+		<label for="password">Password</label></br>
+		<input type="password" id="password"></br>
+		<input type="submit" value="Login">
+	</form>
 </body>
 </html>

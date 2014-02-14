@@ -5,6 +5,21 @@ websocket.onopen = function(evt) { onOpen(evt);};
 websocket.onerror = function(evt) { onError(evt);};
 websocket.onmessage = function(evt) { onMessage(evt);};
 
+function login()
+{
+	var v_data =
+	{
+		user : document.getElementById("username").value,
+		pass : document.getElementById("password").value
+	};
+	
+	var loginData =
+	{
+		method : "login",
+		data : v_data
+	};
+	websocket.send(JSON.stringify(loginData));
+}
 function save()
 {
 	text = document.getElementById('Text1').value;

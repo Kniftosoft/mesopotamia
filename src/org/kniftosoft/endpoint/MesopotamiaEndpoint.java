@@ -38,6 +38,7 @@ public class MesopotamiaEndpoint {
 	@OnMessage
 	public void onMessage(String message,Session peer)
 	{
+		System.out.println("recive:"+message);
 		JsonObject answer = new JsonObject();
 		answer.addProperty("data", message);
 		try
@@ -45,12 +46,14 @@ public class MesopotamiaEndpoint {
 			try
 			{
 				JsonParser parser = new JsonParser();
-				JsonObject jmessage = (JsonObject)parser.parse(message);
+				JsonObject jmessage = (JsonObject) parser.parse(message);
 				if(jmessage.has("method")&&jmessage.has("data"))
 				{
 					switch(jmessage.getAsJsonPrimitive("method").getAsString())
 					{				
 					case "test1": answer = MethodProvider.test1(jmessage.getAsJsonObject("data"));
+						break;
+					case "login": answer = MethodProvider.login(jmessage.getAsJsonObject("data"));
 						break;
 					default : answer = MethodProvider._default(jmessage.getAsJsonObject("data"));
 							 System.out.println("Keine Gültige Methode  Json-String: "+message);
