@@ -29,7 +29,7 @@ public class MethodProvider {
 	}
 	static JsonObject login(JsonObject data, Session peer){
 		JsonObject answer = new JsonObject();
-		Loginmanager.login(peer, data.get("user").getAsString(), data.get("pass").getAsString());
+		Loginmanager.login(peer, data.get("email").getAsString(), data.get("pass").getAsString());
 		return answer;
 	}
 }

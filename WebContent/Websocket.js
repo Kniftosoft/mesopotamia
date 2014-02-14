@@ -9,7 +9,7 @@ function login()
 {
 	var v_data =
 	{
-		user : document.getElementById("username").value,
+		email : document.getElementById("email").value,
 		pass : document.getElementById("password").value
 	};
 	

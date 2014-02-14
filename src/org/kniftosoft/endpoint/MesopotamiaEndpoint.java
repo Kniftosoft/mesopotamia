@@ -8,6 +8,7 @@ import java.util.Set;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import javax.persistence.TypedQuery;
 import javax.websocket.OnClose;
 import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
@@ -41,6 +42,13 @@ public class MesopotamiaEndpoint {
 		System.out.println("recive:"+message);
 		JsonObject answer = new JsonObject();
 		answer.addProperty("data", message);
+		EntityManagerFactory factory;
+		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
+	    EntityManager em = factory.createEntityManager();
+	    em.getTransaction().begin(); 
+	    TypedQuery<EuphratisSession> esq= em.createQuery("SELECT es FROM EuphratisSession es WHERE es.peer_ID = '"+peer.getId()+"'", EuphratisSession.class).setMaxResults(1);
+		em.getTransaction().commit();
+		em.close();
 		try
 		{
 			try
@@ -53,7 +61,7 @@ public class MesopotamiaEndpoint {
 					{				
 					case "test1": answer = MethodProvider.test1(jmessage.getAsJsonObject("data"));
 						break;
-					case "login": answer = MethodProvider.login(jmessage.getAsJsonObject("data"));
+					case "login": answer = MethodProvider.login(jmessage.getAsJsonObject("data"),peer);
 						break;
 					default : answer = MethodProvider._default(jmessage.getAsJsonObject("data"));
 							 System.out.println("Keine Gültige Methode  Json-String: "+message);
