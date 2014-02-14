@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+	<head>
+	
+		<meta charset="ISO-8859-1">
+	
+		<title>Mesopotamia Tigris</title>
+	
+		<link rel="stylesheet" href="./css/tigris_styles.css">
+	
+		<!-- JavaScript libraries -->
+		<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+		<script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script><!-- Remove later if re-created shake anim -->
+		<script src="./CryptoJS/core-min.js"></script>
+		<script src="./CryptoJS/format-hex-min.js"></script>
+		<script src="./CryptoJS/sha256.js"></script>
+		
+		<!-- Tigris system script -->
+		<script src="./tigris_script.js"></script>
+		<script src="./tigris_ui.js"></script>
+	</head>
+	
+	<body>
+
+
+		<div id="header">
+			
+			<div id="tigris_logo">
+				<span class="name_info_major">Tigris</span><br>
+				<span class="name_info_minor">&nbsp;Mesopotamia 1.0</span>
+			</div>
+			
+			<div id="user_control">
+			
+				<div id="user_profpic">
+					<img src="./users/profpic/administrator.png"></img>
+				</div>
+				
+				<div id="user_nameplate">
+					<span id="user_displayname" class="name_info_major">KniftoSoft Admin</span><br>
+					<span id="user_loginname" class="name_info_minor">administrator</span>
+				</div>
+			
+			</div>
+			
+		</div>
+		
+		<div id="dashboard">
+		
+		
+		</div>
+		
+		
+		<div id="login_dialog" class="dashboard_tile">
+				
+				<div id="login_dialog_header" class="dashboard_tile_header">
+				
+					<span class="name_info_major">Tigris</span><br>
+					<span class="name_info_minor">&nbsp;Login</span>
+				
+				</div>
+				
+				<div class="dashboard_tile_content">
+					
+					<div id="login_errorbox" class="error_box">
+						Because this version is not yet able to run with a server,<br>
+						every login will be accepted.<br><br>
+						Enter "Justin Bieber" as username to test this messages shake-animation. 
+					</div>
+					
+					<form id="loginform" method="post">
+						<label for="username">User</label><br><input type="text" name="username" id="loginform_username"><br><br>
+						<label for="password">Pass</label><br><input type="password" name="password" id="loginform_password"><br><br>
+						
+						<input type="submit" name="login" id="loginform_login" value="Login">
+						
+					</form>
+					
+				</div>
+				
+			</div>
+		
+		<!-- Section for background elements -->
+
+
+	</body>
+</html>

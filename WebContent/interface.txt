@@ -1,0 +1,323 @@
++========================================+
+| Mesopotamia Communication Protocol 1.1 |
+|       (C) Niklas Weissner 2014         |
++========================================+
+
+
+
+
+Changes
+=======
+4.2.2014	1.0		Initial creation of protocol
+
+5.2.2014	1.1		Added LOGOUT-,QUERY-,DATA- and ERROR-packets and NACK-response to LOGIN, Basic communication chapter
+
+
+
+
+
+Basic communiaction
+===================
+
+	A connection is opened with a client sending a HANDSHAKE. The server may abandon a connection that
+	isn't HANDSHAKE'd after a given timeout. 
+	When a HANDSHAKE is answered by the server using an ACK packet, the client may continue with a LOGIN process.
+	
+
+
+Basic Packet structure
+======================
+
+	Packets are in JSON-format and must at least contain the following fields:
+
+		int: typeID
+		
+		int: uid
+		
+		struct: data //Packet-specific	
+		
+	
+	-typeID:
+		The type of the packet. For a detailed description of possible values see "Packet types"
+		
+	-uid:
+		An unique ID that is echoed on responses to packets in order to clearly identify responses to sent packets.
+		An UID is generated when the client/server sends a packet. To avoid collisions in UID generation,
+		the client generates only even UIDs while the server generates only the odd ones.
+		When a response to a given UID was received, the sender may re-use the UID of the packets.
+		As an exception, the ERROR-packet needs no UID, as it is allowed as a response to any packet. (Although
+		the UID field is ignored on ERROR-packets, it still has to be included in order to form a valid packet)
+	
+	-data:
+		The contents of the data struct are packet specific and are explained in chapter "Packet types"
+
+	
+	If the server/client receives a message that is not a valid packet (not in JSON-format / required fields
+	not defined) it should ignore the message, print out an error notification and abandon the connection.
+
+
+
+
+Packet types
+============
+
+	Packet ID	|	Direction	|	Packet type	|
+	------------+---------------+---------------+---
+			1	|	C->S		|	HANDSHAKE	|	
+			10	|	C->S		|	LOGIN		|
+			11	|	S->C		|	AUTH		|
+			12	|	C->S		|	RELOG		|
+			13	|	S->C		|	REAUTH		|
+			14	|	Both		|	LOGOUT		|
+			20	|	C->S		|	QUERY		|
+			21	|	S->C		|	DATA		|
+			200	|	Both		|	ACK			|
+			201	|	Both		|	NACK		|
+			242	|	Both		|	ERROR		|
+			255	|	Both		|	QUIT		|
+	
+			
+	HANDSHAKE
+	---------
+	Sent by client to initiate a connection; should be sent right after the client has
+	been loaded up so incompatible versions / a not reachable server can be identified.
+	
+	-Packet ID:		1
+	
+	-Direction:		C->S
+	
+	-Data fields:
+		string: 	clientVersion
+		
+	-Possible responses:
+		ACK:		If connection is accepted (client is listed as peer by server)
+		QUIT:		If connection is refused (incompatible client version/ blocked IP etc.)
+		
+		
+		
+	LOGIN
+	-----
+	Sent by client to login on the server and to receive session information for
+	querying data.
+	
+	-Packet ID:		10
+	
+	-Direction:		C->S
+	
+	-Data fields:
+		string: 	username
+		string: 	passwordHash (SHA-256-Hash of password)
+		
+	-Possible responses:
+		AUTH:		If login succeeds (AUTH-packet contains session information)
+		NACK:		If login fails
+		
+		
+	AUTH
+	----
+	Sent by server as a response to successful login. Session information and 
+	user-specific configuration is included in packet.
+	
+	-Packet ID:		11
+	
+	-Direction:		S->C
+	
+	-Data fields:
+		string:		sessionID
+		struct:		userConfig (Fields of this structure are documented in a later version of the protocol)
+		
+	-Possible responses:
+		none (packet is response-only)
+		
+		
+		
+	RELOG
+	------
+	Sent by client when it already has a session key(from a cookie etc.) and needs to check
+	if it is still usable. If the server responds with a REAUTH the client is still allowed to
+	query data without a new login.
+	
+	-Packet ID:		12
+	
+	-Direction:		C->S
+	
+	-Data fields:
+		string:		sessionID (the session ID that needs to be checked and re-registered)
+		
+	-Possible responses:
+		REAUTH:		If session is still active
+		NACK:		If session has expired (client needs a new login)
+		
+		
+		
+	REAUTH
+	------
+	Sent by server a response to a RELOG packet if the sent session key is still valid. The server
+	is able to replace the old session key by a new one for safety reasons.
+	
+	-Packet ID:		13
+	
+	-Direction:		S->C
+	
+	-Data fields:
+		string:		newSessionID (is used for further connections by client)
+		struct:		userConfig (Fields of this structure are documented in a later version of the protocol)
+		
+	-Possible results:
+		none (packet is response-only)
+		
+		
+	
+	
+	LOGOUT
+	------
+	Sent by server/client to close a session without terminating the connection. A reason can be included
+	in the form of a numerical code and a human-readable message string.
+	
+	-Packet ID:		14
+	
+	-Direction:		Both
+	
+	-Data fields:
+		string:		sessionID (is ignored if sent by the server)
+		int:		reasonCode(a technical ID for identifying the logout reason. List of possible values: see "Notes")
+		string:		reasonMessage(a human-readable message that might be displayed in a message dialog/server log)
+		
+	-Possible results:
+		none (logout needs no confirmation)
+	
+	-Notes:
+		Possible values for the reasonCode-field are:
+		0 = UNKNOWN
+		1 = CLOSED_BY_USER
+		2 = SESSION_EXPIRED
+		3 = INTERNAL_ERROR
+		4 = REFUSED
+		
+		
+	
+	
+	QUERY
+	-----
+	Sent by the client to query MES data. The server answers the query by sending a DATA-packet.
+		!!! This packet will be further documented as soon as a data model
+		!!! is available. Until then it is not neccesary to implement
+		!!! its functionalities.
+	
+	-Packet ID:		20
+	
+	-Direction:		C->S
+	
+	-Data fields:
+		string:		sessionID
+		struct:		filterData (Fields of this structure are documented in a later version of the protocol)
+		
+	-Possible responses:
+		DATA:		If the query succeeds and MES-data is transferred
+		NACK:		If the provided session key has expired
+ 	
+	
+	
+	
+	DATA
+	----
+	Send by the server spontaneously or as a response to a QUERY-packet.
+		!!! This packet will be further documented as soon as a data model
+		!!! is available. Until then it is not neccesary to implement
+		!!! its functionalities.
+	
+	-Packet ID:		21
+	
+	-Direction:		S->C
+	
+	-Data fields:
+		struct:		queryResult (Fields of this structure are documented in a later version of the protocol)
+		
+	-Possible responses:
+		none (packet is response-only)
+	
+	
+	ACK
+	---
+	Sent by client/server as a response to packets with no specific return data. An ACK represents a
+	successful request while a NACK reports a failure.
+	
+	-Packet ID:		200
+	
+	-Direction:		Both
+	
+	-Data fields:
+		none
+		
+	-Possible responses
+		none (packet is response-only)
+		
+		
+		
+	NACK
+	----
+	Sent by client/server as a response to packets with no specific return data. An ACK represents a
+	successful request while a NACK reports a failure.
+	
+	-Packet ID:		201
+	
+	-Direction		Both
+	
+	-Data fields:
+		none
+		
+	-Possible responses
+		none (packet is response-only)
+		
+	
+	
+	ERROR
+	-----
+	Sent by client/server to report an error. This special packet can be sent as a response to any
+	packet to report an error.
+	
+	-Packet ID:		242
+	
+	-Direction:		Both
+	
+	-Data fields:
+		int:		errorCode (a technical ID for identifying the error. List of possible values: see "Notes")
+		string:		errorMessage (a human-readable message that might be displayed in a message dialog/server log)
+		
+	-Possible responses:
+		none (Packet is one-way)
+		
+	-Notes:
+		Possible values for the errorCode-field are:
+		0 = UNKNOWN
+		1 = INVALID_PACKET (An unexpected packet occurred; e.g.: response-only-packet was sent as a request packet)
+		2 = SESSION_EXPIRED (A query was made with an invalid session key)
+		3 = INTERNAL_EXCEPTION  (An internal exception has occurred)
+		4 = INVALID_RESPONSE (A packet was answered with an incompatible packet type)
+		
+		
+		
+	
+	QUIT
+	----
+	Sent by client/server to close the connection. A reason can be included in the form of an error code
+	and a human-readable message string. QUIT is also used to refuse a connection during handshaking.
+	A QUIT does not discard the session of the user.
+	
+	-Packet ID:		255
+	
+	-Direction:		Both
+	
+	-Data fields:
+		int: 		reasonCode (a technical ID for identifying the quit reason. List of possible values: see "Notes")
+		string: 	reasonMessage (a human-readable message that might be displayed in a message dialog/server log)
+		
+	-Possible responses:
+		none (connection is terminated)
+		
+	-Notes:
+		the resaonCode-field has exactly the same possible values as the reasonCode-field of the LOGOUT-packet.
+	
+	
+	
+	
