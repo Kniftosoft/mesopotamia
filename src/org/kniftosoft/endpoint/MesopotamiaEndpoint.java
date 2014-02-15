@@ -32,7 +32,7 @@ public class MesopotamiaEndpoint {
 	 * @param peer Client who sends message
 	 */
 	@OnMessage
-	public void onMessage(String message,Session peer)
+	public void onMessage(String message, Session peer)
 	{
 		JsonObject answer = new JsonObject();
 		answer.addProperty("data", message);

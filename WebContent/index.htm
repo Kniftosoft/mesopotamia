@@ -12,7 +12,7 @@
 		<script src="//code.jquery.com/jquery-1.10.2.js"></script>
 		<script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script><!-- Remove later if re-created shake anim -->
 		<script src="./CryptoJS/core-min.js"></script>
-		<script src="./CryptoJS/format-hex-min.js"></script>
+		<script src="./CryptoJS/format-hex.js"></script>
 		<script src="./CryptoJS/sha256.js"></script>
 		
 		<!-- Tigris system script -->
@@ -63,16 +63,14 @@
 				<div class="dashboard_tile_content">
 					
 					<div id="login_errorbox" class="error_box">
-						Because this version is not yet able to run with a server,<br>
-						every login will be accepted.<br><br>
-						Enter "Justin Bieber" as username to test this messages shake-animation. 
+						If you can read this, your browser probably does not support JavaScript. In that case, Tigris will not work.
 					</div>
 					
 					<form id="loginform" method="post">
-						<label for="username">User</label><br><input type="text" name="username" id="loginform_username"><br><br>
-						<label for="password">Pass</label><br><input type="password" name="password" id="loginform_password"><br><br>
+						<p><label for="username">User<br><input type="text" name="username" id="loginform_username" class="input"></label></p>
+						<p><label for="password">Pass<br><input type="password" name="password" id="loginform_password" class="input"></label></p>
 						
-						<input type="submit" name="login" id="loginform_login" value="Login">
+						<p class="loginbutton"><input type="submit" name="login" class="button" value="Login"></p>
 						
 					</form>
 					

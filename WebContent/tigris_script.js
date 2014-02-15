@@ -10,11 +10,11 @@
 //Configure this to your Euphrates installation
 //If your endpoint is absolute, make sure you include the full URI (including protocol etc.)
 var ENDPOINT_IS_RELATIVE = true;
-var MESO_ENDPOINT = "/MesoEndpoint"; //Link to Euphrates
+var MESO_ENDPOINT = "TIG_TEST_END"; //Link to Euphrates
 
 
 //Constants
-var TIGRIS_VERSION = "0.0.1";
+var TIGRIS_VERSION = "0.0.4";
 
 
 //Packet type IDs
@@ -60,7 +60,7 @@ function()
 {
 	ui_init(); //Initialize UI
 	
-	//netio_init(); //Init connection
+	netio_init(); //Init connection
 });
 
 //---------------------UI handler--------------------
@@ -79,7 +79,6 @@ function ui_init()
 	    ui_i_login();
 	});
 	
-	
 	//Set up elements
 	
 	ui_showLoginPage(); //Initially show login page TODO: Put this in routine for Handshaking
@@ -89,6 +88,7 @@ function ui_showLoginPage()
 {
 	$("#header").hide();
 	$("#dashboard").hide();
+	$("#login_errorbox").hide();
 
 	$("#login_dialog").show();
 }
@@ -106,52 +106,48 @@ function ui_i_login()
 {
 	var username = $("#loginform_username").val();
 	var passwordHashObject = CryptoJS.SHA256($("#loginform_password").val());
+	$("#loginform_password").val("");
 	var passwordHash = passwordHashObject.toString(CryptoJS.enc.Hex);
-	
-	if(username == "Justin Bieber")
-	{
-		//I don't want to sound biased, but don't even create a packet for this one
-		
-		$("#login_errorbox").html("I know, I know. The scrollbar. I'm already fixing that.");
-		$("#login_errorbox").effect("shake"); //TODO: Implement own shake effect
-		
-		return;
-	}
 	
 	var packet = new Packet_Login(username, passwordHash);
 	packet.onResponse = 
-		function(type,data)
+		function(pk)
 		{
-			if(type == PTYPE.AUTH)
+			if(pk.typeID == PTYPE.AUTH)
 			{
-				var sessionID = data.sessionID;
+				var sessionID = pk.data.sessionID;
 				//Wait until full protocol specification before implementing this. Ignore it for now
 				//var userConfig = data.userConfig;
 				
 				ui_showDashboard();
-			}else if(type == PTYPE.NACK)
-			{
 				
+			}else if(pk.typeID == PTYPE.NACK)
+			{
+				ui_login_showBadLoginMessage();
 			}
 		};
 		
 	netio_sendPacket(packet);
-	
-	//TODO: Remove this - only for testing
-	//open dashboard anyway because we don't have a server
-	ui_showDashboard();
+}
+
+function ui_login_showBadLoginMessage()
+{
+	$("#login_errorbox").html("Your login data is incorrect!");
+	$("#login_errorbox").show();
+	$("#login_errorbox").effect("shake"); //TODO: Implement own shake effect
 }
 
 //--------------Net handler-------------------------
 
 var socket;
-var sentPacketMap = {};
+var sentPacketMap = new Array();
 
 function netio_init()
 {
+	//Set up socket
 	var wsURI;
 	
-	if(ENPOINT_IS_RELATIVE)
+	if(ENDPOINT_IS_RELATIVE)
 	{
 		var loc = window.location;
 		
@@ -172,25 +168,25 @@ function netio_init()
 	
 	socket = new WebSocket(wsURI);
 	
-	socket.onOpen = 
+	socket.onopen = 
 	function()
 	{
 		netio_onOpen();
 	};
 	
-	socket.onMessage =
+	socket.onmessage =
 	function(msg)
 	{
 		netio_onMessage(msg);
 	};
 	
-	socket.onClose =
+	socket.onclose =
 	function()
 	{
 		netio_onClose();
 	};
 	
-	socket.onError =
+	socket.onerror =
 	function()
 	{
 		netio_onError();
@@ -199,80 +195,132 @@ function netio_init()
 
 function netio_onOpen()
 {
-	
+	netio_handshake(); //Only start handshaking after connection has been established
 }
 
 function netio_onMessage(msg)
 {
+	console.log("Message: " + msg.data);
+	
 	var packet;
 
 	try
 	{
-		packet = jQuery.parseJSON(msg);
+		packet = jQuery.parseJSON(msg.data);
 		
 	}catch(e)
 	{	
-		ui_showErrorDialog("PANIC","Message was not in JSON format or shit");
+		console.log("Message was not in JSON format or shit. \n" + e + "\n" + msg.data);
 		
 		return;
 	}
 	
 	//TODO: Check for missing fields here
 	
-	if(packet.uid in sentPacketMap) //UID is registered -> Packet is an answer
+	if(("uid" + packet.uid) in sentPacketMap) //UID is registered -> Packet is an answer
 	{
 		
-		var requestPacket = sentPacketMap[packet.uid]; //Get the packet that requested this answer
+		var requestingPacket = sentPacketMap["uid" + packet.uid]; //Get the packet that requested this answer
 		
-		if(!(packet.typeID in requestPacket.allowedResponses)) 
+		delete sentPacketMap["uid" + packet.uid];
+		
+		if($.inArray(packet.typeID , requestingPacket.allowedResponses) == -1) 
 		{
 			//This packet type is not allowed as a response to the requesting packet
 			// -> send INVALID_ANSWER ERROR packet
 			
 			//TODO: Send packet
-		}
-		
-		if(requestPacket.requestOnly)
+			console.error("Received invalid response packet: " + packet.typeID + " is not allowed as a response to " + requestingPacket.packetID);
+		}else
 		{
-			//This packet type is not allowed as a response in general
-			// -> send INVALID_PACKET ERROR packet
+		
+			requestingPacket.onResponse(packet);
 			
-			//TODO: Send packet
 		}
-		
-		requestingPacket.onResponse(packet.typeID, packet.data);
-		
-		
-		
+			
 	}else // -> Packet is a request
 	{
-	
+		//TODO:  Implement request processing
+		console.log("I received a packet as a request.\n At the moment I don't know what to do with it so I throw it away.");
 	}
 }
 
 function netio_onClose()
 {
-	
+	console.log("The connection was closed");
 }
 
 function netio_onError()
 {
-	ui_showErrorDialog(UI_STRINGS.MSG_FATAL_NETWORK_ERROR_TITLE,UI_STRINGS.MSG_FATAL_NETWORK_ERROR);
+	console.error("Network error");
 }
 
-function netio_sendPacket(packet)
+function netio_handshake()
 {
+
+	var packet = new Packet_Handshake();
+	packet.onResponse = 
+	function(pk)
+	{
+		if(pk.typeID == PTYPE.ACK)
+		{
+			console.log("Handshake successful");
+		}else if(pk.typeID == PTYPE.QUIT)
+		{
+			console.error("Handshake refused. Reason: " + pk.data.reasonMessage);
+		}
+	};
+	
+	netio_sendPacket(packet);
+}
+
+function netio_generateUID()
+{
+	var uid = 0;
+	var rounds = 0;
+	
+	while(("uid" + uid) in sentPacketMap)
+	{
+		uid += 2; //Generate only even UIDs
+		
+		if(rounds++ > 256) //Don't mess around too long in this unperformant routine
+		{
+			console.log("Packet queue overloaded!");
+			return -1;
+		}
+	}
+	
+	return uid;
+}
+
+function netio_sendPacket(packet, uid)
+{	
 	var packetToSend = {};
 	
 	packetToSend.typeID = packet.packetID;
 	packetToSend.data = packet.data;
+	packetToSend.uid = uid || netio_generateUID();
 	
 	var jsonPacket = JSON.stringify(packetToSend);
 	
-	//TODO: uncomment this - commented only for testing
-	//socket.send(jsonPacket); Ahhh na na. Don't send this. There is no real socket yet
+	if(socket.readyState == 1)
+	{
+		//TODO: uncomment this - commented only for testing
+		socket.send(jsonPacket); //Ahhh na na. Don't send this. There is no real socket yet
+		sentPacketMap["uid" + packetToSend.uid] = packet;
+		
+		console.log("I sent this: " + jsonPacket);
+		
+		//alert("I would have sent this if there was a server:\n" + jsonPacket);
+	}else if(socket.readyState == 2)
+	{
+		console.error("The connection was lost");
+	}else if(socket.readyState == 0)
+	{
+		console.error("The socket is still connecting");
+	}
 	
-	alert("I would have sent this if there was a server:\n" + jsonPacket);
+	
 }
 
 //---------------Packet constructors------------------

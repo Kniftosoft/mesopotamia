@@ -69,30 +69,31 @@ body
 
 #loginform_username,#loginform_password
 {
-	width: 95%;
+	width: 100%;
 }
 
-#loginform_login
+#loginform .loginbutton
 {
 	float: right;
 }
 
 .dashboard_tile
 {
-	border: 1px solid #101010;
+	border: 1px solid #18002B;
 	background-color: #280444
 }
 
-.dashboard_tile_header
+.dashboard_tile .dashboard_tile_header
 {
 	background-color: #34005C;
 	
 	margin-bottom: 10px;
 	padding-left: 5px;
 	padding-right: 5px;
+	padding-bottom: 2px;
 }
 
-.dashboard_tile_content
+.dashboard_tile .dashboard_tile_content
 {
 	background-color: #31065C;
 	
@@ -100,12 +101,41 @@ body
 	margin-right: auto;
 	margin-bottom: 5px;
 	
-	padding: 5px;
+	padding: 8px;
 	
 	width: 90%;
 	
-	overflow-y: auto;
-	overflow-x: auto;
+	overflow: hidden;
+}
+
+.input
+{
+	border-style: solid;
+	border-width: 1px;
+	border-radius: 0px;
+	border-color: #555059;
+	
+	background: none repeat scroll 0% 0% #E3DEE4;
+	
+	color: #000000;
+	
+	font-size: 1.6em;
+	
+	line-height: 1;
+}
+
+.button
+{
+	border-style: solid;
+	border-width: 1px;
+	border-radius: 0px;
+	border-color: #555059;
+	
+	cursor: pointer;
+	
+	background: none repeat scroll 0% 0% #353536;
+	
+	color: #e3dee4;
 }
 
 
