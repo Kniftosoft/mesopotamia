@@ -30,7 +30,11 @@ public class MethodProvider {
 		}
 		else
 		{
-			return new Packet(201, data);
+			// TODO A Refused Connection is not removed from sessions
+			JsonObject packetdata = new JsonObject();
+			packetdata.addProperty("reasonCode", 4);
+			packetdata.addProperty("reasonMessage", "Connection Refused because of a wrong Client Version");
+			return new Packet(255, packetdata);
 		}
 	}
 	public static Packet relog(JsonObject data, EuphratisSession es) {
