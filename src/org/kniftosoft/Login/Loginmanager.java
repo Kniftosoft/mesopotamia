@@ -8,39 +8,37 @@ import javax.persistence.TypedQuery;
 import org.kniftosoft.entity.EuphratisSession;
 import org.kniftosoft.entity.User;
 import org.kniftosoft.thread.ClientUpDater;
+import org.kniftosoft.util.Constants;
+import org.kniftosoft.util.Packet;
 
 import com.google.gson.JsonObject;
 
 public class Loginmanager {
-	static final String PERSISTENCE_UNIT_NAME = "Euphratis";
-	public static JsonObject login(EuphratisSession es, String email, String pass){
-		JsonObject answer = new JsonObject();
+	public static Packet login(EuphratisSession es, String email, String pass){
+		Packet answer;
+		
 		EntityManagerFactory factory;
-		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
+		factory = Persistence.createEntityManagerFactory(Constants.getPersistenceUnitName());
 	    EntityManager em = factory.createEntityManager();
 	    em.getTransaction().begin();
 	    TypedQuery<User> userquery=em.createQuery("Select u FROM User u WHERE u.email = '"+email+"'", User.class).setMaxResults(1);
 	    em.getTransaction().commit();
 	    User user= userquery.getSingleResult();
-	    System.out.println(email.toLowerCase());
-	    System.out.println(user.getEmail().toLowerCase());
-	    System.out.println(pass);
-	    System.out.println(user.getPassword());
+	    
 	    if(email.toLowerCase().equals(user.getEmail().toLowerCase())&&pass.equals(user.getPassword())){
 	    	es.setLoginverified(true);
 	    	es.setUser(user);
-	    	ClientUpDater.updatepeer(es);
+	    	ClientUpDater.updatepeer(es);	
 	    	
-	    	
-	    	answer.addProperty("typeID", "11");
 	    	JsonObject data = new JsonObject();
 	    	data.addProperty("sessionID", es.getSession().getId());
 	    	data.addProperty("Struct", "");
-	    	answer.addProperty("data", data.toString());
+	    	answer = new Packet(11, data);
 	    }
 	    else
 	    {
-	    	answer.addProperty("typeID", "201");
+	    	JsonObject data = new JsonObject();
+	    	answer = new Packet(201, data);
 	    }
 		em.close();
 		return answer;

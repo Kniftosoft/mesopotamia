@@ -10,6 +10,7 @@ import javax.websocket.server.ServerEndpoint;
 
 import org.kniftosoft.entity.EuphratisSession;
 import org.kniftosoft.thread.ClientUpDater;
+import org.kniftosoft.util.Packet;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -31,8 +32,7 @@ public class MesopotamiaEndpoint {
 	public void onMessage(String message,Session peer)
 	{
 		EuphratisSession es = new EuphratisSession(peer);
-		System.out.println("recive:"+message);
-		JsonObject answer = new JsonObject();
+		System.out.println("recive:"+message);	
 		try
 		{
 			try
@@ -41,31 +41,46 @@ public class MesopotamiaEndpoint {
 				JsonObject jmessage = (JsonObject) parser.parse(message);
 				if(jmessage.has("typeID")&&jmessage.has("data")&&jmessage.has("uid"))
 				{
+					Packet answer;
 					switch(jmessage.getAsJsonPrimitive("typeID").getAsString())
-					{				
+					{	
+					case "1": answer = MethodProvider.handshake(jmessage.getAsJsonObject("data"),es);
+					break;
 					case "10": answer = MethodProvider.login(jmessage.getAsJsonObject("data"),es);
+					break;
+					case "12": answer = MethodProvider.relog(jmessage.getAsJsonObject("data"),es);
+					break;
+					case "14": answer = MethodProvider.logout(jmessage.getAsJsonObject("data"),es);
+					break;
+					case "20": answer = MethodProvider.query(jmessage.getAsJsonObject("data"),es);
+					break;
+					case "200": answer = MethodProvider.ack(jmessage.getAsJsonObject("data"),es);
+					break;
+					case "201": answer = MethodProvider.nack(jmessage.getAsJsonObject("data"),es);
+					break;
+					case "242": answer = MethodProvider.error(jmessage.getAsJsonObject("data"),es);
+					break;
+					case "255": answer = MethodProvider.quit(jmessage.getAsJsonObject("data"),es);
 						break;
 					default : answer = MethodProvider._default(jmessage.getAsJsonObject("data"));
 							 System.out.println("Keine Gültige Methode  Json-String: "+message);
 						break;
 					}
+					answer.setuid(jmessage.get("uid").getAsString());
+					send(answer.getPacket(), es);
 				}
 				else
 				{
 					System.out.println("No Valid JSON");
-				}
-				answer.addProperty("uid", jmessage.get("uid").getAsString());
+				}				
 			}		
 			catch(JsonSyntaxException e)
 			{
 				System.out.println("Could not parse message to Json /n JsonSyntaxException :/n"+e.toString());
-			}
-			
+			}			
 		}catch(Exception e){
 			System.out.println("Unbekannter Fehler:/n"+e.toString());
-		}
-		
-		send(answer, es);
+		}	
 	}
 	/**
 	 * 

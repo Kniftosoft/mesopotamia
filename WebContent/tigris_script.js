@@ -284,7 +284,7 @@ function netio_onMessage(msg)
 			
 			//TODO: Send packet
 			console.error("Received invalid response packet: " + packet.typeID + " is not allowed as a response to " + requestingPacket.packetID);
-			
+			console.error(requestingPacket.allowedResponses+" expected");
 		}else
 		{
 		
