@@ -3,13 +3,13 @@
  */
 package org.kniftosoft.thread;
 
-import javax.websocket.Session;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.kniftosoft.endpoint.MesopotamiaEndpoint;
-
-import com.google.gson.JsonObject;
+import org.kniftosoft.entity.EuphratisSession;
 
 /**
+ * Thread Stores Connected peers and updates them 
  * @author julian
  *
  */
@@ -18,37 +18,67 @@ public class ClientUpDater extends Thread {
 	/* (non-Javadoc)
 	 * @see java.lang.Runnable#run()
 	 */
-	private boolean connected = false;
-	Session peer;
+	int sleepTime = 10000;
+	private static Map<String, EuphratisSession> peers = new HashMap<String, EuphratisSession>();
 	
 	/**
 	 * 
-	 * @param peer Session which will be updated by the Thread
+	 * @param peerID
+	 * @return Stored Session with this ID
 	 */
-	public ClientUpDater(Session peer )
+	public static EuphratisSession getpeer(String peerID)
 	{
-		this.peer = peer;
-		System.out.println("Create Thread");
-		connected = true;
+		return peers.get(peerID);
 	}
 	
+	/**
+	 * 
+	 * @param peer adds this peer to the connected peers
+	 */
+	public static void addpeer(EuphratisSession peer)
+	{
+		peers.put(peer.getSession().getId(), peer);
+	}
+	/**
+	 * 
+	 * @param peer removes this peer from the connected peers
+	 */
+	public static void removepeer(EuphratisSession peer)
+	{
+		peers.remove(peer.getSession().getId());
+	}
+	/**
+	 *  Updates a Stored peer
+	 * @param peer
+	 */
+	public static void updatepeer(EuphratisSession peer)
+	{
+		removepeer(peer);
+		addpeer(peer);
+	}
 	
+	/**
+	 * 
+	 */
+	public ClientUpDater()
+	{
+		System.out.println("Create Thread");
+	}
+	
+	/**
+	 * 
+	 */
 	@Override
 	public void run() {
-		
-		while(connected) {
-	          int sleepTime = (int)(1000);
-	          try {
-	        	System.out.println("update" +Thread.currentThread().getName());
-		        JsonObject jo= new JsonObject();
-		        jo.addProperty("tee", Thread.currentThread().getName());
+		try {
+			while(true) {
+	        	System.out.println("update" +Thread.currentThread().getName()+peers.toString());
 				Thread.currentThread();
 				Thread.sleep(sleepTime);
-				MesopotamiaEndpoint.send(jo, peer);
-			} catch (InterruptedException e) {
-				connected = false;
-				interrupt();
+
 			}
+		} catch (InterruptedException e) {
+			System.out.println("Update Thread stopps by Interrupt");
 		}
 	}
 }

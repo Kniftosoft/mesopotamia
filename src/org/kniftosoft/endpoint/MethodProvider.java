@@ -3,11 +3,6 @@
  */
 package org.kniftosoft.endpoint;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.websocket.Session;
-
 import org.kniftosoft.Login.Loginmanager;
 import org.kniftosoft.entity.EuphratisSession;
 
@@ -27,9 +22,9 @@ public class MethodProvider {
 		System.out.println("test1 called ");
 		return answer;
 	}
-	static JsonObject login(JsonObject data, Session peer){
+	static JsonObject login(JsonObject data, EuphratisSession es){
 		JsonObject answer = new JsonObject();
-		Loginmanager.login(peer, data.get("email").getAsString(), data.get("pass").getAsString());
+		Loginmanager.login(es, data.get("email").getAsString(), data.get("pass").getAsString());
 		return answer;
 	}
 }

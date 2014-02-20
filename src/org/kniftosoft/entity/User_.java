@@ -17,5 +17,5 @@ public class User_ {
 	public static volatile SingularAttribute<User, String> plz;
 	public static volatile SingularAttribute<User, String> strasse;
 	public static volatile SingularAttribute<User, String> vorname;
-	public static volatile SingularAttribute<User, EuphratisSession> euphratisSession;
+
 }

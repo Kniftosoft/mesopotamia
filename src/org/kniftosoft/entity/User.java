@@ -45,10 +45,6 @@ public class User implements Serializable {
 	@Column(length=45)
 	private String vorname;
 
-	//bi-directional one-to-one association to EuphratisSession
-	@OneToOne(mappedBy="user")
-	private EuphratisSession euphratisSession;
-
 	public User() {
 	}
 
@@ -132,12 +128,5 @@ public class User implements Serializable {
 		this.vorname = vorname;
 	}
 
-	public EuphratisSession getEuphratisSession() {
-		return this.euphratisSession;
-	}
-
-	public void setEuphratisSession(EuphratisSession euphratisSession) {
-		this.euphratisSession = euphratisSession;
-	}
 
 }

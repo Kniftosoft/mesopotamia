@@ -1,14 +1,7 @@
 package org.kniftosoft.endpoint;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.persistence.TypedQuery;
 import javax.websocket.OnClose;
 import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
@@ -16,6 +9,7 @@ import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
 import org.kniftosoft.entity.EuphratisSession;
+import org.kniftosoft.thread.ClientUpDater;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -28,9 +22,6 @@ import com.google.gson.JsonSyntaxException;
  *
  */
 public class MesopotamiaEndpoint {
-	final String PERSISTENCE_UNIT_NAME = "Euphratis";
-	private static Set<Session> peers = Collections.synchronizedSet(new HashSet<Session>());
-	Thread updater;
 	/**
 	 * 
 	 * @param message Received message from client
@@ -39,16 +30,10 @@ public class MesopotamiaEndpoint {
 	@OnMessage
 	public void onMessage(String message,Session peer)
 	{
+		EuphratisSession es = new EuphratisSession(peer);
 		System.out.println("recive:"+message);
 		JsonObject answer = new JsonObject();
-		answer.addProperty("data", message);
-		EntityManagerFactory factory;
-		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
-	    EntityManager em = factory.createEntityManager();
-	    em.getTransaction().begin(); 
-	    TypedQuery<EuphratisSession> esq= em.createQuery("SELECT es FROM EuphratisSession es WHERE es.peer_ID = '"+peer.getId()+"'", EuphratisSession.class).setMaxResults(1);
-		em.getTransaction().commit();
-		em.close();
+
 		try
 		{
 			try
@@ -61,7 +46,7 @@ public class MesopotamiaEndpoint {
 					{				
 					case "test1": answer = MethodProvider.test1(jmessage.getAsJsonObject("data"));
 						break;
-					case "login": answer = MethodProvider.login(jmessage.getAsJsonObject("data"),peer);
+					case "login": answer = MethodProvider.login(jmessage.getAsJsonObject("data"),es);
 						break;
 					default : answer = MethodProvider._default(jmessage.getAsJsonObject("data"));
 							 System.out.println("Keine Gültige Methode  Json-String: "+message);
@@ -81,7 +66,7 @@ public class MesopotamiaEndpoint {
 		}catch(Exception e){
 			System.out.println("Unbekannter Fehler:/n"+e.toString());
 		}
-		send(answer, peer);
+		send(answer, es);
 	}
 	/**
 	 * 
@@ -91,24 +76,8 @@ public class MesopotamiaEndpoint {
 	public void onOpen (Session peer)
 	{
 		try{
-			
-		peers.add(peer);
-		//updater = new Thread(new ClientUpDater(peer), "UpdateThread"+peer.getId());
-		//updater.start();
-		
-		
-		EntityManagerFactory factory;
-		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
-	    EntityManager em = factory.createEntityManager();
-		em.getTransaction().begin();
-		 
-		EuphratisSession es = new EuphratisSession();
-		es.setLogin_verified(false);
-		es.setPeer_ID(peer.getId());
-		es.setUser(null);
-		em.persist(es);
-		em.getTransaction().commit();
-		em.close();
+			EuphratisSession es = new EuphratisSession(peer);
+			ClientUpDater.addpeer(es);
 		}catch(Exception e)
 		{
 			e.printStackTrace();
@@ -121,23 +90,14 @@ public class MesopotamiaEndpoint {
 	@OnClose
 	public void onClose (Session peer)
 	{
-		
 		try
 		{
-			EntityManagerFactory factory;
-			factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
-		    EntityManager em = factory.createEntityManager();
-		    em.getTransaction().begin(); 
-		    em.createQuery("DELETE FROM EuphratisSession es WHERE es.peer_ID = '"+peer.getId()+"'", EuphratisSession.class).executeUpdate();
-			em.getTransaction().commit();
-			em.close();
-			
+			EuphratisSession es = new EuphratisSession(peer);
+			ClientUpDater.removepeer(es);
 		}catch(Exception e)
 		{
 			e.printStackTrace();
 		}
-		peers.remove(peer);
-		//updater.interrupt();
 	}
 	
 	/**
@@ -145,12 +105,12 @@ public class MesopotamiaEndpoint {
 	 * @param json JSON Message which should send to the connected peer
 	 * @param peer A connected Peer which should receive the message
 	 */
-	public static void send(JsonObject json, Session peer){
+	public static void send(JsonObject json, EuphratisSession peer){
 		try
 		{
-			peer.getBasicRemote().sendText(json.toString());
+			peer.getSession().getBasicRemote().sendText(json.toString());
 		}catch(IOException e){
-			System.out.println("Failed to send message to peer: "+ peer.getId()+" JSON MEssage: "+json.toString()+" IOExeption: "+ e.toString());
+			System.out.println("Failed to send message to peer: "+ peer.getSession().getId()+" JSON MEssage: "+json.toString()+" IOExeption: "+ e.toString());
 		}
 	}
 	
