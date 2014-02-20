@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+	<head>
+	
+		<meta charset="ISO-8859-1">
+	
+		<title>Mesopotamia Tigris</title>
+	
+		<link rel="stylesheet" href="./css/tigris_styles.css">
+	
+		<!-- JavaScript libraries -->
+		<script src="./lib/jquery-1.11.0.js"></script> <!-- Change to CDN when finished -->
+		<script src="./lib/jquery-ui.js"></script>
+		<script src="./CryptoJS/core-min.js"></script>
+		<script src="./CryptoJS/format-hex.js"></script>
+		<script src="./CryptoJS/sha256.js"></script>
+		
+		<!-- Tigris system script -->
+		<script src="./tigris_script.js"></script>
+		<script src="./tigris_ui.js"></script>
+	</head>
+	
+	<body>
+
+
+		<div id="header">
+			
+			<div id="tigris_logo">
+				<span class="name_info_major">Tigris</span><br>
+				<span class="name_info_minor">&nbsp;Mesopotamia 1.0</span>
+			</div>
+			
+			<div id="user_control">
+			
+				<input type="button" id="menubutton" class="button" value="V">
+				
+				<div id="nameplate">
+					<span id="user_displayname" class="name_info_major">KniftoSoft Admin</span><br>
+					<span id="user_loginname" class="name_info_minor">administrator</span>
+				</div>
+			
+				<div id="profpic">
+					<img src="./users/profpic/administrator.png"></img>
+				</div>
+			
+			</div>
+			
+		</div>
+		
+		<div id="dashboard">
+		
+			<div id="test_dashboard_tile" class="dashboard_tile">
+		
+				<div class="dashboard_tile_header">
+					
+						<span class="name_info_major">Test dashboard tile</span>
+					
+				</div>
+					
+				<div class="dashboard_tile_content">
+						
+						This is a test dashboard tile.
+						
+				</div>
+		
+			</div>
+		
+		</div>
+		
+		
+		<div id="login_dialog" class="dashboard_tile">
+				
+			<div id="login_dialog_header" class="dashboard_tile_header">
+			
+				<span class="name_info_major">Tigris</span><br>
+				<span class="name_info_minor">&nbsp;Login</span>
+			
+			</div>
+			
+			<div class="dashboard_tile_content">
+				
+				<div id="login_errorbox" class="error_box">
+					If you can read this, your browser probably does not support JavaScript. In that case, Tigris will not work.
+				</div>
+				
+				<form id="loginform" method="post">
+					<p><label for="username">User<br><input type="text" name="username" id="loginform_username" class="input"></label></p>
+					<p><label for="password">Pass<br><input type="password" name="password" id="loginform_password" class="input"></label></p>
+					
+					<p class="loginbutton"><input type="submit" name="login" class="button" value="Login"></p>
+					
+				</form>
+				
+			</div>
+				
+		</div>
+		
+		<!--<div id="error" class="dashboard_tile">
+		
+			<div class="dashboard_tile_header">
+			
+				<span class="name_info_major">Tigris</span><br>
+				<span class="name_info_minor">&nbsp;Error</span>
+			
+			</div>
+			
+			<div class="dashboard_tile_content">
+				DON'T PANIC
+			</div>
+		
+		</div>-->
+
+	</body>
+</html>

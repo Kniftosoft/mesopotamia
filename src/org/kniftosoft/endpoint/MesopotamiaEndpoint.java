@@ -33,20 +33,17 @@ public class MesopotamiaEndpoint {
 		EuphratisSession es = new EuphratisSession(peer);
 		System.out.println("recive:"+message);
 		JsonObject answer = new JsonObject();
-
 		try
 		{
 			try
 			{
 				JsonParser parser = new JsonParser();
 				JsonObject jmessage = (JsonObject) parser.parse(message);
-				if(jmessage.has("method")&&jmessage.has("data"))
+				if(jmessage.has("typeID")&&jmessage.has("data")&&jmessage.has("uid"))
 				{
-					switch(jmessage.getAsJsonPrimitive("method").getAsString())
+					switch(jmessage.getAsJsonPrimitive("typeID").getAsString())
 					{				
-					case "test1": answer = MethodProvider.test1(jmessage.getAsJsonObject("data"));
-						break;
-					case "login": answer = MethodProvider.login(jmessage.getAsJsonObject("data"),es);
+					case "10": answer = MethodProvider.login(jmessage.getAsJsonObject("data"),es);
 						break;
 					default : answer = MethodProvider._default(jmessage.getAsJsonObject("data"));
 							 System.out.println("Keine Gültige Methode  Json-String: "+message);
@@ -57,7 +54,8 @@ public class MesopotamiaEndpoint {
 				{
 					System.out.println("No Valid JSON");
 				}
-			}
+				answer.addProperty("uid", jmessage.get("uid").getAsString());
+			}		
 			catch(JsonSyntaxException e)
 			{
 				System.out.println("Could not parse message to Json /n JsonSyntaxException :/n"+e.toString());
@@ -66,6 +64,7 @@ public class MesopotamiaEndpoint {
 		}catch(Exception e){
 			System.out.println("Unbekannter Fehler:/n"+e.toString());
 		}
+		
 		send(answer, es);
 	}
 	/**

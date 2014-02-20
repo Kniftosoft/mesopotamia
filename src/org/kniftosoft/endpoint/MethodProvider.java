@@ -23,8 +23,7 @@ public class MethodProvider {
 		return answer;
 	}
 	static JsonObject login(JsonObject data, EuphratisSession es){
-		JsonObject answer = new JsonObject();
-		Loginmanager.login(es, data.get("email").getAsString(), data.get("pass").getAsString());
+		JsonObject answer = Loginmanager.login(es, data.get("username").getAsString(), data.get("passwordHash").getAsString());
 		return answer;
 	}
 }

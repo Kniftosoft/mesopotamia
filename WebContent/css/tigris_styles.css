@@ -1,0 +1,192 @@
+
+body
+{
+	font-family: verdana,sans-serif;
+	color: #e3dee4;
+	font-size: 65%;
+	
+	background-color: #240040;
+	
+	margin: 0px;
+	padding: 0px;
+	
+	border-radius: 20px 20px 20px 20px;
+}
+
+#header
+{
+	background-color: #34005C;
+	
+	height: auto;
+	width: 100%;
+	
+	border-bottom: 1px solid #171717;
+	
+	overflow: hidden;
+}
+
+#tigris_logo
+{
+	float: left;
+	margin-left: 8px;
+}
+
+.name_info_major
+{
+	font-size: 3em;
+}
+
+.name_info_minor
+{
+	font-size: 1.2em;
+}
+
+.error_box
+{
+	border: 2px solid #D91A3D;
+	
+	background-color: #C40427;
+	
+	padding: 5px;
+}
+
+#test_dashboard_tile
+{
+	
+	position: fixed;
+
+	left: 100px;
+	top: 300px;
+}
+
+#login_dialog
+{
+	margin-left: auto;
+	margin-right: auto;
+	
+	margin-top: 15%;
+	margin-bottom: 0;
+	
+	width: 20%;
+}
+
+#login_errorbox
+{
+	margin-bottom: 15px;
+	margin-top: 5px;
+}
+
+#loginform_username,#loginform_password
+{
+	width: 100%;
+}
+
+#loginform .loginbutton
+{
+	float: right;
+}
+
+#dashboard
+{
+	position: fixed;
+	
+	width: 100%;
+	height: 100%;
+	
+	padding: 10px;
+}
+
+/* For the dashboard tile visuals */
+.dashboard_tile
+{	
+	border: 1px solid #18002B;
+	background-color: #280444
+}
+
+.dashboard_tile .dashboard_tile_header
+{
+	background-color: #34005C;
+	
+	margin-bottom: 10px;
+	padding-left: 5px;
+	padding-right: 5px;
+	padding-bottom: 2px;
+}
+
+.dashboard_tile .dashboard_tile_content
+{
+	background-color: #31065C;
+	
+	margin-left: auto;
+	margin-right: auto;
+	margin-bottom: 5px;
+	
+	padding: 8px;
+	
+	width: 90%;
+	
+	overflow: hidden;
+}
+
+.input
+{
+	border-style: solid;
+	border-width: 1px;
+	border-radius: 0px;
+	border-color: #555059;
+	
+	background: none repeat scroll 0% 0% #E3DEE4;
+	
+	color: #000000;
+	
+	font-size: 1.6em;
+	
+	line-height: 1;
+}
+
+.button
+{
+	border-style: solid;
+	border-width: 1px;
+	border-radius: 0px;
+	border-color: #555059;
+	
+	cursor: pointer;
+	
+	background: none repeat scroll 0% 0% #353536;
+	
+	color: #e3dee4;
+}
+
+
+#user_control
+{
+	margin-right: 10px;
+}
+
+#user_control div,input
+{
+	float: right;
+}
+
+#user_control #profpic
+{	
+	margin-right: 15px;
+}
+
+#user_control #profpic img
+{
+	width: 6em;
+	height: 6em;
+}
+
+#user_control #nameplate
+{
+	margin-right: 10px;
+}
+
+#user_control #menubutton
+{
+	width: 5em;
+	height: 5em;
+}

@@ -33,7 +33,7 @@ public class User implements Serializable {
 	@Column(length=30)
 	private String ort;
 
-	@Column(nullable=false, length=45)
+	@Column(nullable=false, length=64)
 	private String password;
 
 	@Column(length=7)
