@@ -15,8 +15,6 @@ import com.google.gson.JsonObject;
 
 public class Loginmanager {
 	public static Packet login(EuphratisSession es, String email, String pass){
-		Packet answer;
-		
 		EntityManagerFactory factory;
 		factory = Persistence.createEntityManagerFactory(Constants.getPersistenceUnitName());
 	    EntityManager em = factory.createEntityManager();
@@ -24,7 +22,7 @@ public class Loginmanager {
 	    TypedQuery<User> userquery=em.createQuery("Select u FROM User u WHERE u.email = '"+email+"'", User.class).setMaxResults(1);
 	    em.getTransaction().commit();
 	    User user= userquery.getSingleResult();
-	    
+	    em.close();
 	    if(email.toLowerCase().equals(user.getEmail().toLowerCase())&&pass.equals(user.getPassword())){
 	    	es.setLoginverified(true);
 	    	es.setUser(user);
@@ -32,15 +30,43 @@ public class Loginmanager {
 	    	
 	    	JsonObject data = new JsonObject();
 	    	data.addProperty("sessionID", es.getSession().getId());
-	    	data.addProperty("Struct", "");
-	    	answer = new Packet(11, data);
+	    	//TODO add user config
+	    	data.addProperty("userConfig", "");
+	    	return new Packet(11, data);
 	    }
 	    else
 	    {
-	    	JsonObject data = new JsonObject();
-	    	answer = new Packet(201, data);
+	    	return new Packet(201,null);
 	    }
-		em.close();
-		return answer;
+	}
+	
+	public static void Logout(EuphratisSession es ,JsonObject data)
+	{
+		if(es.getSession().getId().equals(data.get("sessionID").getAsString()))
+		{
+			//TODO remove sys out if checkt and handle different codes
+			System.out.println("logg out"+data.get("sessionID").getAsString());
+			es.setLoginverified(false);
+			es.setUser(null);
+			ClientUpDater.updatepeer(es);	
+		}
+	}
+
+	public static Packet relog(EuphratisSession es ,JsonObject data)
+	{
+		if(ClientUpDater.getpeer(data.get("sessionID").getAsString()).isLoginverified())
+		{
+			JsonObject packetdata = new JsonObject();
+			packetdata.addProperty("newSessionID", es.getSession().getId());
+			//TODO add user config
+			packetdata.addProperty("userConfig", "");
+			return new Packet(13, packetdata);
+		}
+		else
+		{			
+			return new Packet(201, null);	
+		}
+
+		
 	}
 }

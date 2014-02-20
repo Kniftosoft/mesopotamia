@@ -62,7 +62,7 @@ public class MesopotamiaEndpoint {
 					break;
 					case "255": answer = MethodProvider.quit(jmessage.getAsJsonObject("data"),es);
 						break;
-					default : answer = MethodProvider._default(jmessage.getAsJsonObject("data"));
+					default : answer = MethodProvider._default(jmessage.getAsJsonObject("data"),es);
 							 System.out.println("Keine Gültige Methode  Json-String: "+message);
 						break;
 					}

@@ -15,18 +15,18 @@ import com.google.gson.JsonObject;
  *
  */
 public class MethodProvider {
-	static Packet _default(JsonObject data){
-		Packet answer = new Packet(201, data);
-		return answer;
+	static Packet _default(JsonObject data, EuphratisSession es){
+		return new Packet(201, null);
 	}
+	
 	public static Packet login(JsonObject data, EuphratisSession es){
-		Packet answer = Loginmanager.login(es, data.get("username").getAsString(), data.get("passwordHash").getAsString());
-		return answer;
+		return Loginmanager.login(es, data.get("username").getAsString(), data.get("passwordHash").getAsString());
 	}
+	
 	public static Packet handshake(JsonObject data,EuphratisSession es) {
 		if(data.get("clientVersion").getAsString().equals(Constants.getClientversion()))
 		{
-			return new Packet(200, data);
+			return new Packet(200, null);
 		}
 		else
 		{
@@ -38,11 +38,12 @@ public class MethodProvider {
 		}
 	}
 	public static Packet relog(JsonObject data, EuphratisSession es) {
-		// TODO Auto-generated method stub
-		return null;
+		// TODO Auto-generated method stub	
+		return Loginmanager.relog(es, data);
 	}
 	public static Packet logout(JsonObject data, EuphratisSession es) {
 		// TODO Auto-generated method stub
+		Loginmanager.Logout(es, data);
 		return null;
 	}
 	public static Packet query(JsonObject data, EuphratisSession es) {
