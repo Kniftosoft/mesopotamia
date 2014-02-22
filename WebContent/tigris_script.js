@@ -6,6 +6,8 @@
  *-------------------------- 
  */
 
+//TODO: Implement better error handling all over the script
+ 
 
 //Configure this to your Euphrates installation
 //If your endpoint is absolute, make sure you include the full URI (including protocol etc.)
@@ -15,7 +17,7 @@ var MESO_ENDPOINT = "TIG_TEST_END"; //Link to Euphrates
 
 //Constants
 var TIGRIS_VERSION = "0.0.4";
-
+var TIGRIS_SESSION_COOKIE = "559-tigris-session";
 
 //Packet type IDs
 var PTYPE =
@@ -54,7 +56,6 @@ var REASONCODE =
 	REFUSED:			4
 };
 
-
 $(document).ready(
 function()
 {
@@ -62,6 +63,60 @@ function()
 	
 	netio_init(); //Init connection
 });
+
+//-----------------Functional stuff-------------------
+
+function f_setUpSession(sessionID)
+{
+	//util_setCookie(TIGRIS_SESSION_COOKIE, sessionID, 600);
+	
+	ui_showDashboard();
+}
+
+
+//-------------------Utility stuff-------------------
+
+/**
+ * Sets cookie with specific name, value and time-to-live.
+ * 
+ * @param name Name of the cookie
+ * @param value Value of the cookie
+ * @param ttl Lifespan of the cookie in seconds
+ */
+function util_setCookie(name, value, ttl)
+{
+	var expires = new Date();
+	expires.setSeconds(expires.getSeconds() + ttl);
+
+	var valueFormat = escape(value) + ((expires==null) ? "" : "; expires=" + expires.toUTCString());
+
+	document.cookie = name + "=" + valueFormat;
+}
+
+/**
+ * Returns the value of a cookie with a specific name. Undefined cookies
+ * will be returned as null.
+ * 
+ * @param name Name of the cookie to be returned
+ * 
+ * @returns Value of cookie or null if undefined
+ */
+function util_getCookie(name)
+{
+	var i, x, y;
+	var ARRcookies = document.cookie.split(";");
+
+	for (i = 0; i<ARRcookies.length; i++)
+	{
+		x = ARRcookies[i].substr(0,ARRcookies[i].indexOf("="));
+		y = ARRcookies[i].substr(ARRcookies[i].indexOf("=")+1);
+		x = x.replace(/^\s+|\s+$/g,"");
+		if (x == name)
+		{
+			return unescape(y);
+		}
+	}	
+}
 
 //---------------------UI handler--------------------
 
@@ -73,11 +128,19 @@ function ui_init()
 	//Set up events
 	
 	//Init login form events
-	$('#loginform').submit(function(e) 
+	$("#loginform").submit(function(e) 
 	{
 	    e.preventDefault();
 	    ui_i_login();
 	});
+	
+	$("#sidebar_handle").click(function(e)
+	{
+		console.log("the sidebar handle was clicked");
+		$("#sidebar").animate( { width: "toggle" }, 1000, "easeInOutExpo");
+	});
+	
+	$("#sidebar").animate( { width: "hide" }, 1, "linear");
 	
 	//Set up elements
 	
@@ -86,11 +149,12 @@ function ui_init()
 
 function ui_showLoginPage()
 {
-	$("#header").hide();
-	$("#dashboard").hide();
-	$("#login_errorbox").hide();
+	$("#login").show();
 
-	$("#login_dialog").show();
+	$("#login_errorbox").hide();
+	$("#dashboard").hide();
+	$("#header").hide();
+	$("#error").hide();
 }
 
 function ui_showDashboard()
@@ -98,9 +162,22 @@ function ui_showDashboard()
 	$("#header").show();
 	$("#dashboard").show();
 	
-	$("#login_dialog").hide();
+	$("#login").hide();
+	$("#error").hide();
 }
 
+function ui_showError(msg)
+{
+	var error = msg || "An unknown error occurred";
+
+	$("#login").hide();
+	$("#dashboard").hide();
+	$("#header").hide();
+	
+	$("#error_msg").html(error);
+	
+	$("#error").show();
+}
 
 function ui_i_login()
 {
@@ -119,7 +196,7 @@ function ui_i_login()
 				//Wait until full protocol specification before implementing this. Ignore it for now
 				//var userConfig = data.userConfig;
 				
-				ui_showDashboard();
+				f_setUpSession(sessionID);
 				
 			}else if(pk.typeID == PTYPE.NACK)
 			{
@@ -134,7 +211,7 @@ function ui_login_showBadLoginMessage()
 {
 	$("#login_errorbox").html("Your login data is incorrect!");
 	$("#login_errorbox").show();
-	$("#login_errorbox").effect("shake"); //TODO: Implement own shake effect
+	$("#login_errorbox").effect("shake");
 }
 
 //--------------Net handler-------------------------
@@ -166,31 +243,22 @@ function netio_init()
 		wsURI = MESO_ENDPOINT;
 	}
 	
-	socket = new WebSocket(wsURI);
-	
-	socket.onopen = 
-	function()
+	try
 	{
-		netio_onOpen();
-	};
-	
-	socket.onmessage =
-	function(msg)
+		socket = new WebSocket(wsURI);
+	}catch(e)
 	{
-		netio_onMessage(msg);
-	};
+		ui_showError("Error while opening connection:<br><b>" + e + "</b>");
+		return;
+	}
 	
-	socket.onclose =
-	function()
-	{
-		netio_onClose();
-	};
+	socket.onopen = netio_onOpen;
 	
-	socket.onerror =
-	function()
-	{
-		netio_onError();
-	};
+	socket.onmessage = netio_onMessage;
+	
+	socket.onclose = netio_onClose;
+	
+	socket.onerror = netio_onError;
 }
 
 function netio_onOpen()
@@ -210,12 +278,17 @@ function netio_onMessage(msg)
 		
 	}catch(e)
 	{	
-		console.log("Message was not in JSON format or shit. \n" + e + "\n" + msg.data);
+		console.error("Message was not in JSON format or shit. \n" + e + "\n" + msg.data);
 		
 		return;
 	}
 	
-	//TODO: Check for missing fields here
+	if(packet.uid == "undefined" || packet.typeID == "undefined" || packet.data == "undefined")
+	{
+		console.error("Packet had missing fields.");
+		
+		return;
+	}
 	
 	if(("uid" + packet.uid) in sentPacketMap) //UID is registered -> Packet is an answer
 	{
@@ -224,13 +297,14 @@ function netio_onMessage(msg)
 		
 		delete sentPacketMap["uid" + packet.uid];
 		
-		if($.inArray(packet.typeID , requestingPacket.allowedResponses) == -1) 
+		if($.inArray(packet.typeID , requestingPacket.allowedResponses) == -1)
 		{
 			//This packet type is not allowed as a response to the requesting packet
 			// -> send INVALID_ANSWER ERROR packet
 			
 			//TODO: Send packet
 			console.error("Received invalid response packet: " + packet.typeID + " is not allowed as a response to " + requestingPacket.packetID);
+			
 		}else
 		{
 		
@@ -240,8 +314,7 @@ function netio_onMessage(msg)
 			
 	}else // -> Packet is a request
 	{
-		//TODO:  Implement request processing
-		console.log("I received a packet as a request.\n At the moment I don't know what to do with it so I throw it away.");
+		netio_request(packet);
 	}
 }
 
@@ -250,9 +323,11 @@ function netio_onClose()
 	console.log("The connection was closed");
 }
 
-function netio_onError()
+function netio_onError(e)
 {
 	console.error("Network error");
+	
+	ui_showError("A network error occurred. Please contact the system admin you do not know.");
 }
 
 function netio_handshake()
@@ -268,6 +343,8 @@ function netio_handshake()
 		}else if(pk.typeID == PTYPE.QUIT)
 		{
 			console.error("Handshake refused. Reason: " + pk.data.reasonMessage);
+			
+			ui_showError("Connection refused by server. Reason: " + pk.data.reasonMessage);
 		}
 	};
 	
@@ -285,7 +362,7 @@ function netio_generateUID()
 		
 		if(rounds++ > 256) //Don't mess around too long in this unperformant routine
 		{
-			console.log("Packet queue overloaded!");
+			console.error("Packet queue overloaded!");
 			return -1;
 		}
 	}
@@ -297,7 +374,7 @@ function netio_sendPacket(packet, uid)
 {	
 	var packetToSend = {};
 	
-	packetToSend.typeID = packet.packetID;
+	packetToSend.typeID = packet.typeID;
 	packetToSend.data = packet.data;
 	packetToSend.uid = uid || netio_generateUID();
 	
@@ -305,13 +382,11 @@ function netio_sendPacket(packet, uid)
 	
 	if(socket.readyState == 1)
 	{
-		//TODO: uncomment this - commented only for testing
-		socket.send(jsonPacket); //Ahhh na na. Don't send this. There is no real socket yet
+		socket.send(jsonPacket);
 		sentPacketMap["uid" + packetToSend.uid] = packet;
 		
 		console.log("I sent this: " + jsonPacket);
 		
-		//alert("I would have sent this if there was a server:\n" + jsonPacket);
 	}else if(socket.readyState == 2)
 	{
 		console.error("The connection was lost");
@@ -323,6 +398,20 @@ function netio_sendPacket(packet, uid)
 	
 }
 
+function netio_quit()
+{
+	socket.close(); //TODO: Verify function name
+}
+
+function netio_request(packet)
+{
+	if(packet.typeID == PTYPE.QUIT)
+	{
+		netio_quit();
+		ui_showError("The server closed the connection");
+	}
+}
+
 //---------------Packet constructors------------------
 
 /**
@@ -331,7 +420,7 @@ function netio_sendPacket(packet, uid)
  */
 function Packet_Handshake()
 {
-	this.packetID = PTYPE.HANDSHAKE;
+	this.typeID = PTYPE.HANDSHAKE;
 	
 	this.data = {};
 	this.data.clientVersion = TIGRIS_VERSION;
@@ -345,7 +434,7 @@ function Packet_Handshake()
  */
 function Packet_Login(usr,pwrdHash)
 {
-	this.packetID = PTYPE.LOGIN;
+	this.typeID = PTYPE.LOGIN;
 	
 	this.data = {};
 	this.data.username = usr;
@@ -359,7 +448,7 @@ function Packet_Login(usr,pwrdHash)
  */
 function Packet_Error(code, message)
 {
-	this.packetID = PTYPE.ERROR;
+	this.typeID = PTYPE.ERROR;
 	
 	this.data = {};
 	this.data.errorCode = code;

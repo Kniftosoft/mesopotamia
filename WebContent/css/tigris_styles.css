@@ -3,14 +3,12 @@ body
 {
 	font-family: verdana,sans-serif;
 	color: #e3dee4;
-	font-size: 65%;
+	font-size: 70%;
 	
 	background-color: #240040;
 	
 	margin: 0px;
 	padding: 0px;
-	
-	border-radius: 20px 20px 20px 20px;
 }
 
 #header
@@ -29,6 +27,39 @@ body
 {
 	float: left;
 	margin-left: 8px;
+}
+
+#sidebar
+{
+	float: left;
+	 
+	height: 100%;
+	width: 10%;
+	 
+	background-color: #31065C;
+	 
+	border-right: 1px solid #000;
+	 
+	overflow: hidden;
+}
+
+#sidebar_handle
+{
+	
+	float: left;
+	
+	height: 7%;
+	width: auto;
+	background-color: #28014F;
+	
+	margin-top: 20%;
+	
+	border-top: 1px solid #000;
+	border-right: 1px solid #000;
+	border-bottom: 1px solid #000;
+	border-radius: 0px 10px 10px 0px;
+	
+	cursor: pointer;
 }
 
 .name_info_major
@@ -50,7 +81,16 @@ body
 	padding: 5px;
 }
 
-#login_dialog
+#test_dashboard_tile
+{
+	
+	position: fixed;
+
+	left: 100px;
+	top: 300px;
+}
+
+.centered
 {
 	margin-left: auto;
 	margin-right: auto;
@@ -77,13 +117,24 @@ body
 	float: right;
 }
 
-.dashboard_tile
+#dashboard
 {
-	border: 1px solid #18002B;
-	background-color: #280444
+	position: fixed;
+	
+	width: 100%;
+	height: 100%;
+	
+	padding: 10px 0px 10px;
 }
 
-.dashboard_tile .dashboard_tile_header
+/* For the dashboard tile visuals */
+.dashboard_tile
+{	
+	border: 1px solid #18002B;
+	background-color: #280444;
+}
+
+.dashboard_tile .tile_header
 {
 	background-color: #34005C;
 	
@@ -93,7 +144,7 @@ body
 	padding-bottom: 2px;
 }
 
-.dashboard_tile .dashboard_tile_content
+.dashboard_tile .tile_content
 {
 	background-color: #31065C;
 	
@@ -133,32 +184,42 @@ body
 	
 	cursor: pointer;
 	
-	background: none repeat scroll 0% 0% #353536;
+	background-color: #353536;
 	
 	color: #e3dee4;
 }
 
-
 #user_control
 {
-	float: right;
-	margin-right: 8px;
+	margin-right: 10px;
 }
 
-#user_control #user_profpic
+#user_control div,input,button
 {
-	float: left;
-	
+	float: right;
+}
+
+#user_control #profpic
+{	
 	margin-right: 15px;
 }
 
-#user_control #user_profpic img
+#user_control #profpic img
 {
 	width: 6em;
 	height: 6em;
 }
 
-#user_control #user_nameplate
+#user_control #nameplate
 {
-	float: right;
+	margin-right: 10px;
+}
+
+#user_control #menubutton
+{
+	width: 40px;
+	height: 40px;
+	
+	
+	background: transparent;
 }
