@@ -1,6 +1,6 @@
 
 /*--------------------------
- *      Tigris 0.0.4
+ *      Tigris 0.1.0
  * 	Mesopotamia Client v1
  * (C) Niklas Weissner 2014
  *-------------------------- 
@@ -16,13 +16,14 @@ var MESO_ENDPOINT = "TIG_TEST_END"; //Link to Euphrates
 
 
 //Constants
-var TIGRIS_VERSION = "0.0.4";
+var TIGRIS_VERSION = "0.1.0";
 var TIGRIS_SESSION_COOKIE = "559-tigris-session";
 
 //Packet type IDs
 var PTYPE =
 {
 	HANDSHAKE: 	1,
+	ACCEPT:		2,
 	LOGIN: 		10,
 	AUTH: 		11,
 	RELOG: 		12,
@@ -32,8 +33,7 @@ var PTYPE =
 	DATA: 		21,
 	ACK: 		200,
 	NACK: 		201,
-	ERROR: 		242,
-	QUIT:		255
+	ERROR: 		242
 };
 
 //Error codes
@@ -46,7 +46,7 @@ var ERRORCODE =
 	INVALID_RESPONSE:	4
 };
 
-//Reason codes
+//Logout reason codes
 var REASONCODE =
 {
 	UNKNOWN:			0,
@@ -55,6 +55,13 @@ var REASONCODE =
 	INTERNAL_ERROR:		3,
 	REFUSED:			4
 };
+
+
+var connectionData =
+{
+	sessionOpen:	false
+}; 
+
 
 $(document).ready(
 function()
@@ -71,6 +78,13 @@ function f_setUpSession(sessionID)
 	//util_setCookie(TIGRIS_SESSION_COOKIE, sessionID, 600);
 	
 	ui_showDashboard();
+	
+	connectionData.sessionID = sessionID;
+	connectionData.sessionOpen = true;
+	
+	var d = $("#dashboard");
+	
+	console.log("Computed dimensions of dashboard: " + d.width() + "/" + d.height());
 }
 
 
@@ -142,9 +156,8 @@ function ui_init()
 	
 	$("#sidebar").animate( { width: "hide" }, 1, "linear");
 	
-	//Set up elements
-	
-	ui_showLoginPage(); //Initially show login page TODO: Put this in routine for Handshaking
+	//Initially show message indicating we are still connection TODO: change this to something different then an error message
+	ui_showError("Connecting to the server..."); 
 }
 
 function ui_showLoginPage()
@@ -182,7 +195,9 @@ function ui_showError(msg)
 function ui_i_login()
 {
 	var username = $("#loginform_username").val();
-	var passwordHashObject = CryptoJS.SHA256($("#loginform_password").val());
+	var password = $("#loginform_password").val() + connectionData.salt;
+	var passwordHashObject = CryptoJS.SHA256(password);
+	delete password; //For safety :)
 	$("#loginform_password").val("");
 	var passwordHash = passwordHashObject.toString(CryptoJS.enc.Hex);
 	
@@ -200,18 +215,24 @@ function ui_i_login()
 				
 			}else if(pk.typeID == PTYPE.NACK)
 			{
-				ui_login_showBadLoginMessage();
+				ui_login_showError("Your login data is incorrect");
 			}
 		};
 		
 	netio_sendPacket(packet);
 }
 
-function ui_login_showBadLoginMessage()
+function ui_login_showError(msg, shk)
 {
-	$("#login_errorbox").html("Your login data is incorrect!");
+	var shake = shk || false;
+	
+	$("#login_errorbox").html(msg);
 	$("#login_errorbox").show();
-	$("#login_errorbox").effect("shake");
+	
+	if(shake)
+	{
+		$("#login_errorbox").effect("shake");
+	}
 }
 
 //--------------Net handler-------------------------
@@ -303,7 +324,9 @@ function netio_onMessage(msg)
 			// -> send INVALID_ANSWER ERROR packet
 			
 			//TODO: Send packet
-			console.error("Received invalid response packet: " + packet.typeID + " is not allowed as a response to " + requestingPacket.packetID);
+			console.error("Received invalid response packet: " + packet.typeID + " is not allowed as a response to " + requestingPacket.typeID);
+			
+			ui_showError("Received invalid response packet: " + packet.typeID + " is not allowed as a response to " + requestingPacket.typeID);
 			
 		}else
 		{
@@ -337,14 +360,19 @@ function netio_handshake()
 	packet.onResponse = 
 	function(pk)
 	{
-		if(pk.typeID == PTYPE.ACK)
+		if(pk.typeID == PTYPE.ACCEPT)
 		{
 			console.log("Handshake successful");
-		}else if(pk.typeID == PTYPE.QUIT)
-		{
-			console.error("Handshake refused. Reason: " + pk.data.reasonMessage);
 			
-			ui_showError("Connection refused by server. Reason: " + pk.data.reasonMessage);
+			connectionData.salt = pk.data.salt;
+			
+			ui_showLoginPage();
+			
+		}else if(pk.typeID == PTYPE.NACK)
+		{
+			console.error("Handshake refused");
+			
+			ui_showError("Connection refused by server");
 		}
 	};
 	
@@ -398,17 +426,15 @@ function netio_sendPacket(packet, uid)
 	
 }
 
-function netio_quit()
-{
-	socket.close(); //TODO: Verify function name
-}
 
 function netio_request(packet)
 {
-	if(packet.typeID == PTYPE.QUIT)
+	if(packet.typeID == PTYPE.LOGOUT)
 	{
-		netio_quit();
-		ui_showError("The server closed the connection");
+		ui_showLoginPage();
+		ui_login_showError("Session closed by server.", false);
+		
+		return;
 	}
 }
 
@@ -425,7 +451,7 @@ function Packet_Handshake()
 	this.data = {};
 	this.data.clientVersion = TIGRIS_VERSION;
 	
-	this.allowedResponses = [PTYPE.ACK, PTYPE.QUIT];
+	this.allowedResponses = [PTYPE.ACCEPT, PTYPE.NACK];
 }
 
 /**

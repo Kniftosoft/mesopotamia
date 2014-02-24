@@ -4,11 +4,11 @@ public enum PacketType
 {
 
 	HANDSHAKE(1, PacketHandshake.class),
+	ACCEPT(2, PacketAccept.class),
 	LOGIN(10, PacketLogin.class),
 	AUTH(11, PacketAuth.class),
 	ACK(200, PacketAck.class),
-	NACK(201, PacketNack.class),
-	QUIT(255, PacketQuit.class);
+	NACK(201, PacketNack.class);
 	
 	private PacketType(int typeID, Class packetClass)
 	{
