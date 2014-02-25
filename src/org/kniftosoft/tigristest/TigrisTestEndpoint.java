@@ -65,7 +65,8 @@ public class TigrisTestEndpoint
 			{
 				MessageDigest md = MessageDigest.getInstance("SHA-256");
 				
-				md.update((EXAMPLE_PASSWORD + EXAMPLE_SALT).getBytes());
+				//We act like the are only password hashes in the database, as suggested by MCP 1.2.1
+				md.update((EXAMPLE_PASSWORD_HASH + EXAMPLE_SALT).getBytes());
 				
 				exampleHash = bytesToHex(md.digest());
 				
@@ -106,9 +107,9 @@ public class TigrisTestEndpoint
 	    return new String(hexChars);
 	}
 	
-	public static final String EUPHRATES_VERSION = "0.1.0";
+	public static final String EUPHRATES_VERSION = "0.1.1";
 	
-	public static final String EXAMPLE_USER = "heinz";
-	public static final String EXAMPLE_PASSWORD = "asdf";
+	public static final String EXAMPLE_USER = "otto";
+	public static final String EXAMPLE_PASSWORD_HASH = "c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2"; //hash of "foobar"
 	public static final String EXAMPLE_SALT = "IamDaveYognautAndIhaveTheBalls";
 }

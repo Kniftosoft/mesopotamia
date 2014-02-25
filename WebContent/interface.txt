@@ -1,8 +1,8 @@
-+========================================+
-| Mesopotamia Communication Protocol 1.2 |
-|			  Shatt al-Arab				 |
-|       (C) Niklas Weissner 2014         |
-+========================================+
++==========================================+
+| Mesopotamia Communication Protocol 1.2.1 |
+|			    Shatt al-Arab              |
+|         (C) Niklas Weissner 2014         |
++==========================================+
 
 
 
@@ -28,6 +28,7 @@ Contents
 
 24.2.2014	1.2		Removed QUIT-packet, added ACCEPT-packet and defined a basic salting procedure (chapter "Security")
 
+25.2.2014	1.2.1	Changed salting procedure to append salt to hashed password instead of unencrypted password
 
 
 
@@ -49,7 +50,6 @@ Contents
 	A connection is opened with a client sending a HANDSHAKE. The server may abandon a connection that
 	isn't HANDSHAKE'd after a given timeout. 
 	When a HANDSHAKE is answered by the server using an ACCEPT packet, the client may continue with a LOGIN process.
-	After 
 
 
 
@@ -205,7 +205,7 @@ Contents
 		
 	REAUTH
 	------
-	Sent by server a response to a RELOG packet if the sent session key is still valid. The server
+	Sent by server as a response to a RELOG packet if the sent session key is still valid. The server
 	is able to replace the old session key by a new one for safety reasons.
 	
 	-Packet ID:		13
@@ -364,17 +364,26 @@ Contents
 	sent to the client (included in the response to HANDSHAKE). This string is stored by both the client and the
 	server in relation to the connection.
 	
-	When the client wishes to login, it takes the unencrypted password and appends the random salt string as received by
-	the server to the password string. The resulting string is hashed using the SHA-256 hashinh algorithm. The resulting
-	hash value can in turn be transmitted as password in the LOGIN packet.
+	When the client wishes to login, it takes the unencrypted password, hashes it using the SHA-256 algorithm and appends
+	the random salt string as received by the server to the has value encoded in hexadecmial format with lowercase letters. 
+	The resulting string is again hashed using SHA-256. The resulting hash value can in turn be transmitted as password 
+	in the LOGIN packet.
 	
-	In order to check the correctness of the password, the server has to load the password associated with the username transmitted
+	The double hashing provides additional security, as it makes storage of unencrypted passwords in the server database
+	unnecessary. Using this method, the only person who can know the password associated with a username is the user himself, even
+	when hackers intrude the database.
+	
+	In order to check the correctness of the password, the server has to load the password associated with the transmitted username 
 	from the database and encrypt the password in exactly the same way as the client did using the same random salt string.
+	When only the password hashes are stored in the database like suggested in the paragraph above, the server may skip the
+	first hashing, as the hashed password (without salt) is already obtained from the database. 
 	If the resulting string matches with the one recieved by the client in the LOGIN packet, the password is correct.
 	
 	It is important that the salt string is different for any connection, so when a hacker intercepts a login packet and reads out
 	the password hash, he is not able to use this hash on an other connetion.
 	
+	It is necessary that both the client and the server use the same coding for string representations of hash values.
+	As of MCP 1.2.1 the default coding is hexadecimal with lowercase letters (0123456789abcdef). Leading zeroes must NOT be omitted.
 	
 	For illustration (and stupid people), here is an example login procedure:
 	
@@ -382,11 +391,14 @@ Contents
 		|
 		|	The user logs in using the username "otto" and the password "foobar".
 		|	
-		|	The client takes the password entered and appends the salt string, yielding the string
-		|		"foobar1234randomSaltString".
+		|	The client takes the password entered and calculates the SHA-256 hash value, which is:
+		|		c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2
 		|
-		|	It now hashes the string using the SHA-256 algorithm which results in the hash value:
-		|		2c84b0b511bb93c021d4aff3df8bd4f92c18f63dde21ce81f6f3a4fd070e38b3
+		|	It now appends the salt received by the server, yielding the string
+		|		"c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f21234randomSaltString"
+		|
+		|	This string is now hashed again using SHA-256 which results in the hash value:
+		|		8e8f8789710978ca5ac74cf6abecfaffc4d8c6b2a696b27b215df538ea6581a8
 		|
 		|	This value is now transmitted to the server together with the username "otto".
 	
