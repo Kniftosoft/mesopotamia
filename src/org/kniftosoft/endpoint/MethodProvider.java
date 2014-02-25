@@ -15,7 +15,7 @@ import com.google.gson.JsonObject;
  *
  */
 public class MethodProvider {
-	static Packet _default(JsonObject data, EuphratisSession es){
+	public static Packet _default(JsonObject data, EuphratisSession es){
 		return new Packet(201, null);
 	}
 	

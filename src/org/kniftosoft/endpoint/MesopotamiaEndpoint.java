@@ -31,7 +31,8 @@ public class MesopotamiaEndpoint {
 	@OnMessage
 	public void onMessage(String message,Session peer)
 	{
-		EuphratisSession es = new EuphratisSession(peer);
+		Packet packet = new Packet(message, peer);
+		
 		System.out.println("recive:"+message);	
 		try
 		{
