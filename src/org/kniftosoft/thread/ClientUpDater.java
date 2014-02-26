@@ -6,6 +6,8 @@ package org.kniftosoft.thread;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.websocket.Session;
+
 import org.kniftosoft.entity.EuphratisSession;
 
 /**
@@ -30,6 +32,7 @@ public class ClientUpDater extends Thread {
 	{
 		return peers.get(peerID);
 	}
+
 	
 	/**
 	 * 
@@ -84,5 +87,9 @@ public class ClientUpDater extends Thread {
 
 	public static EuphratisSession getpeer(EuphratisSession peer) {
 		return peers.get(peer.getSession().getId());
+	}
+
+	public static EuphratisSession getpeer(Session peer) {
+		return peers.get(peer.getId());
 	}
 }

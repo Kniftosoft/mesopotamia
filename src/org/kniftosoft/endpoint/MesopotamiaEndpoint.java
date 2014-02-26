@@ -27,10 +27,8 @@ public class MesopotamiaEndpoint {
 	{
 		//TODO remove before publishing
 		System.out.println("recive:"+message);
-		EuphratisSession es = new EuphratisSession(peer);
-		System.out.println("es");
+		EuphratisSession es = ClientUpDater.getpeer(peer);
 		RecivedPacket packet = new RecivedPacket(message, es);
-		System.out.println("exe");
 		packet.executerequest();
 			
 		

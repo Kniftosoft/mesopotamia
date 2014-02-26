@@ -23,7 +23,7 @@ public class RecivedPacket extends Packet {
 					if(data.get("clientVersion").getAsString().equals(Constants.getClientversion()))
 					{
 						AnswerPacket ap = new AnswerPacket(2, uid, peer);
-						ap.addDataProperty("salt", Long.toHexString(Double.doubleToLongBits(Math.random())));
+						ap.addDataProperty("salt", peer.getSalt());
 						ap.send();
 						break;
 					}

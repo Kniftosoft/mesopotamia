@@ -21,14 +21,14 @@ public class AnswerPacket extends Packet {
 		{
 			try
 			{
-				peer.getSession().getBasicRemote().sendText(toJSON().getAsString());
+				peer.getSession().getBasicRemote().sendText(toJSON().toString());
 			}catch(IOException e){
 				System.out.println("Failed to send message to peer: "+ peer.getSession().getId()+" JSON MEssage: "+toJSON().toString()+" IOExeption: "+ e.toString());
 			}
 		}
 		else
 		{
-			
+			System.out.println("no valid answer:"+this.toString());
 		}
 		
 	}
