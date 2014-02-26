@@ -5,21 +5,19 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.TypedQuery;
 
-import java.security.*;
-
 import org.kniftosoft.entity.User;
 import org.kniftosoft.thread.ClientUpDater;
 import org.kniftosoft.util.AnswerPacket;
 import org.kniftosoft.util.Constants;
 import org.kniftosoft.util.RecivedPacket;
+import org.kniftosoft.util.SHA256Generator;
 
 
 public class Loginmanager {
 	
 	public static void login(RecivedPacket rp){
-		MessageDigest md;
-		String email = rp.getData().get("username").toString().toLowerCase();
-		String pass = rp.getData().get("passwordHash").toString();
+		String email = rp.getData().get("username").getAsString().toLowerCase();
+		String pass = rp.getData().get("passwordHash").getAsString();
 		EntityManagerFactory factory;
 		factory = Persistence.createEntityManagerFactory(Constants.getPersistenceUnitName());
 	    EntityManager em = factory.createEntityManager();
@@ -29,24 +27,13 @@ public class Loginmanager {
 	    User user= userquery.getSingleResult();
 	    em.close();
 
-        try {
-
-            md = MessageDigest.getInstance("SHA-256");
-
-        } catch (NoSuchAlgorithmException ex) {
-            System.out.println(ex.getMessage());
-            return;
-        }
-
         String password = user.getPassword()+ClientUpDater.getpeer(rp.getPeer()).getSalt();
-        
-        md.update(password.getBytes());
 	   
-	    if(email.toLowerCase().equals(user.getEmail().toLowerCase())&&pass.equals(md.digest())){
+	    if(email.toLowerCase().equals(user.getEmail().toLowerCase())&&pass.equals(SHA256Generator.StringTOSHA256(password))){
 	    	rp.getPeer().setLoginverified(true);
 	    	rp.getPeer().setUser(user);
 	    	ClientUpDater.updatepeer(rp.getPeer());	
-	    	AnswerPacket ap = new AnswerPacket("11", rp.getUid(), rp.getPeer());
+	    	AnswerPacket ap = new AnswerPacket(11, rp.getUid(), rp.getPeer());
 	    	//TODO add user config
 	    	ap.addDataProperty("sessionID", rp.getPeer().getSession().getId());
 	    	ap.addDataProperty("userConfig", "");
@@ -54,7 +41,7 @@ public class Loginmanager {
 	    }
 	    else
 	    {
-	    	AnswerPacket ap = new AnswerPacket("201", rp.getUid(), rp.getPeer());
+	    	AnswerPacket ap = new AnswerPacket(201, rp.getUid(), rp.getPeer());
 	    	ap.send();
 	    }
 	}
@@ -75,7 +62,7 @@ public class Loginmanager {
 	{
 		if(ClientUpDater.getpeer(rp.getData().get("sessionID").getAsString()).isLoginverified())
 		{
-			AnswerPacket ap = new AnswerPacket("13", rp.getUid(), rp.getPeer());
+			AnswerPacket ap = new AnswerPacket(13, rp.getUid(), rp.getPeer());
 	    	//TODO add user config
 	    	ap.addDataProperty("newSessionID", rp.getPeer().getSession().getId());
 	    	ap.addDataProperty("userConfig", "");
@@ -83,7 +70,7 @@ public class Loginmanager {
 		}
 		else
 		{			
-			AnswerPacket ap = new AnswerPacket("201", rp.getUid(), rp.getPeer());
+			AnswerPacket ap = new AnswerPacket(201, rp.getUid(), rp.getPeer());
 			ap.send();
 		}
 

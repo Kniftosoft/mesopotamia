@@ -10,7 +10,7 @@ import org.kniftosoft.entity.EuphratisSession;
 import org.kniftosoft.thread.ClientUpDater;
 import org.kniftosoft.util.RecivedPacket;
 
-@ServerEndpoint(value = "/MESOEND",configurator=Mesoendconfigurator.class)
+@ServerEndpoint(value = "/TIG_TEST_END",configurator=Mesoendconfigurator.class)
 /**
  * 
  * @author julian

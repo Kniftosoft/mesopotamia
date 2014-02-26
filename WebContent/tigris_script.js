@@ -1,6 +1,6 @@
 
 /*--------------------------
- *      Tigris 0.1.0
+ *      Tigris 0.1.1
  * 	Mesopotamia Client v1
  * (C) Niklas Weissner 2014
  *-------------------------- 
@@ -16,7 +16,7 @@ var MESO_ENDPOINT = "TIG_TEST_END"; //Link to Euphrates
 
 
 //Constants
-var TIGRIS_VERSION = "0.1.0";
+var TIGRIS_VERSION = "0.1.1";
 var TIGRIS_SESSION_COOKIE = "559-tigris-session";
 
 //Packet type IDs
@@ -87,6 +87,28 @@ function f_setUpSession(sessionID)
 	console.log("Computed dimensions of dashboard: " + d.width() + "/" + d.height());
 }
 
+function f_loadLocale(locale)
+{
+
+	$.ajax({
+		url: "./locale/" + locale + ".json",
+		success: 
+			function(data, textStatus, jqXHR)
+			{
+				if(data.LOCALE_VERSION == TIGRIS_VERSION)
+				{
+					
+				}
+			},
+		error:
+			function(jqXHR, textStatus, errorThrown)
+			{
+				ui_showError("Could not load locale file.");
+			}
+			
+	});
+	
+}
 
 //-------------------Utility stuff-------------------
 
@@ -150,13 +172,14 @@ function ui_init()
 	
 	$("#sidebar_handle").click(function(e)
 	{
-		console.log("the sidebar handle was clicked");
-		$("#sidebar").animate( { width: "toggle" }, 1000, "easeInOutExpo");
+		$("#sidebar").toggle( "slide",{}, 400);
 	});
 	
-	$("#sidebar").animate( { width: "hide" }, 1, "linear");
+	$("#sidebar").hide("blind");
 	
-	//Initially show message indicating we are still connection TODO: change this to something different then an error message
+	$("#tileCreator").accordion();
+	
+	//Initially show message indicating we are still connecting TODO: change this to something different then an error message
 	ui_showError("Connecting to the server..."); 
 }
 
@@ -195,13 +218,16 @@ function ui_showError(msg)
 function ui_i_login()
 {
 	var username = $("#loginform_username").val();
-	var password = $("#loginform_password").val() + connectionData.salt;
-	var passwordHashObject = CryptoJS.SHA256(password);
-	delete password; //For safety :)
-	$("#loginform_password").val("");
-	var passwordHash = passwordHashObject.toString(CryptoJS.enc.Hex);
 	
-	var packet = new Packet_Login(username, passwordHash);
+	//Encrypt password in accordance with specification of MCP 1.2.1
+	var passwordHashObject = CryptoJS.SHA256($("#loginform_password").val());
+	$("#loginform_password").val("");
+	var saltedPasswordHash = passwordHashObject.toString(CryptoJS.enc.Hex) + connectionData.salt; //TODO: replace hex encoder with self written one. plain ridicolous to use a library for that
+	var finalPasswordHash = CryptoJS.SHA256(saltedPasswordHash).toString(CryptoJS.enc.Hex);
+	delete passwordHashObject; //Delete unneeded vars containing sensible data. For safety :) God, I think someone is watching me!
+	delete saltedPasswordHash;
+	
+	var packet = new Packet_Login(username, finalPasswordHash);
 	packet.onResponse = 
 		function(pk)
 		{
@@ -215,7 +241,7 @@ function ui_i_login()
 				
 			}else if(pk.typeID == PTYPE.NACK)
 			{
-				ui_login_showError("Your login data is incorrect");
+				ui_login_showError("Your login data is incorrect", true);
 			}
 		};
 		
@@ -289,7 +315,7 @@ function netio_onOpen()
 
 function netio_onMessage(msg)
 {
-	console.log("Message: " + msg.data);
+	console.log("Received message: " + msg.data);
 	
 	var packet;
 
@@ -491,3 +517,8 @@ UI_STRINGS.MSG_FATAL_NETWORK_ERROR_TITLE = 	"Fatal network error";
 
 UI_STRINGS.MSG_COM_ERROR_BAD_PACKET = 		"The server sent a message that could not be parsed into a valid packet.";
 UI_STRINGS.MSG_COM_ERROR_BAD_PACKET_TITLE = "Communication error";
+
+UI_STRINGS.LOGOUT_REASON[REASONCODE.UNKNOWN] = "Unknown logout reason";
+UI_STRINGS.LOGOUT_REASON[REASONCODE.CLOSED_BY_USER] = "The session was closed by the user"; //This should never occur on the client
+UI_STRINGS.LOGOUT_REASON[REASONCODE.SESSION_EXPIRED] = "Your session has expired";
+

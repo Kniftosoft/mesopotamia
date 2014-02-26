@@ -18,18 +18,18 @@ public class Packet  {
 		protected String uid;
 		protected EuphratisSession peer;
 		protected JsonObject data = new JsonObject();
-		protected String typeID;
+		protected int typeID;
 		/**
 		 * @return the typeID
 		 */
-		public String getTypeID() {
+		public int getTypeID() {
 			return typeID;
 		}
 
 		/**
 		 * @param typeID the typeID to set
 		 */
-		public void setTypeID(String typeID) {
+		public void setTypeID(int typeID) {
 			this.typeID = typeID;
 		}
 
@@ -102,7 +102,7 @@ public class Packet  {
 				JsonObject jmessage = (JsonObject) parser.parse(message);
 				if(jmessage.has("typeID")&&jmessage.has("data")&&jmessage.has("uid"))
 				{
-					this.typeID = jmessage.get("typeID").getAsString();
+					this.typeID = jmessage.get("typeID").getAsInt();
 					this.uid = jmessage.get("uid").getAsString();
 					this.data = jmessage.getAsJsonObject("data");
 				}
@@ -117,14 +117,14 @@ public class Packet  {
 			}			
 
 		}	
-		public Packet(String typeID, String uid,EuphratisSession peer)
+		public Packet(int typeID, String uid,EuphratisSession peer)
 		{
 			this.typeID = typeID;
 			this.uid = uid;
 			this.peer = peer;
 		}
 		
-		public Packet(String typeID, String uid,JsonObject data,EuphratisSession peer)
+		public Packet(int typeID, String uid,JsonObject data,EuphratisSession peer)
 		{
 			this.typeID = typeID;
 			this.uid = uid;

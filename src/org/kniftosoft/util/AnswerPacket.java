@@ -17,11 +17,11 @@ public class AnswerPacket extends Packet {
 
 	
 	public void send(){
-		if(this.typeID != null && this.uid != null && this.peer != null)
+		if(this.typeID != 0 && this.uid != null && this.peer != null)
 		{
 			try
 			{
-				peer.getSession().getBasicRemote().sendText(toJSON().toString());
+				peer.getSession().getBasicRemote().sendText(toJSON().getAsString());
 			}catch(IOException e){
 				System.out.println("Failed to send message to peer: "+ peer.getSession().getId()+" JSON MEssage: "+toJSON().toString()+" IOExeption: "+ e.toString());
 			}
@@ -37,7 +37,7 @@ public class AnswerPacket extends Packet {
 		JsonObject json = new JsonObject();
 		json.addProperty("typeID", typeID);
 		json.addProperty("uid", uid);
-		json.addProperty("data", data.toString());
+		json.add("data", data);
 		return json;
 		
 	}
@@ -53,7 +53,7 @@ public class AnswerPacket extends Packet {
 	 * @param uid
 	 * @param peer
 	 */
-	public AnswerPacket(String typeID, String uid, EuphratisSession peer) {
+	public AnswerPacket(int typeID, String uid, EuphratisSession peer) {
 		super(typeID, uid, peer);
 	}
 	/**
@@ -62,8 +62,7 @@ public class AnswerPacket extends Packet {
 	 * @param data
 	 * @param peer
 	 */
-	public AnswerPacket(String typeID, String uid, JsonObject data,
-			EuphratisSession peer) {
+	public AnswerPacket(int typeID, String uid, JsonObject data,EuphratisSession peer) {
 		super(typeID, uid, data, peer);
 	}
 

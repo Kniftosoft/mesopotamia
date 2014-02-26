@@ -15,7 +15,7 @@ body
 {
 	background-color: #34005C;
 	
-	height: auto;
+	height: 14%;
 	width: 100%;
 	
 	border-bottom: 1px solid #171717;
@@ -34,13 +34,15 @@ body
 	float: left;
 	 
 	height: 100%;
-	width: 10%;
+	width: 35%;
 	 
 	background-color: #31065C;
 	 
 	border-right: 1px solid #000;
 	 
 	overflow: hidden;
+	
+	padding: 5px 5px 0px;
 }
 
 #sidebar_handle
@@ -57,7 +59,7 @@ body
 	border-top: 1px solid #000;
 	border-right: 1px solid #000;
 	border-bottom: 1px solid #000;
-	border-radius: 0px 10px 10px 0px;
+	border-radius: 0px 3px 3px 0px;
 	
 	cursor: pointer;
 }

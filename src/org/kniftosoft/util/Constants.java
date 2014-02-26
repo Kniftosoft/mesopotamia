@@ -8,7 +8,7 @@ package org.kniftosoft.util;
  *
  */
 public class Constants {
-	private static final String Clientversion="0.0.4";
+	private static final String Clientversion="0.1.1";
 	static final String PERSISTENCE_UNIT_NAME = "Euphratis";
 	/**
 	 * @return the version
