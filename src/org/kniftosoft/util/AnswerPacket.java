@@ -47,7 +47,6 @@ public class AnswerPacket extends Packet {
 	 */
 	public AnswerPacket(String message, EuphratisSession peer) {
 		super(message, peer);
-		// TODO Auto-generated constructor stub
 	}
 	/**
 	 * @param typeID
@@ -56,7 +55,6 @@ public class AnswerPacket extends Packet {
 	 */
 	public AnswerPacket(String typeID, String uid, EuphratisSession peer) {
 		super(typeID, uid, peer);
-		// TODO Auto-generated constructor stub
 	}
 	/**
 	 * @param typeID
@@ -67,7 +65,6 @@ public class AnswerPacket extends Packet {
 	public AnswerPacket(String typeID, String uid, JsonObject data,
 			EuphratisSession peer) {
 		super(typeID, uid, data, peer);
-		// TODO Auto-generated constructor stub
 	}
 
 }

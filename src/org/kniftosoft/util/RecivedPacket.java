@@ -25,8 +25,7 @@ public class RecivedPacket extends Packet {
 					if(data.get("clientVersion").getAsString().equals(Constants.getClientversion()))
 					{
 						AnswerPacket ap = new AnswerPacket("2", uid, peer);
-						//TODO generate salt
-						ap.addDataProperty("salt", "");
+						ap.addDataProperty("salt", Long.toHexString(Double.doubleToLongBits(Math.random())));
 						ap.send();
 						break;
 					}
@@ -39,9 +38,7 @@ public class RecivedPacket extends Packet {
 						ap.send();
 						break;
 					}
-		case "10":	//login
-					//TODO move send to login
-			
+		case "10":	//login	
 					Loginmanager.login(this);
 		break;
 		
@@ -94,7 +91,6 @@ public class RecivedPacket extends Packet {
 	 */
 	public RecivedPacket(String message, EuphratisSession peer) {
 		super(message, peer);
-		// TODO Auto-generated constructor stub
 	}
 
 }
