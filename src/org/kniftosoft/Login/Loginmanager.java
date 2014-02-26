@@ -5,18 +5,21 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.TypedQuery;
 
+import java.security.*;
+
 import org.kniftosoft.entity.User;
 import org.kniftosoft.thread.ClientUpDater;
 import org.kniftosoft.util.AnswerPacket;
 import org.kniftosoft.util.Constants;
 import org.kniftosoft.util.RecivedPacket;
 
+
 public class Loginmanager {
 	
 	public static void login(RecivedPacket rp){
+		MessageDigest md;
 		String email = rp.getData().get("username").toString().toLowerCase();
 		String pass = rp.getData().get("passwordHash").toString();
-		
 		EntityManagerFactory factory;
 		factory = Persistence.createEntityManagerFactory(Constants.getPersistenceUnitName());
 	    EntityManager em = factory.createEntityManager();
@@ -25,8 +28,21 @@ public class Loginmanager {
 	    em.getTransaction().commit();
 	    User user= userquery.getSingleResult();
 	    em.close();
-	    
-	    if(email.toLowerCase().equals(user.getEmail().toLowerCase())&&pass.equals(user.getPassword())){
+
+        try {
+
+            md = MessageDigest.getInstance("SHA-256");
+
+        } catch (NoSuchAlgorithmException ex) {
+            System.out.println(ex.getMessage());
+            return;
+        }
+
+        String password = user.getPassword()+ClientUpDater.getpeer(rp.getPeer()).getSalt();
+        
+        md.update(password.getBytes());
+	   
+	    if(email.toLowerCase().equals(user.getEmail().toLowerCase())&&pass.equals(md.digest())){
 	    	rp.getPeer().setLoginverified(true);
 	    	rp.getPeer().setUser(user);
 	    	ClientUpDater.updatepeer(rp.getPeer());	

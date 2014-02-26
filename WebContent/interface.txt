@@ -1,32 +1,61 @@
 +========================================+
-| Mesopotamia Communication Protocol 1.1 |
+| Mesopotamia Communication Protocol 1.2 |
+|			  Shatt al-Arab				 |
 |       (C) Niklas Weissner 2014         |
 +========================================+
 
 
 
 
-Changes
-=======
+Contents
+========
+
+	1	-	Changelog
+	2	-	Foreword
+	3	-	Basic communication
+	4	-	Basic packet structure
+	5	-	Packet types
+	6	-	Security
+	
+	
+	
+	
+1 - Changelog
+=============
 4.2.2014	1.0		Initial creation of protocol
 
 5.2.2014	1.1		Added LOGOUT-,QUERY-,DATA- and ERROR-packets and NACK-response to LOGIN, Basic communication chapter
 
+24.2.2014	1.2		Removed QUIT-packet, added ACCEPT-packet and defined a basic salting procedure (chapter "Security")
 
 
 
 
-Basic communiaction
-===================
+2 - Foreword
+============
+	This is the specification for the Mesopotamia Communication Protocol (MCP) used by the
+	Mesopotamia producation-surveillance-system consisting of the client (codename "Tigris") and
+	the Glassfish-based server (codename "Euphrates"). 
+	This protocol is build around Websocket technology and uses the JavaScript Object Notation (JSON) 
+	for packet wrapping. 
+	The JSON specification is provided under the licence viewable at [http://www.json.org/license.html].
+	
+	
+	
+	
+3 - Basic communiaction
+=======================
 
 	A connection is opened with a client sending a HANDSHAKE. The server may abandon a connection that
 	isn't HANDSHAKE'd after a given timeout. 
-	When a HANDSHAKE is answered by the server using an ACK packet, the client may continue with a LOGIN process.
-	
+	When a HANDSHAKE is answered by the server using an ACCEPT packet, the client may continue with a LOGIN process.
+	After 
 
 
-Basic Packet structure
-======================
+
+
+4 - Basic packet structure
+==========================
 
 	Packets are in JSON-format and must at least contain the following fields:
 
@@ -58,12 +87,13 @@ Basic Packet structure
 
 
 
-Packet types
-============
+5 - Packet types
+================
 
 	Packet ID	|	Direction	|	Packet type	|
 	------------+---------------+---------------+---
-			1	|	C->S		|	HANDSHAKE	|	
+			1	|	C->S		|	HANDSHAKE	|
+			2	|	S->C		|	ACCEPT		|	
 			10	|	C->S		|	LOGIN		|
 			11	|	S->C		|	AUTH		|
 			12	|	C->S		|	RELOG		|
@@ -74,7 +104,6 @@ Packet types
 			200	|	Both		|	ACK			|
 			201	|	Both		|	NACK		|
 			242	|	Both		|	ERROR		|
-			255	|	Both		|	QUIT		|
 	
 			
 	HANDSHAKE
@@ -90,8 +119,28 @@ Packet types
 		string: 	clientVersion
 		
 	-Possible responses:
-		ACK:		If connection is accepted (client is listed as peer by server)
-		QUIT:		If connection is refused (incompatible client version/ blocked IP etc.)
+		ACCEPT:		If connection is accepted (client is listed as peer by server, server transmits salt for secure login)
+		NACK:		If connection is refused (incompatible client version/ blocked IP etc.)
+		
+		
+		
+	ACCEPT
+	------
+	Sent by the server for accepting the HANDSHAKE of a client. This packet contains a random salt string that is
+	used for safely transmitting sensitive data like passwords on non-secure connections(http/ws). For more information
+	see chapter "6 - Security".
+	A client that receives an ACCEPT as an answer to it's HANDSHAKE is able to continue with the login procedure.
+	
+	-Packet ID:		2
+	
+	-Direction:		S->C
+	
+	-Data fields:
+		string:		salt (Random salt string, for more information see chapter "6 - Security")
+		
+	-Possible responses:
+		none (packet is response-only)
+		
 		
 		
 		
@@ -106,11 +155,13 @@ Packet types
 	
 	-Data fields:
 		string: 	username
-		string: 	passwordHash (SHA-256-Hash of password)
+		string: 	passwordHash (SHA-256-Hash of password + salt, for more information see chapter "6 - Security")
 		
 	-Possible responses:
 		AUTH:		If login succeeds (AUTH-packet contains session information)
 		NACK:		If login fails
+		
+		
 		
 		
 	AUTH
@@ -131,6 +182,7 @@ Packet types
 		
 		
 		
+		
 	RELOG
 	------
 	Sent by client when it already has a session key(from a cookie etc.) and needs to check
@@ -147,6 +199,7 @@ Packet types
 	-Possible responses:
 		REAUTH:		If session is still active
 		NACK:		If session has expired (client needs a new login)
+		
 		
 		
 		
@@ -237,6 +290,8 @@ Packet types
 		none (packet is response-only)
 	
 	
+	
+	
 	ACK
 	---
 	Sent by client/server as a response to packets with no specific return data. An ACK represents a
@@ -251,6 +306,7 @@ Packet types
 		
 	-Possible responses
 		none (packet is response-only)
+		
 		
 		
 		
@@ -269,6 +325,7 @@ Packet types
 	-Possible responses
 		none (packet is response-only)
 		
+	
 	
 	
 	ERROR
@@ -294,30 +351,43 @@ Packet types
 		2 = SESSION_EXPIRED (A query was made with an invalid session key)
 		3 = INTERNAL_EXCEPTION  (An internal exception has occurred)
 		4 = INVALID_RESPONSE (A packet was answered with an incompatible packet type)
-		
-		
-		
-	
-	QUIT
-	----
-	Sent by client/server to close the connection. A reason can be included in the form of an error code
-	and a human-readable message string. QUIT is also used to refuse a connection during handshaking.
-	A QUIT does not discard the session of the user.
-	
-	-Packet ID:		255
-	
-	-Direction:		Both
-	
-	-Data fields:
-		int: 		reasonCode (a technical ID for identifying the quit reason. List of possible values: see "Notes")
-		string: 	reasonMessage (a human-readable message that might be displayed in a message dialog/server log)
-		
-	-Possible responses:
-		none (connection is terminated)
-		
-	-Notes:
-		the resaonCode-field has exactly the same possible values as the reasonCode-field of the LOGOUT-packet.
 	
 	
+	
+	
+6 - Security
+============
+
+	To prevent user login credentials to be stolen, the MCP uses a simple but effective salting procedure.
+	
+	When a connection is opened, the server generates a random string of arbitrary length ( > 0) which is
+	sent to the client (included in the response to HANDSHAKE). This string is stored by both the client and the
+	server in relation to the connection.
+	
+	When the client wishes to login, it takes the unencrypted password and appends the random salt string as received by
+	the server to the password string. The resulting string is hashed using the SHA-256 hashinh algorithm. The resulting
+	hash value can in turn be transmitted as password in the LOGIN packet.
+	
+	In order to check the correctness of the password, the server has to load the password associated with the username transmitted
+	from the database and encrypt the password in exactly the same way as the client did using the same random salt string.
+	If the resulting string matches with the one recieved by the client in the LOGIN packet, the password is correct.
+	
+	It is important that the salt string is different for any connection, so when a hacker intercepts a login packet and reads out
+	the password hash, he is not able to use this hash on an other connetion.
+	
+	
+	For illustration (and stupid people), here is an example login procedure:
+	
+		|	A user opens the Tigris client webapp. After HANDSHAKING, the server transmits the salt string "1234randomSaltString".
+		|
+		|	The user logs in using the username "otto" and the password "foobar".
+		|	
+		|	The client takes the password entered and appends the salt string, yielding the string
+		|		"foobar1234randomSaltString".
+		|
+		|	It now hashes the string using the SHA-256 algorithm which results in the hash value:
+		|		2c84b0b511bb93c021d4aff3df8bd4f92c18f63dde21ce81f6f3a4fd070e38b3
+		|
+		|	This value is now transmitted to the server together with the username "otto".
 	
 	

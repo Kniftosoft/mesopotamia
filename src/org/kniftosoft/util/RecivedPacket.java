@@ -24,7 +24,9 @@ public class RecivedPacket extends Packet {
 		case "1":	//Handshake
 					if(data.get("clientVersion").getAsString().equals(Constants.getClientversion()))
 					{
-						AnswerPacket ap = new AnswerPacket("200", uid, peer);
+						AnswerPacket ap = new AnswerPacket("2", uid, peer);
+						//TODO generate salt
+						ap.addDataProperty("salt", "");
 						ap.send();
 						break;
 					}

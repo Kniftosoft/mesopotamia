@@ -6,7 +6,9 @@ public class EuphratisSession {
 
 	private Session session;
 	private User user;
-	boolean loginverified;
+	private String salt;
+	private boolean loginverified;
+	
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */
@@ -40,6 +42,12 @@ public class EuphratisSession {
 	 */
 	public void setUser(User user) {
 		this.user = user;
+	}
+	public String getSalt() {
+		return salt;
+	}
+	public void setSalt(String salt) {
+		this.salt = salt;
 	}
 	/**
 	 * @return the loginverified

@@ -81,4 +81,8 @@ public class ClientUpDater extends Thread {
 			System.out.println("Update Thread stopps by Interrupt");
 		}
 	}
+
+	public static EuphratisSession getpeer(EuphratisSession peer) {
+		return peers.get(peer.getSession().getId());
+	}
 }
