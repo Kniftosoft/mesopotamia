@@ -5,16 +5,18 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.TypedQuery;
 
-import org.kniftosoft.entity.EuphratisSession;
 import org.kniftosoft.entity.User;
 import org.kniftosoft.thread.ClientUpDater;
+import org.kniftosoft.util.AnswerPacket;
 import org.kniftosoft.util.Constants;
-import org.kniftosoft.util.Packet;
-
-import com.google.gson.JsonObject;
+import org.kniftosoft.util.RecivedPacket;
 
 public class Loginmanager {
-	public static Packet login(EuphratisSession es, String email, String pass){
+	
+	public static void login(RecivedPacket rp){
+		String email = rp.getData().get("username").toString().toLowerCase();
+		String pass = rp.getData().get("passwordHash").toString();
+		
 		EntityManagerFactory factory;
 		factory = Persistence.createEntityManagerFactory(Constants.getPersistenceUnitName());
 	    EntityManager em = factory.createEntityManager();
@@ -23,48 +25,50 @@ public class Loginmanager {
 	    em.getTransaction().commit();
 	    User user= userquery.getSingleResult();
 	    em.close();
+	    
 	    if(email.toLowerCase().equals(user.getEmail().toLowerCase())&&pass.equals(user.getPassword())){
-	    	es.setLoginverified(true);
-	    	es.setUser(user);
-	    	ClientUpDater.updatepeer(es);	
-	    	
-	    	JsonObject data = new JsonObject();
-	    	data.addProperty("sessionID", es.getSession().getId());
+	    	rp.getPeer().setLoginverified(true);
+	    	rp.getPeer().setUser(user);
+	    	ClientUpDater.updatepeer(rp.getPeer());	
+	    	AnswerPacket ap = new AnswerPacket("11", rp.getUid(), rp.getPeer());
 	    	//TODO add user config
-	    	data.addProperty("userConfig", "");
-	    	return new Packet(11, data);
+	    	ap.addDataProperty("sessionID", rp.getPeer().getSession().getId());
+	    	ap.addDataProperty("userConfig", "");
+	    	ap.send();
 	    }
 	    else
 	    {
-	    	return new Packet(201,null);
+	    	AnswerPacket ap = new AnswerPacket("201", rp.getUid(), rp.getPeer());
+	    	ap.send();
 	    }
 	}
 	
-	public static void Logout(EuphratisSession es ,JsonObject data)
+	public static void Logout(RecivedPacket rp)
 	{
-		if(es.getSession().getId().equals(data.get("sessionID").getAsString()))
+		if(rp.getPeer().getSession().getId().equals(rp.getData().get("sessionID").getAsString()))
 		{
 			//TODO remove sys out if checkt and handle different codes
-			System.out.println("logg out"+data.get("sessionID").getAsString());
-			es.setLoginverified(false);
-			es.setUser(null);
-			ClientUpDater.updatepeer(es);	
+			System.out.println("logg out"+rp.getData().get("sessionID").getAsString());
+			rp.getPeer().setLoginverified(false);
+			rp.getPeer().setUser(null);
+			ClientUpDater.updatepeer(rp.getPeer());	
 		}
 	}
 
-	public static Packet relog(EuphratisSession es ,JsonObject data)
+	public static void relog(RecivedPacket rp)
 	{
-		if(ClientUpDater.getpeer(data.get("sessionID").getAsString()).isLoginverified())
+		if(ClientUpDater.getpeer(rp.getData().get("sessionID").getAsString()).isLoginverified())
 		{
-			JsonObject packetdata = new JsonObject();
-			packetdata.addProperty("newSessionID", es.getSession().getId());
-			//TODO add user config
-			packetdata.addProperty("userConfig", "");
-			return new Packet(13, packetdata);
+			AnswerPacket ap = new AnswerPacket("13", rp.getUid(), rp.getPeer());
+	    	//TODO add user config
+	    	ap.addDataProperty("newSessionID", rp.getPeer().getSession().getId());
+	    	ap.addDataProperty("userConfig", "");
+	    	ap.send();
 		}
 		else
 		{			
-			return new Packet(201, null);	
+			AnswerPacket ap = new AnswerPacket("201", rp.getUid(), rp.getPeer());
+			ap.send();
 		}
 
 		
