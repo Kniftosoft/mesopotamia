@@ -1,26 +1,29 @@
 
 /*--------------------------
- *      Tigris 0.0.4
+ *      Tigris 0.1.0
  * 	Mesopotamia Client v1
  * (C) Niklas Weissner 2014
  *-------------------------- 
  */
 
+//TODO: Implement better error handling all over the script
+ 
 
 //Configure this to your Euphrates installation
 //If your endpoint is absolute, make sure you include the full URI (including protocol etc.)
 var ENDPOINT_IS_RELATIVE = true;
-var MESO_ENDPOINT = "MESOEND"; //Link to Euphrates
+var MESO_ENDPOINT = "TIG_TEST_END"; //Link to Euphrates
 
 
 //Constants
-var TIGRIS_VERSION = "0.0.4";
+var TIGRIS_VERSION = "0.1.0";
 var TIGRIS_SESSION_COOKIE = "559-tigris-session";
 
 //Packet type IDs
 var PTYPE =
 {
 	HANDSHAKE: 	1,
+	ACCEPT:		2,
 	LOGIN: 		10,
 	AUTH: 		11,
 	RELOG: 		12,
@@ -30,8 +33,7 @@ var PTYPE =
 	DATA: 		21,
 	ACK: 		200,
 	NACK: 		201,
-	ERROR: 		242,
-	QUIT:		255
+	ERROR: 		242
 };
 
 //Error codes
@@ -44,7 +46,7 @@ var ERRORCODE =
 	INVALID_RESPONSE:	4
 };
 
-//Reason codes
+//Logout reason codes
 var REASONCODE =
 {
 	UNKNOWN:			0,
@@ -53,6 +55,13 @@ var REASONCODE =
 	INTERNAL_ERROR:		3,
 	REFUSED:			4
 };
+
+
+var connectionData =
+{
+	sessionOpen:	false
+}; 
+
 
 $(document).ready(
 function()
@@ -69,6 +78,13 @@ function f_setUpSession(sessionID)
 	//util_setCookie(TIGRIS_SESSION_COOKIE, sessionID, 600);
 	
 	ui_showDashboard();
+	
+	connectionData.sessionID = sessionID;
+	connectionData.sessionOpen = true;
+	
+	var d = $("#dashboard");
+	
+	console.log("Computed dimensions of dashboard: " + d.width() + "/" + d.height());
 }
 
 
@@ -126,39 +142,62 @@ function ui_init()
 	//Set up events
 	
 	//Init login form events
-	$('#loginform').submit(function(e) 
+	$("#loginform").submit(function(e) 
 	{
 	    e.preventDefault();
 	    ui_i_login();
 	});
 	
-	//Set up elements
+	$("#sidebar_handle").click(function(e)
+	{
+		console.log("the sidebar handle was clicked");
+		$("#sidebar").animate( { width: "toggle" }, 1000, "easeInOutExpo");
+	});
 	
-	ui_showLoginPage(); //Initially show login page TODO: Put this in routine for Handshaking
+	$("#sidebar").animate( { width: "hide" }, 1, "linear");
+	
+	//Initially show message indicating we are still connection TODO: change this to something different then an error message
+	ui_showError("Connecting to the server..."); 
 }
 
 function ui_showLoginPage()
 {
+	$("#login").show();
+
 	$("#login_errorbox").hide();
 	$("#dashboard").hide();
 	$("#header").hide();
-	
-	$("#login_dialog").show();
+	$("#error").hide();
 }
 
 function ui_showDashboard()
 {
 	$("#header").show();
-	$("#dashobard").show();
+	$("#dashboard").show();
 	
-	$("#login_dialog").hide();
+	$("#login").hide();
+	$("#error").hide();
 }
 
+function ui_showError(msg)
+{
+	var error = msg || "An unknown error occurred";
+
+	$("#login").hide();
+	$("#dashboard").hide();
+	$("#header").hide();
+	
+	$("#error_msg").html(error);
+	
+	$("#error").show();
+}
 
 function ui_i_login()
 {
 	var username = $("#loginform_username").val();
-	var passwordHashObject = CryptoJS.SHA256($("#loginform_password").val());
+	var password = $("#loginform_password").val() + connectionData.salt;
+	var passwordHashObject = CryptoJS.SHA256(password);
+	delete password; //For safety :)
 	$("#loginform_password").val("");
 	var passwordHash = passwordHashObject.toString(CryptoJS.enc.Hex);
 	
@@ -176,18 +215,24 @@ function ui_i_login()
 				
 			}else if(pk.typeID == PTYPE.NACK)
 			{
-				ui_login_showBadLoginMessage();
+				ui_login_showError("Your login data is incorrect");
 			}
 		};
 		
 	netio_sendPacket(packet);
 }
 
-function ui_login_showBadLoginMessage()
+function ui_login_showError(msg, shk)
 {
-	$("#login_errorbox").html("Your login data is incorrect!");
+	var shake = shk || false;
+	
+	$("#login_errorbox").html(msg);
 	$("#login_errorbox").show();
-	$("#login_errorbox").effect("shake");
+	
+	if(shake)
+	{
+		$("#login_errorbox").effect("shake");
+	}
 }
 
 //--------------Net handler-------------------------
@@ -219,31 +264,22 @@ function netio_init()
 		wsURI = MESO_ENDPOINT;
 	}
 	
-	socket = new WebSocket(wsURI);
-	
-	socket.onopen = 
-	function()
+	try
 	{
-		netio_onOpen();
-	};
-	
-	socket.onmessage =
-	function(msg)
+		socket = new WebSocket(wsURI);
+	}catch(e)
 	{
-		netio_onMessage(msg);
-	};
+		ui_showError("Error while opening connection:<br><b>" + e + "</b>");
+		return;
+	}
 	
-	socket.onclose =
-	function()
-	{
-		netio_onClose();
-	};
+	socket.onopen = netio_onOpen;
 	
-	socket.onerror =
-	function()
-	{
-		netio_onError();
-	};
+	socket.onmessage = netio_onMessage;
+	
+	socket.onclose = netio_onClose;
+	
+	socket.onerror = netio_onError;
 }
 
 function netio_onOpen()
@@ -263,12 +299,17 @@ function netio_onMessage(msg)
 		
 	}catch(e)
 	{	
-		console.log("Message was not in JSON format or shit. \n" + e + "\n" + msg.data);
+		console.error("Message was not in JSON format or shit. \n" + e + "\n" + msg.data);
 		
 		return;
 	}
 	
-	//TODO: Check for missing fields here
+	if(packet.uid == "undefined" || packet.typeID == "undefined" || packet.data == "undefined")
+	{
+		console.error("Packet had missing fields.");
+		
+		return;
+	}
 	
 	if(("uid" + packet.uid) in sentPacketMap) //UID is registered -> Packet is an answer
 	{
@@ -277,14 +318,16 @@ function netio_onMessage(msg)
 		
 		delete sentPacketMap["uid" + packet.uid];
 		
-		if($.inArray(packet.typeID , requestingPacket.allowedResponses) == -1) 
+		if($.inArray(packet.typeID , requestingPacket.allowedResponses) == -1)
 		{
 			//This packet type is not allowed as a response to the requesting packet
 			// -> send INVALID_ANSWER ERROR packet
 			
 			//TODO: Send packet
-			console.error("Received invalid response packet: " + packet.typeID + " is not allowed as a response to " + requestingPacket.packetID);
-			console.error(requestingPacket.allowedResponses+" expected");
+			console.error("Received invalid response packet: " + packet.typeID + " is not allowed as a response to " + requestingPacket.typeID);
+			
+			ui_showError("Received invalid response packet: " + packet.typeID + " is not allowed as a response to " + requestingPacket.typeID);
+			
 		}else
 		{
 		
@@ -294,8 +337,7 @@ function netio_onMessage(msg)
 			
 	}else // -> Packet is a request
 	{
-		//TODO:  Implement request processing
-		console.log("I received a packet as a request.\n At the moment I don't know what to do with it so I throw it away.");
+		netio_request(packet);
 	}
 }
 
@@ -304,9 +346,11 @@ function netio_onClose()
 	console.log("The connection was closed");
 }
 
-function netio_onError()
+function netio_onError(e)
 {
 	console.error("Network error");
+	
+	ui_showError("A network error occurred. Please contact the system admin you do not know.");
 }
 
 function netio_handshake()
@@ -316,12 +360,19 @@ function netio_handshake()
 	packet.onResponse = 
 	function(pk)
 	{
-		if(pk.typeID == PTYPE.ACK)
+		if(pk.typeID == PTYPE.ACCEPT)
 		{
 			console.log("Handshake successful");
-		}else if(pk.typeID == PTYPE.QUIT)
+			
+			connectionData.salt = pk.data.salt;
+			
+			ui_showLoginPage();
+			
+		}else if(pk.typeID == PTYPE.NACK)
 		{
-			console.error("Handshake refused. Reason: " + pk.data.reasonMessage);
+			console.error("Handshake refused");
+			
+			ui_showError("Connection refused by server");
 		}
 	};
 	
@@ -351,7 +402,7 @@ function netio_sendPacket(packet, uid)
 {	
 	var packetToSend = {};
 	
-	packetToSend.typeID = packet.packetID;
+	packetToSend.typeID = packet.typeID;
 	packetToSend.data = packet.data;
 	packetToSend.uid = uid || netio_generateUID();
 	
@@ -375,6 +426,18 @@ function netio_sendPacket(packet, uid)
 	
 }
 
+
+function netio_request(packet)
+{
+	if(packet.typeID == PTYPE.LOGOUT)
+	{
+		ui_showLoginPage();
+		ui_login_showError("Session closed by server.", false);
+		
+		return;
+	}
+}
+
 //---------------Packet constructors------------------
 
 /**
@@ -383,12 +446,12 @@ function netio_sendPacket(packet, uid)
  */
 function Packet_Handshake()
 {
-	this.packetID = PTYPE.HANDSHAKE;
+	this.typeID = PTYPE.HANDSHAKE;
 	
 	this.data = {};
 	this.data.clientVersion = TIGRIS_VERSION;
 	
-	this.allowedResponses = [PTYPE.ACK, PTYPE.QUIT];
+	this.allowedResponses = [PTYPE.ACCEPT, PTYPE.NACK];
 }
 
 /**
@@ -397,7 +460,7 @@ function Packet_Handshake()
  */
 function Packet_Login(usr,pwrdHash)
 {
-	this.packetID = PTYPE.LOGIN;
+	this.typeID = PTYPE.LOGIN;
 	
 	this.data = {};
 	this.data.username = usr;
@@ -411,7 +474,7 @@ function Packet_Login(usr,pwrdHash)
  */
 function Packet_Error(code, message)
 {
-	this.packetID = PTYPE.ERROR;
+	this.typeID = PTYPE.ERROR;
 	
 	this.data = {};
 	this.data.errorCode = code;

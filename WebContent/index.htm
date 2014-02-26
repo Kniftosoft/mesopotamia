@@ -11,13 +11,12 @@
 		<!-- JavaScript libraries -->
 		<script src="./lib/jquery-1.11.0.js"></script> <!-- Change to CDN when finished -->
 		<script src="./lib/jquery-ui.js"></script>
-		<script src="./CryptoJS/core-min.js"></script>
-		<script src="./CryptoJS/format-hex.js"></script>
-		<script src="./CryptoJS/sha256.js"></script>
+		<script src="./lib/CryptoJS/core-min.js"></script>
+		<script src="./lib/CryptoJS/format-hex.js"></script>
+		<script src="./lib/CryptoJS/sha256.js"></script>
 		
 		<!-- Tigris system script -->
 		<script src="./tigris_script.js"></script>
-		<script src="./tigris_ui.js"></script>
 	</head>
 	
 	<body>
@@ -32,7 +31,9 @@
 			
 			<div id="user_control">
 			
-				<input type="button" id="menubutton" class="button" value="V">
+				<button id="menubutton" class="button">
+					<img src="./css/img/arrowDown.png" style="width: 80%; height: 80%;"></img>
+				</button>
 				
 				<div id="nameplate">
 					<span id="user_displayname" class="name_info_major">KniftoSoft Admin</span><br>
@@ -49,35 +50,52 @@
 		
 		<div id="dashboard">
 		
-			<div id="test_dashboard_tile" class="dashboard_tile">
+			<div id="sidebar">
+			
+				<span class="name_info_major">Overview</span><br>
+				<span>
+				
+					This is the sidebar for overview stuff.
+				
+				</span>
+			
+			</div>
+			
+			<div id="sidebar_handle">
+			
+				<img src="./css/img/arrowRight.png" style="margin-top: 10%; width: 80%; height: 80%;"></img>
+			
+			</div>
 		
-				<div class="dashboard_tile_header">
+			<!-- <div id="test_dashboard_tile" class="dashboard_tile">
+		
+				<div class="tile_header">
 					
 						<span class="name_info_major">Test dashboard tile</span>
 					
 				</div>
 					
-				<div class="dashboard_tile_content">
+				<div class="tile_content">
 						
 						This is a test dashboard tile.
 						
 				</div>
 		
-			</div>
+			</div>-->
 		
 		</div>
 		
 		
-		<div id="login_dialog" class="dashboard_tile">
+		<div id="login" class="dashboard_tile centered">
 				
-			<div id="login_dialog_header" class="dashboard_tile_header">
+			<div id="login_dialog_header" class="tile_header">
 			
 				<span class="name_info_major">Tigris</span><br>
 				<span class="name_info_minor">&nbsp;Login</span>
 			
 			</div>
 			
-			<div class="dashboard_tile_content">
+			<div class="tile_content">
 				
 				<div id="login_errorbox" class="error_box">
 					If you can read this, your browser probably does not support JavaScript. In that case, Tigris will not work.
@@ -95,20 +113,22 @@
 				
 		</div>
 		
-		<!--<div id="error" class="dashboard_tile">
+		<div id="error" class="dashboard_tile centered">
 		
-			<div class="dashboard_tile_header">
+			<div class="tile_header">
 			
 				<span class="name_info_major">Tigris</span><br>
 				<span class="name_info_minor">&nbsp;Error</span>
 			
 			</div>
 			
-			<div class="dashboard_tile_content">
-				DON'T PANIC
+			<div class="tile_content">
+				<div id="error_msg" class="error_box">
+					DON'T PANIC
+				</div>
 			</div>
 		
-		</div>-->
+		</div>
 
 	</body>
 </html>
