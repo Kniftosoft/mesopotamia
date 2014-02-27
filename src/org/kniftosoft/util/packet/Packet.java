@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.kniftosoft.util;
+package org.kniftosoft.util.packet;
 
 import org.kniftosoft.entity.EuphratisSession;
 
@@ -15,7 +15,7 @@ import com.google.gson.JsonSyntaxException;
  *
  */
 public class Packet  {
-		protected String uid;
+		protected int uid;
 		protected EuphratisSession peer;
 		protected JsonObject data = new JsonObject();
 		protected int typeID;
@@ -36,14 +36,14 @@ public class Packet  {
 		/**
 		 * @return the uid
 		 */
-		public String getUid() {
+		public int getUid() {
 			return uid;
 		}
 
 		/**
 		 * @param uid the uid to set
 		 */
-		public void setUid(String uid) {
+		public void setUid(int uid) {
 			this.uid = uid;
 		}
 
@@ -96,6 +96,7 @@ public class Packet  {
 
 		public Packet(String message, EuphratisSession peer) {
 			this.peer = peer;
+			System.out.println("Packet Construktor");
 			try
 			{
 				JsonParser parser = new JsonParser();
@@ -103,7 +104,7 @@ public class Packet  {
 				if(jmessage.has("typeID")&&jmessage.has("data")&&jmessage.has("uid"))
 				{
 					this.typeID = jmessage.get("typeID").getAsInt();
-					this.uid = jmessage.get("uid").getAsString();
+					this.uid = jmessage.get("uid").getAsInt();
 					this.data = jmessage.getAsJsonObject("data");
 				}
 				else
@@ -117,16 +118,15 @@ public class Packet  {
 			}			
 
 		}	
-		public Packet(int typeID, String uid,EuphratisSession peer)
+		public Packet(int typeID,int uid, EuphratisSession peer)
 		{
 			this.typeID = typeID;
 			this.uid = uid;
 			this.peer = peer;
 		}
 		
-		public Packet(int typeID, String uid,JsonObject data,EuphratisSession peer)
+		public Packet(int uid,JsonObject data,EuphratisSession peer)
 		{
-			this.typeID = typeID;
 			this.uid = uid;
 			this.peer = peer;
 			this.data = data;

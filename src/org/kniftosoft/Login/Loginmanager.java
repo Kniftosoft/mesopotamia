@@ -8,10 +8,12 @@ import javax.persistence.TypedQuery;
 
 import org.kniftosoft.entity.User;
 import org.kniftosoft.thread.ClientUpDater;
-import org.kniftosoft.util.AnswerPacket;
 import org.kniftosoft.util.Constants;
-import org.kniftosoft.util.RecivedPacket;
 import org.kniftosoft.util.SHA256Generator;
+import org.kniftosoft.util.packet.answer.AUTHPacket;
+import org.kniftosoft.util.packet.answer.NACKPackage;
+import org.kniftosoft.util.packet.answer.REAUTHPackage;
+import org.kniftosoft.util.packet.recived.RecivedPacket;
 
 
 public class Loginmanager {
@@ -35,15 +37,12 @@ public class Loginmanager {
 		    	rp.getPeer().setLoginverified(true);
 		    	rp.getPeer().setUser(user);
 		    	ClientUpDater.updatepeer(rp.getPeer());	
-		    	AnswerPacket ap = new AnswerPacket(11, rp.getUid(), rp.getPeer());
-		    	//TODO add user config
-		    	ap.addDataProperty("sessionID", rp.getPeer().getSession().getId());
-		    	ap.addDataProperty("userConfig", "");
+		    	AUTHPacket ap = new AUTHPacket(rp.getUid(), rp.getPeer());
 		    	ap.send();
 		    }
 		    else
 		    {
-		    	AnswerPacket ap = new AnswerPacket(201, rp.getUid(), rp.getPeer());
+		    	NACKPackage ap = new NACKPackage(rp.getUid(), rp.getPeer());
 		    	ap.send();
 		    }
 		}catch(NoResultException e)
@@ -69,7 +68,7 @@ public class Loginmanager {
 	{
 		if(ClientUpDater.getpeer(rp.getData().get("sessionID").getAsString()).isLoginverified())
 		{
-			AnswerPacket ap = new AnswerPacket(13, rp.getUid(), rp.getPeer());
+			REAUTHPackage ap = new REAUTHPackage(rp.getUid(), rp.getPeer());
 	    	//TODO add user config
 	    	ap.addDataProperty("newSessionID", rp.getPeer().getSession().getId());
 	    	ap.addDataProperty("userConfig", "");
@@ -77,7 +76,7 @@ public class Loginmanager {
 		}
 		else
 		{			
-			AnswerPacket ap = new AnswerPacket(201, rp.getUid(), rp.getPeer());
+			NACKPackage ap = new NACKPackage(rp.getUid(), rp.getPeer());
 			ap.send();
 		}
 

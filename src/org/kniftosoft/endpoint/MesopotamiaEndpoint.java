@@ -8,7 +8,8 @@ import javax.websocket.server.ServerEndpoint;
 
 import org.kniftosoft.entity.EuphratisSession;
 import org.kniftosoft.thread.ClientUpDater;
-import org.kniftosoft.util.RecivedPacket;
+import org.kniftosoft.util.packet.recived.HANDSHAKEPackage;
+import org.kniftosoft.util.packet.recived.RecivedPacket;
 
 @ServerEndpoint(value = "/TIG_TEST_END",configurator=Mesoendconfigurator.class)
 /**
@@ -28,8 +29,10 @@ public class MesopotamiaEndpoint {
 		//TODO remove before publishing
 		System.out.println("recive:"+message);
 		EuphratisSession es = ClientUpDater.getpeer(peer);
-		RecivedPacket packet = new RecivedPacket(message, es);
-		packet.executerequest();
+		//RecivedPacket packet = new RecivedPacket(message, es);
+		//packet.executerequest();
+		RecivedPacket hp = new RecivedPacket(message, es);
+		hp.executerequest();
 			
 		
 	}

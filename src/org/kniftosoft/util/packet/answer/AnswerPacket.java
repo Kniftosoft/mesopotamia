@@ -1,11 +1,12 @@
 /**
  * 
  */
-package org.kniftosoft.util;
+package org.kniftosoft.util.packet.answer;
 
 import java.io.IOException;
 
 import org.kniftosoft.entity.EuphratisSession;
+import org.kniftosoft.util.packet.Packet;
 
 import com.google.gson.JsonObject;
 
@@ -17,7 +18,7 @@ public class AnswerPacket extends Packet {
 
 	
 	public void send(){
-		if(this.typeID != 0 && this.uid != null && this.peer != null)
+		if(this.typeID != 0 && this.uid != 0 && this.peer != null)
 		{
 			try
 			{
@@ -42,28 +43,11 @@ public class AnswerPacket extends Packet {
 		
 	}
 	/**
-	 * @param message
-	 * @param peer
-	 */
-	public AnswerPacket(String message, EuphratisSession peer) {
-		super(message, peer);
-	}
-	/**
-	 * @param typeID
 	 * @param uid
 	 * @param peer
 	 */
-	public AnswerPacket(int typeID, String uid, EuphratisSession peer) {
-		super(typeID, uid, peer);
-	}
-	/**
-	 * @param typeID
-	 * @param uid
-	 * @param data
-	 * @param peer
-	 */
-	public AnswerPacket(int typeID, String uid, JsonObject data,EuphratisSession peer) {
-		super(typeID, uid, data, peer);
+	public AnswerPacket(int typeID,int uid, EuphratisSession peer) {
+		super(typeID,uid, peer);
 	}
 
 }
