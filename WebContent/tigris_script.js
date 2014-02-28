@@ -1,6 +1,6 @@
 
 /*--------------------------
- *      Tigris 0.1.1
+ *      Tigris 0.2.0
  * 	Mesopotamia Client v1
  * (C) Niklas Weissner 2014
  *-------------------------- 
@@ -11,15 +11,15 @@
 
 //Configure this to your Euphrates installation
 //If your endpoint is absolute, make sure you include the full URI (including protocol etc.)
-var ENDPOINT_IS_RELATIVE = true;
-var MESO_ENDPOINT = "TIG_TEST_END"; //Link to Euphrates
+var ENDPOINT_IS_RELATIVE = false;
+var MESO_ENDPOINT = "ws://localhost:8080/mesopotamia/TIG_TEST_END"; //Link to Euphrates
 
 
 //Constants
-var TIGRIS_VERSION = "0.1.1";
+var TIGRIS_VERSION = "0.2.0";
 var TIGRIS_SESSION_COOKIE = "559-tigris-session";
 
-//Packet type IDs
+
 var PTYPE =
 {
 	HANDSHAKE: 	1,
@@ -36,186 +36,94 @@ var PTYPE =
 	ERROR: 		242
 };
 
-//Error codes
 var ERRORCODE =
 {
 	UNKNOWN:			0,
 	INVALID_PACKET:		1,
 	SESSION_EXPIRED:	2,
 	INTERNAL_EXCEPTION:	3,
-	INVALID_RESPONSE:	4
-};
-
-//Logout reason codes
-var REASONCODE =
-{
-	UNKNOWN:			0,
-	CLOSED_BY_USER:		1,
-	SESSION_EXPIRED:	2,
-	INTERNAL_ERROR:		3,
-	REFUSED:			4
+	INVALID_RESPONSE:	4,
+	WRONG_VERSION:		5,
+	NOT_ALLOWED:		6
 };
 
 
-var connectionData =
-{
-	sessionOpen:	false
-}; 
+var connectionData = {};
+
+var socket;
+var sentPacketMap = {};
 
 
 $(document).ready(
 function()
 {
-	ui_init(); //Initialize UI
 	
-	netio_init(); //Init connection
+	ui_init();
+	
+	n_init();
+	
 });
 
-//-----------------Functional stuff-------------------
 
-function f_setUpSession(sessionID)
-{
-	//util_setCookie(TIGRIS_SESSION_COOKIE, sessionID, 600);
-	
-	ui_showDashboard();
-	
-	connectionData.sessionID = sessionID;
-	connectionData.sessionOpen = true;
-	
-	var d = $("#dashboard");
-	
-	console.log("Computed dimensions of dashboard: " + d.width() + "/" + d.height());
-}
+//-------------UI stuff---------------
 
-function f_loadLocale(locale)
-{
-
-	$.ajax({
-		url: "./locale/" + locale + ".json",
-		success: 
-			function(data, textStatus, jqXHR)
-			{
-				if(data.LOCALE_VERSION == TIGRIS_VERSION)
-				{
-					
-				}
-			},
-		error:
-			function(jqXHR, textStatus, errorThrown)
-			{
-				ui_showError("Could not load locale file.");
-			}
-			
-	});
-	
-}
-
-//-------------------Utility stuff-------------------
-
-/**
- * Sets cookie with specific name, value and time-to-live.
- * 
- * @param name Name of the cookie
- * @param value Value of the cookie
- * @param ttl Lifespan of the cookie in seconds
- */
-function util_setCookie(name, value, ttl)
-{
-	var expires = new Date();
-	expires.setSeconds(expires.getSeconds() + ttl);
-
-	var valueFormat = escape(value) + ((expires==null) ? "" : "; expires=" + expires.toUTCString());
-
-	document.cookie = name + "=" + valueFormat;
-}
-
-/**
- * Returns the value of a cookie with a specific name. Undefined cookies
- * will be returned as null.
- * 
- * @param name Name of the cookie to be returned
- * 
- * @returns Value of cookie or null if undefined
- */
-function util_getCookie(name)
-{
-	var i, x, y;
-	var ARRcookies = document.cookie.split(";");
-
-	for (i = 0; i<ARRcookies.length; i++)
-	{
-		x = ARRcookies[i].substr(0,ARRcookies[i].indexOf("="));
-		y = ARRcookies[i].substr(ARRcookies[i].indexOf("=")+1);
-		x = x.replace(/^\s+|\s+$/g,"");
-		if (x == name)
-		{
-			return unescape(y);
-		}
-	}	
-}
-
-//---------------------UI handler--------------------
-
-/**
- * Initializes all GUI elements.
- */
 function ui_init()
 {
-	//Set up events
+
+	$("#dashboard-screen").hide();
 	
-	//Init login form events
+	$("#login-screen").show();
+	
+	
 	$("#loginform").submit(function(e) 
 	{
-	    e.preventDefault();
-	    ui_i_login();
+		e.preventDefault();
+		
+		i_tryLogin();
 	});
 	
-	$("#sidebar_handle").click(function(e)
-	{
-		$("#sidebar").toggle( "slide",{}, 400);
-	});
-	
-	$("#sidebar").hide("blind");
-	
-	$("#tileCreator").accordion();
-	
-	//Initially show message indicating we are still connecting TODO: change this to something different then an error message
-	ui_showError("Connecting to the server..."); 
-}
-
-function ui_showLoginPage()
-{
-	$("#login").show();
-
-	$("#login_errorbox").hide();
-	$("#dashboard").hide();
-	$("#header").hide();
-	$("#error").hide();
+	$(".sidebar-item").click(function(e)
+			{
+		
+				$(".sidebar-item").each(function(index)
+						{
+							$(this).removeClass("sidebar-item-active", 350);
+						});
+				
+				$(e.target).addClass("sidebar-item-active", 350);
+		
+			});
 }
 
 function ui_showDashboard()
 {
-	$("#header").show();
-	$("#dashboard").show();
-	
-	$("#login").hide();
-	$("#error").hide();
+	//Play nice fading animation
+	$("#login-screen").hide("puff", {}, 600, 
+			function()
+			{ 
+				$("#dashboard-screen").fadeIn();
+			});
 }
 
 function ui_showError(msg)
 {
-	var error = msg || "An unknown error occurred";
 
-	$("#login").hide();
-	$("#dashboard").hide();
-	$("#header").hide();
+	alert("Put this in real error msg: " + msg);
 	
-	$("#error_msg").html(error);
-	
-	$("#error").show();
 }
 
-function ui_i_login()
+function ui_login_showError(msg)
+{
+	$("#loginerror").html(msg);
+	
+	$("#loginerror").show();
+	
+	$("#loginerror").effect("shake");
+}
+
+//-------------Interaction stuff------------
+
+function i_tryLogin()
 {
 	var username = $("#loginform_username").val();
 	
@@ -224,7 +132,7 @@ function ui_i_login()
 	$("#loginform_password").val("");
 	var saltedPasswordHash = passwordHashObject.toString(CryptoJS.enc.Hex) + connectionData.salt; //TODO: replace hex encoder with self written one. plain ridicolous to use a library for that
 	var finalPasswordHash = CryptoJS.SHA256(saltedPasswordHash).toString(CryptoJS.enc.Hex);
-	delete passwordHashObject; //Delete unneeded vars containing sensible data. For safety :) God, I think someone is watching me!
+	delete passwordHashObject; //Delete unneeded vars containing sensible data. For safety. God, I think someone is watching me!
 	delete saltedPasswordHash;
 	
 	var packet = new Packet_Login(username, finalPasswordHash);
@@ -233,40 +141,23 @@ function ui_i_login()
 		{
 			if(pk.typeID == PTYPE.AUTH)
 			{
-				var sessionID = pk.data.sessionID;
-				//Wait until full protocol specification before implementing this. Ignore it for now
-				//var userConfig = data.userConfig;
+				//var sessionID = pk.data.sessionID;
 				
-				f_setUpSession(sessionID);
+				ui_showDashboard();
 				
 			}else if(pk.typeID == PTYPE.NACK)
 			{
-				ui_login_showError("Your login data is incorrect", true);
+				ui_login_showError("Your login data is incorrect"); //MSG_LOGIN_BADLOGINDATA
 			}
 		};
 		
-	netio_sendPacket(packet);
+	n_sendPacket(packet);
 }
 
-function ui_login_showError(msg, shk)
-{
-	var shake = shk || false;
-	
-	$("#login_errorbox").html(msg);
-	$("#login_errorbox").show();
-	
-	if(shake)
-	{
-		$("#login_errorbox").effect("shake");
-	}
-}
 
-//--------------Net handler-------------------------
+//-------------Network stuff------------------
 
-var socket;
-var sentPacketMap = new Array();
-
-function netio_init()
+function n_init()
 {
 	//Set up socket
 	var wsURI;
@@ -275,7 +166,7 @@ function netio_init()
 	{
 		var loc = window.location;
 		
-		if(loc.protocol === "https:") 
+		if(loc.protocol === "https:")
 		{
 			wsURI = "wss:";
 			
@@ -299,23 +190,23 @@ function netio_init()
 		return;
 	}
 	
-	socket.onopen = netio_onOpen;
+	socket.onopen = n_ws_onOpen;
 	
-	socket.onmessage = netio_onMessage;
+	socket.onmessage = n_ws_onMessage;
 	
-	socket.onclose = netio_onClose;
+	socket.onclose = n_ws_onClose;
 	
-	socket.onerror = netio_onError;
+	socket.onerror = n_ws_onError;
 }
 
-function netio_onOpen()
+function n_ws_onOpen()
 {
-	netio_handshake(); //Only start handshaking after connection has been established
+	n_handshake(); //Only start handshaking after connection has been established
 }
 
-function netio_onMessage(msg)
+function n_ws_onMessage(msg)
 {
-	console.log("Received message: " + msg.data);
+	console.log("I received this: " + msg.data);
 	
 	var packet;
 
@@ -325,7 +216,7 @@ function netio_onMessage(msg)
 		
 	}catch(e)
 	{	
-		console.error("Message was not in JSON format or shit. \n" + e + "\n" + msg.data);
+		console.error("Message was not in JSON format or shit. \n" + e);
 		
 		return;
 	}
@@ -363,23 +254,23 @@ function netio_onMessage(msg)
 			
 	}else // -> Packet is a request
 	{
-		netio_request(packet);
+		n_request(packet);
 	}
 }
 
-function netio_onClose()
+function n_ws_onClose()
 {
 	console.log("The connection was closed");
 }
 
-function netio_onError(e)
+function n_ws_onError(e)
 {
 	console.error("Network error");
 	
-	ui_showError("A network error occurred. Please contact the system admin you do not know.");
+	ui_showError("A network error occurred. Please contact the system admin you do not know."); //ERR_COMM_NETWORK
 }
 
-function netio_handshake()
+function n_handshake()
 {
 
 	var packet = new Packet_Handshake();
@@ -392,20 +283,32 @@ function netio_handshake()
 			
 			connectionData.salt = pk.data.salt;
 			
-			ui_showLoginPage();
+			//TODO: Let handshake display login page
+			//ui_showLoginPage();
 			
-		}else if(pk.typeID == PTYPE.NACK)
+		}else if(pk.typeID == PTYPE.ERROR)
 		{
-			console.error("Handshake refused");
+			//TODO: This one can be omitted after error packets are bypassed to general error processing
+			//TODO: Maybe not. Review this later
 			
-			ui_showError("Connection refused by server");
+			if(pk.data.errorCode == ERRORCODE.WRONG_VERSION)
+			{
+				console.error("Handshake refused: Client version is incompatible with server");
+			
+				ui_showError("Connection refused by server: This version of Tigris is too old/new"); //ERR_COMM_CLIENTINCOMPATIBLE
+			}else
+			{
+				console.error("Handshake refused: Unknown reason");
+				
+				ui_showError("Connection refused by server for unknown reason");
+			}
 		}
 	};
 	
-	netio_sendPacket(packet);
+	n_sendPacket(packet);
 }
 
-function netio_generateUID()
+function n_generateUID()
 {
 	var uid = 0;
 	var rounds = 0;
@@ -424,13 +327,13 @@ function netio_generateUID()
 	return uid;
 }
 
-function netio_sendPacket(packet, uid)
-{	
+function n_sendPacket(packet, uid)
+{
 	var packetToSend = {};
 	
 	packetToSend.typeID = packet.typeID;
 	packetToSend.data = packet.data;
-	packetToSend.uid = uid || netio_generateUID();
+	packetToSend.uid = uid || n_generateUID();
 	
 	var jsonPacket = JSON.stringify(packetToSend);
 	
@@ -443,33 +346,23 @@ function netio_sendPacket(packet, uid)
 		
 	}else if(socket.readyState == 2)
 	{
-		console.error("The connection was lost");
+		console.error("Tried to send after the connection was lost");
 	}else if(socket.readyState == 0)
 	{
-		console.error("The socket is still connecting");
+		console.error("Tried to send while the socket was still connecting");
 	}
-	
-	
 }
 
-
-function netio_request(packet)
+function n_request()
 {
-	if(packet.typeID == PTYPE.LOGOUT)
-	{
-		ui_showLoginPage();
-		ui_login_showError("Session closed by server.", false);
-		
-		return;
-	}
+	
 }
 
-//---------------Packet constructors------------------
 
 /**
- *
- * @constructor
- */
+*
+* @constructor
+*/
 function Packet_Handshake()
 {
 	this.typeID = PTYPE.HANDSHAKE;
@@ -477,13 +370,13 @@ function Packet_Handshake()
 	this.data = {};
 	this.data.clientVersion = TIGRIS_VERSION;
 	
-	this.allowedResponses = [PTYPE.ACCEPT, PTYPE.NACK];
+	this.allowedResponses = [PTYPE.ACCEPT, PTYPE.ERROR];
 }
 
 /**
- *
- * @constructor
- */
+*
+* @constructor
+*/
 function Packet_Login(usr,pwrdHash)
 {
 	this.typeID = PTYPE.LOGIN;
@@ -496,8 +389,8 @@ function Packet_Login(usr,pwrdHash)
 }
 
 /**
- * @constructor
- */
+* @constructor
+*/
 function Packet_Error(code, message)
 {
 	this.typeID = PTYPE.ERROR;
@@ -508,17 +401,3 @@ function Packet_Error(code, message)
 	
 	this.allowedResponses = [];
 }
-
-
-var UI_STRINGS = {};
-
-UI_STRINGS.MSG_FATAL_NETWORK_ERROR = 		"A fatal network error occurred!";
-UI_STRINGS.MSG_FATAL_NETWORK_ERROR_TITLE = 	"Fatal network error";
-
-UI_STRINGS.MSG_COM_ERROR_BAD_PACKET = 		"The server sent a message that could not be parsed into a valid packet.";
-UI_STRINGS.MSG_COM_ERROR_BAD_PACKET_TITLE = "Communication error";
-
-UI_STRINGS.LOGOUT_REASON[REASONCODE.UNKNOWN] = "Unknown logout reason";
-UI_STRINGS.LOGOUT_REASON[REASONCODE.CLOSED_BY_USER] = "The session was closed by the user"; //This should never occur on the client
-UI_STRINGS.LOGOUT_REASON[REASONCODE.SESSION_EXPIRED] = "Your session has expired";
-

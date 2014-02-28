@@ -49,7 +49,8 @@ public class TigrisTestEndpoint
 			}else
 			{
 				//Client is using too old or too new version -> throw him out
-				PacketNack resp = new PacketNack();
+				PacketError resp = new PacketError();
+				resp.setErrorType(ErrorType.WRONG_VERSION);
 				resp.setUID(pk.getUID());
 				
 				peer.getAsyncRemote().sendObject(resp);
@@ -107,7 +108,7 @@ public class TigrisTestEndpoint
 	    return new String(hexChars);
 	}
 	
-	public static final String EUPHRATES_VERSION = "0.1.1";
+	public static final String EUPHRATES_VERSION = "0.2.0";
 	
 	public static final String EXAMPLE_USER = "otto";
 	public static final String EXAMPLE_PASSWORD_HASH = "c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2"; //hash of "foobar"

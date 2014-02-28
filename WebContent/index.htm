@@ -1,152 +1,78 @@
 <!DOCTYPE html>
+
 <html>
+
 	<head>
 	
 		<meta charset="ISO-8859-1">
 	
-		<title>Mesopotamia Tigris</title>
-	
+		<title>Shining new Tigris GUI</title>
+		
 		<link rel="stylesheet" href="./css/tigris_styles.css">
-		<link rel="stylesheet" href="./css/jquery-ui-1.10.4.custom.css">
-	
-		<!-- JavaScript libraries -->
-		<script src="./lib/jquery-1.11.0.js"></script> <!-- Change to CDN when finished -->
+		
+		<script src="./lib/jquery-1.11.0.js"></script>
 		<script src="./lib/jquery-ui.js"></script>
 		<script src="./lib/CryptoJS/core-min.js"></script>
 		<script src="./lib/CryptoJS/format-hex.js"></script>
 		<script src="./lib/CryptoJS/sha256.js"></script>
 		
-		<!-- Tigris system script -->
 		<script src="./tigris_script.js"></script>
+	
 	</head>
 	
 	<body>
-
-
-		<div id="header">
+	
+		<div id="login-screen" class="screen">
 			
-			<div id="tigris_logo">
-				<span class="name_info_major">Tigris</span><br>
-				<span class="name_info_minor">&nbsp;Mesopotamia 1.0</span>
-			</div>
-			
-			<div id="user_control">
-			
-				<button id="menubutton" class="button">
-					<img src="./css/images/arrowDown.png" style="width: 80%; height: 80%;"></img>
-				</button>
-				
-				<div id="nameplate">
-					<span id="user_displayname" class="name_info_major">KniftoSoft Admin</span><br>
-					<span id="user_loginname" class="name_info_minor">administrator</span>
-				</div>
-			
-				<div id="profpic">
-					<img src="./users/profpic/administrator.png"></img>
-				</div>
-			
-			</div>
-			
-		</div>
-		
-		<div id="dashboard">
-		
-			<div id="sidebar">
-			
-				<div id="tileCreator">
-				
-					<h3>Machines</h3>
-					<div>
-						This is where one can find a list of machine-related tiles in the future.
-					</div>
-					
-					<h3>Jobs</h3>
-					<div>
-						This is where one can find a list of job-related tiles in the future.
-					</div>
-				
-					<h3>Warnings</h3>
-					<div>
-						This is where .... well, I think you can read the headline yourself.
-					</div>
-				
-					<h3>Productivity</h3>
-					<div>
-						Oh, come on. Why should I fill all these with text? They are just examples.
-					</div>
-				
-				</div>
-			
-			</div>
-			
-			<div id="sidebar_handle">
-			
-				<img src="./css/images/arrowRight.png" style="margin-top: 10%; width: 80%; height: 80%;"></img>
-			
-			</div>
-		
-			<!-- <div id="test_dashboard_tile" class="dashboard_tile">
-		
-				<div class="tile_header">
-					
-						<span class="name_info_major">Test dashboard tile</span>
-					
-				</div>
-					
-				<div class="tile_content">
-						
-						This is a test dashboard tile.
-						
-				</div>
-		
-			</div>-->
-		
-		</div>
-		
-		
-		<div id="login" class="dashboard_tile centered">
-				
-			<div id="login_dialog_header" class="tile_header">
-			
-				<span class="name_info_major">Tigris</span><br>
-				<span class="name_info_minor">&nbsp;Login</span>
-			
-			</div>
-			
-			<div class="tile_content">
-				
-				<div id="login_errorbox" class="error_box">
-					If you can read this, your browser probably does not support JavaScript. In that case, Tigris will not work.
+			<div id="frame">
+				<div id="header">
+					<span class="heading-major">Tigris</span><br>
+					<span class="heading-minor">&nbsp;Login</span>
 				</div>
 				
-				<form id="loginform" method="post">
-					<p><label for="username">User<br><input type="text" name="username" id="loginform_username" class="input"></label></p>
-					<p><label for="password">Pass<br><input type="password" name="password" id="loginform_password" class="input"></label></p>
+				<form id="loginform">
+				
+					<p id="loginerror"></p>
+					<p><label for="username">User</label><br><input type="text" name="username" id="loginform_username" class="input"></p>
+					<p><label for="password">Pass</label><br><input type="password" name="password" id="loginform_password" class="input"></p>
 					
 					<p class="loginbutton"><input type="submit" name="login" class="button" value="Login"></p>
 					
 				</form>
-				
 			</div>
 				
 		</div>
+	
+	
+		<div id="dashboard-screen" class="screen">
 		
-		<div id="error" class="dashboard_tile centered">
+			<div id="header">
+				Tigris 0.2.0
+			</div>
 		
-			<div class="tile_header">
+			<div id="sidebar">
 			
-				<span class="name_info_major">Tigris</span><br>
-				<span class="name_info_minor">&nbsp;Error</span>
-			
+				<div class="sidebar-item">Machines</div>
+				<div class="sidebar-item">Job</div>
+				<div class="sidebar-item">Warnings</div>
+				<div class="sidebar-item">Info</div>
+				
 			</div>
 			
-			<div class="tile_content">
-				<div id="error_msg" class="error_box">
-					DON'T PANIC
-				</div>
+			<div id="dashboard">
+			
+				This is the dashboard. On the left is the (currently static) sidebar.<br>
+				From there one will be able to drag items onto the dashboard in order to<br>
+				create new tiles for viewing information.
+			
 			</div>
+		</div>
+	
+		<div id="footer">
+		
 		
 		</div>
-
+	
 	</body>
+
 </html>

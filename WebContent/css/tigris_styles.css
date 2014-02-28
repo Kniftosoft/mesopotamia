@@ -1,227 +1,233 @@
 
-body
+*
 {
-	font-family: verdana,sans-serif;
-	color: #e3dee4;
-	font-size: 70%;
-	
-	background-color: #240040;
-	
 	margin: 0px;
+	
 	padding: 0px;
 }
 
-#header
+body
 {
-	background-color: #34005C;
+	font-family: Verdana;
+	font-size: 15px;
+	color: #000;
 	
-	height: 14%;
+	
+	background-color: #fff;
+}
+
+#login-screen #frame
+{
+	background-color: #efeff1;
+	
+	padding-bottom: 25px; 
+	
+	width: 25%;
+	min-height: 35%;
+	
+	position: relative;
+	top: 25%;
+	left: 37.5%;
+}
+
+#login-screen #header
+{
+	color: #fff;
+	
+	background-color: #0072c3;
+	
+	border-bottom: 1px solid #b3cfe5;
+	
 	width: 100%;
-	
-	border-bottom: 1px solid #171717;
-	
-	overflow: hidden;
+	min-height: 15%;
 }
 
-#tigris_logo
+#login-screen #header span
 {
-	float: left;
-	margin-left: 8px;
+	position: relative;
+	left: 4px;
 }
 
-#sidebar
+#login-screen #loginform
 {
-	float: left;
-	 
-	height: 100%;
-	width: 35%;
-	 
-	background-color: #31065C;
-	 
-	border-right: 1px solid #000;
-	 
-	overflow: hidden;
+	color: #707070;
 	
-	padding: 5px 5px 0px;
-}
-
-#sidebar_handle
-{
 	
-	float: left;
+	background-color: #efeff1;
 	
-	height: 7%;
-	width: auto;
-	background-color: #28014F;
+	padding-top: 30px;
 	
-	margin-top: 20%;
 	
-	border-top: 1px solid #000;
-	border-right: 1px solid #000;
-	border-bottom: 1px solid #000;
-	border-radius: 0px 3px 3px 0px;
-	
-	cursor: pointer;
-}
-
-.name_info_major
-{
-	font-size: 3em;
-}
-
-.name_info_minor
-{
-	font-size: 1.2em;
-}
-
-.error_box
-{
-	border: 2px solid #D91A3D;
-	
-	background-color: #C40427;
-	
-	padding: 5px;
-}
-
-#test_dashboard_tile
-{
-	
-	position: fixed;
-
-	left: 100px;
-	top: 300px;
-}
-
-.centered
-{
-	margin-left: auto;
-	margin-right: auto;
-	
-	margin-top: 15%;
-	margin-bottom: 0;
-	
-	width: 20%;
-}
-
-#login_errorbox
-{
-	margin-bottom: 15px;
-	margin-top: 5px;
-}
-
-#loginform_username,#loginform_password
-{
+	height: auto;
 	width: 100%;
 }
 
-#loginform .loginbutton
+#login-screen #loginform #loginerror
+{
+	font-size: 1.3em;
+	color: #c34400;
+	
+	margin-bottom: 20px;
+	
+	position: relative;
+	left: 2.5%;
+}
+
+#login-screen #loginform .button
 {
 	float: right;
+	
+	position: relative;
+	top: 15px;
+	right: 2.5%;
 }
 
-#dashboard
+#login-screen #loginform label
 {
-	position: fixed;
+	position: relative;
+	left: 2.5%;
+}
+
+#login-screen #loginform .input
+{
+	width: 95%;
 	
+	position: relative;
+	left: 2.5%;
+}
+
+#dashboard-screen #header
+{
+	font-size: 3em;
+	font-weight: 300;
+	color: #fff;
+	
+	background-color: #0072c3;
+	
+	padding: 0px 10px 2px;
+	
+	border-bottom: 1px solid #b3cfe5;
+	
+	width: 100%;
+	height: auto;
+	
+	position: relative;
+	
+	z-index: 2;
+}
+
+#dashboard-screen #sidebar
+{
+	color: #707070;
+	
+	background-color: #efeff1;
+	
+	padding: 25px 0px;
+	
+	height: 100%;
+	width: 20%;
+	
+	float: left;
+	
+	position: relative;
+	
+	z-index: 3;
+}
+
+#dashboard-screen #sidebar-handle
+{
+	background-color: #358bc9;
+	
+	height: 100%;
+	width: 5px;
+	
+	float: left;
+}
+
+#dashboard-screen #dashboard
+{
+	height: 100%;
+	width: 100%;
+	
+	padding: 10px;
+	
+	position: relative;
+	
+	z-index: 0;
+}
+
+.heading-major
+{
+	font-size: 1.7em;
+}
+
+.heading-minor
+{
+	font-size: 1em;
+}
+
+.screen
+{
 	width: 100%;
 	height: 100%;
 	
-	padding: 10px 0px 10px;
+	position: fixed;
 }
 
-/* For the dashboard tile visuals */
-.dashboard_tile
-{	
-	border: 1px solid #18002B;
-	background-color: #280444;
-}
-
-.dashboard_tile .tile_header
+.button,button
 {
-	background-color: #34005C;
+	font-size: 1.2em;
+	color: #fff;
 	
-	margin-bottom: 10px;
-	padding-left: 5px;
-	padding-right: 5px;
-	padding-bottom: 2px;
-}
-
-.dashboard_tile .tile_content
-{
-	background-color: #31065C;
+	background-color: #0072c3;
 	
-	margin-left: auto;
-	margin-right: auto;
-	margin-bottom: 5px;
+	padding: 0px 13px;
 	
-	padding: 8px;
+	border: none;
+	border-radius: 0px;
 	
-	width: 90%;
+	height: 1.9em;
 	
-	overflow: hidden;
+	cursor: pointer;
 }
 
 .input
 {
-	border-style: solid;
-	border-width: 1px;
-	border-radius: 0px;
-	border-color: #555059;
+	background-color: #fff;
 	
-	background: none repeat scroll 0% 0% #E3DEE4;
+	border: 1px solid #c4c4c4;
 	
-	color: #000000;
+	color: #000;
 	
 	font-size: 1.6em;
 	
 	line-height: 1;
+	
+	cursor: text;
 }
 
-.button
+.sidebar-item
 {
-	border-style: solid;
-	border-width: 1px;
-	border-radius: 0px;
-	border-color: #555059;
+	font-size: 1.7em;
+	color: #2a2a2a;
+	
+	padding-left: 4px;
+	
+	border-left: 2px solid #c4c4c4;
+	
+	width: 85%;
+	
+	float: right;
+	
+	position: relative;
+	right: 20px;
 	
 	cursor: pointer;
-	
-	background-color: #353536;
-	
-	color: #e3dee4;
 }
 
-#user_control
-{
-	margin-right: 10px;
-}
-
-#user_control div,input,button
-{
-	float: right;
-}
-
-#user_control #profpic
+.sidebar-item-active
 {	
-	margin-right: 15px;
-}
+	background-color: #c4c4c4;
 
-#user_control #profpic img
-{
-	width: 6em;
-	height: 6em;
-}
-
-#user_control #nameplate
-{
-	margin-right: 10px;
-}
-
-#user_control #menubutton
-{
-	width: 40px;
-	height: 40px;
-	
-	
-	background: transparent;
+	right: 0px;
 }
