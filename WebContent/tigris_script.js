@@ -1,6 +1,6 @@
 
 /*--------------------------
- *      Tigris 0.2.0
+ *      Tigris 0.2.1
  * 	Mesopotamia Client v1
  * (C) Niklas Weissner 2014
  *-------------------------- 
@@ -16,7 +16,7 @@ var MESO_ENDPOINT = "ws://localhost:8080/mesopotamia/TIG_TEST_END"; //Link to Eu
 
 
 //Constants
-var TIGRIS_VERSION = "0.2.0";
+var TIGRIS_VERSION = "0.2.1";
 var TIGRIS_SESSION_COOKIE = "559-tigris-session";
 
 
@@ -53,6 +53,7 @@ var connectionData = {};
 var socket;
 var sentPacketMap = {};
 
+var currentSub = null; //The data screen window currently displayed
 
 $(document).ready(
 function()
@@ -62,6 +63,7 @@ function()
 	
 	n_init();
 	
+	ui_setUpDashboard();
 });
 
 
@@ -70,7 +72,7 @@ function()
 function ui_init()
 {
 
-	$("#dashboard-screen").hide();
+	$("#data-screen").hide();
 	
 	$("#login-screen").show();
 	
@@ -84,30 +86,44 @@ function ui_init()
 	
 	$(".sidebar-item").click(function(e)
 			{
-		
-				$(".sidebar-item").each(function(index)
-						{
-							$(this).removeClass("sidebar-item-active", 350);
-						});
-				
-				$(e.target).addClass("sidebar-item-active", 350);
-		
+				ui_sidebarItemClicked(e.target);
 			});
 }
 
-function ui_showDashboard()
+function ui_showDataScreen()
 {
 	//Play nice fading animation
 	$("#login-screen").hide("puff", {}, 600, 
 			function()
 			{ 
-				$("#dashboard-screen").fadeIn();
+				$("#data-screen").fadeIn();
 			});
+	
+	$("#data-frame > .data-frame-sub").hide();//Initially hide all subs and show dashboard
+	ui_data_showSub("dashboard");
+}
+
+function ui_data_showSub(sub)
+{
+	if(currentSub != null)
+	{
+		currentSub.fadeOut(function()
+				{
+					$("#sub-" + sub).fadeIn();
+				});
+		
+	}else
+	{
+		$("#sub-" + sub).fadeIn();
+	}
+	
+	currentSub = $("#sub-" + sub);
 }
 
 function ui_showError(msg)
 {
-
+	console.error(msg);
+	
 	alert("Put this in real error msg: " + msg);
 	
 }
@@ -119,6 +135,57 @@ function ui_login_showError(msg)
 	$("#loginerror").show();
 	
 	$("#loginerror").effect("shake");
+}
+
+function ui_sidebarItemClicked(eventTarget)
+{
+	var item = $(eventTarget);
+	
+	if(!item.hasClass("sidebar-item-active"))
+	{
+		//Animate sidebar buttons
+		$(".sidebar-item-active").each(function(index)
+				{
+					$(this).removeClass("sidebar-item-active", 350);
+				});
+		item.addClass("sidebar-item-active", 350);
+		
+		
+		var target = item.attr("data-target");
+		
+		ui_data_showSub(target);
+	}
+}
+
+function ui_setUpDashboard()
+{
+
+	$(".dashboard-column").sortable(
+			{
+				connectWith: ".dashboard-column",
+				handle: ".dashboard-tile-header",
+				placeholder: "dashboard-tile-placeholder"
+			});
+	
+	//Let's create some example tiles	
+	var tile0 = new Tile(0);
+	tile0.setTitle("Have some good chip music");
+	tile0.content.html("<audio controls> <source src='http://ftp.df.lth.se/pub/media/soasc/soasc_mp3/MUSICIANS/T/Trident/A_Short_One_T01.sid_CSG8580R5.mp3' type='audio/mpeg'></audio>" +
+			"<br>Adam Dunkels - A Short One");
+	$("#dashboard-col1").append(tile0.base);
+	
+	var tile1 = new Tile(1);
+	tile1.setTitle("These tiles are sortable");
+	tile1.content.html("The dashboard is split into four columns (WordPress-like).<br>" +
+			"You can move the tiles between the columns by dragging it by the header.<br>" +
+			"The columns are stacked top-down (This is the best thing I could do without fucking up the portability).");
+	$("#dashboard-col0").append(tile1.base);
+	
+	var tile2 = new Tile(2);
+	tile2.setTitle("Content coming soon");
+	tile2.content.html("These tiles are going to conatin statistics and stuff and will be creatable<br>" +
+			"by dragging items of the tableview to the dashboard.");
+	$("#dashboard-col0").append(tile2.base);
 }
 
 //-------------Interaction stuff------------
@@ -143,7 +210,7 @@ function i_tryLogin()
 			{
 				//var sessionID = pk.data.sessionID;
 				
-				ui_showDashboard();
+				ui_showDataScreen();
 				
 			}else if(pk.typeID == PTYPE.NACK)
 			{
@@ -286,6 +353,12 @@ function n_handshake()
 			//TODO: Let handshake display login page
 			//ui_showLoginPage();
 			
+			//Automtaically login using test account
+			//TODO: ONLY FOR TESTING!!!! Remove later
+			$("#loginform_username").val("otto");
+			$("#loginform_password").val("foobar");
+			i_tryLogin();
+			
 		}else if(pk.typeID == PTYPE.ERROR)
 		{
 			//TODO: This one can be omitted after error packets are bypassed to general error processing
@@ -359,6 +432,29 @@ function n_request()
 }
 
 
+//-------tile constructors------------
+
+function Tile(id)
+{
+	
+	this.base = $("<div>").addClass("dashboard-tile");
+	this.base.attr("id","tile"+id);
+	
+	this.header = $("<div>").addClass("dashboard-tile-header");
+	this.base.append(this.header);
+	
+	this.content = $("<div>").addClass("dashboard-tile-content");
+	this.base.append(this.content);
+	
+	this.setTitle = 
+		function(title)
+		{
+			this.header.html(title);
+		};
+}
+
+
+//--------packet contructors-----------
 /**
 *
 * @constructor
@@ -371,6 +467,8 @@ function Packet_Handshake()
 	this.data.clientVersion = TIGRIS_VERSION;
 	
 	this.allowedResponses = [PTYPE.ACCEPT, PTYPE.ERROR];
+	
+	this.onResponse = function(){};
 }
 
 /**
@@ -386,6 +484,8 @@ function Packet_Login(usr,pwrdHash)
 	this.data.passwordHash = pwrdHash;
 	
 	this.allowedResponses = [PTYPE.AUTH, PTYPE.NACK];
+	
+	this.onResponse = function(){};
 }
 
 /**
@@ -400,4 +500,6 @@ function Packet_Error(code, message)
 	this.data.errorMessage = message;
 	
 	this.allowedResponses = [];
+	
+	this.onResponse = function(){};
 }

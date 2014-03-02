@@ -96,9 +96,10 @@ body
 	left: 2.5%;
 }
 
-#dashboard-screen #header
+
+#data-header
 {
-	font-size: 3em;
+	font-size: 38px;
 	font-weight: 300;
 	color: #fff;
 	
@@ -109,51 +110,53 @@ body
 	border-bottom: 1px solid #b3cfe5;
 	
 	width: 100%;
-	height: auto;
+	height: 47px;
 	
-	position: relative;
+	float: left;
 	
-	z-index: 2;
+	position: fixed;
+	top: 0px;
+	left: 0px;
+	
+	z-index: 42;
 }
 
-#dashboard-screen #sidebar
+#sidebar
 {
+	font-size: 13px;
+	
 	color: #707070;
 	
 	background-color: #efeff1;
 	
 	padding: 25px 0px;
 	
-	height: 100%;
-	width: 20%;
-	
-	float: left;
-	
-	position: relative;
-	
-	z-index: 3;
-}
-
-#dashboard-screen #sidebar-handle
-{
-	background-color: #358bc9;
+	margin-top: 49px;
 	
 	height: 100%;
-	width: 5px;
+	width: 180px;
 	
 	float: left;
 }
 
-#dashboard-screen #dashboard
+#data-frame
 {
 	height: 100%;
-	width: 100%;
 	
-	padding: 10px;
+
+	margin-left: 195px;
+	margin-top: 50px;
+}
+
+#sub-dashboard
+{
+}
+
+#sidebar_dashboard_link
+{
 	
-	position: relative;
+	font-weight: bold;
 	
-	z-index: 0;
 }
 
 .heading-major
@@ -208,19 +211,22 @@ body
 
 .sidebar-item
 {
-	font-size: 1.7em;
+	font-size: 1.4em;
 	color: #2a2a2a;
 	
 	padding-left: 4px;
 	
 	border-left: 2px solid #c4c4c4;
+	border-top: 1px solid #c4c4c4;
+	
+	margin-bottom: 4px;
 	
 	width: 85%;
 	
 	float: right;
 	
 	position: relative;
-	right: 20px;
+	right: 16px;
 	
 	cursor: pointer;
 }
@@ -230,4 +236,64 @@ body
 	background-color: #c4c4c4;
 
 	right: 0px;
+}
+
+
+.data-frame-sub
+{
+	padding-top: 5px;
+	
+	overflow: visible;
+}
+
+.dashboard-column
+{
+	width: 25%;
+	min-height: 100px;
+	
+	float: left;
+}
+
+.dashboard-tile
+{
+	
+	background-color: #efeff1;
+	
+	border: 1px solid #e1e1e1;
+	
+	margin: 4px;
+	
+	width: auto;
+	height: auto;
+	
+	float: left;
+}
+
+.dashboard-tile-header
+{
+	font-size: 1.2em;
+	color: #091009;
+	
+	padding: 3px 5px;
+	
+	border-bottom: 1px solid #e1e1e1;
+	
+}
+
+.dashboard-tile-content
+{
+	
+	padding: 5px;
+	
+}
+
+.dashboard-tile-placeholder 
+{
+	background-color: #fefefe;
+	
+	border: 1px dashed #000;
+	
+	margin: 0 1em 1em 0;
+	
+	height: 50px;
 }
