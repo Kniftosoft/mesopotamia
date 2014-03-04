@@ -3,7 +3,6 @@
  */
 package org.kniftosoft.util.packet;
 
-import org.kniftosoft.endpoint.MesopotamiaEndpoint;
 import org.kniftosoft.thread.ClientUpDater;
 import org.kniftosoft.util.Constants;
 
@@ -22,13 +21,11 @@ public class HANDSHAKE extends Packet {
 		System.out.println("hp");
 		if(clientVersion.equals(Constants.getClientversion()))
 		{
-			ACCEPT ap = new ACCEPT(uid, peer);
-			MesopotamiaEndpoint.send(ap);
+			new ACCEPT(uid, peer).send();
 		}
 		else
 		{
-			ERROR ap = new ERROR(uid, peer,4,"Connection Refused because of a wrong Client Version");
-			MesopotamiaEndpoint.send(ap);
+			new ERROR(uid, peer,5,"Connection Refused because of a wrong Client Version").send();
 			ClientUpDater.removepeer(peer);
 		}
 	}

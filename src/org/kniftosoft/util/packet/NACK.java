@@ -37,7 +37,7 @@ public class NACK extends Packet {
 	@Override
 	public JsonObject storeData() {
 		// TODO Auto-generated method stub
-		return null;
+		return new JsonObject();
 	}
 
 	@Override

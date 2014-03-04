@@ -30,6 +30,7 @@ Contents
 
 25.2.2014	1.2.1	Changed salting procedure to append salt to hashed password instead of unencrypted password
 
+28.2.2014	1.2.2	Replaced NACK-response of HANDSHAKE with ERROR-response, defined new WRONG_VERSION and NOT_ALLOWED error code
 
 
 2 - Foreword
@@ -120,7 +121,7 @@ Contents
 		
 	-Possible responses:
 		ACCEPT:		If connection is accepted (client is listed as peer by server, server transmits salt for secure login)
-		NACK:		If connection is refused (incompatible client version/ blocked IP etc.)
+		ERROR:		If connection is refused (incompatible client version/ blocked IP etc. Error codes WRONG_VERSION and NOT_ALLOWED are put to use here)
 		
 		
 		
@@ -351,7 +352,8 @@ Contents
 		2 = SESSION_EXPIRED (A query was made with an invalid session key)
 		3 = INTERNAL_EXCEPTION  (An internal exception has occurred)
 		4 = INVALID_RESPONSE (A packet was answered with an incompatible packet type)
-	
+		5 = WRONG_VERSION (The client's version did not match the server's - used when handshaking)
+		6 = NOT_ALLOWED (The client issued something he is not allowed to)
 	
 	
 	

@@ -42,7 +42,7 @@ public class PacketEncoder implements Encoder.Text<Packet>
 		fullPacket.addProperty("uid", packet.getUID()); //TODO: Implement UID generator
 		
 		fullPacket.add("data", jo);
-		
+		System.out.println("I have send this" + fullPacket.toString());
 		return fullPacket.toString();
 	}
 	

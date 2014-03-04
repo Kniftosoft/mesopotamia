@@ -6,7 +6,6 @@ import javax.persistence.NoResultException;
 import javax.persistence.Persistence;
 import javax.persistence.TypedQuery;
 
-import org.kniftosoft.endpoint.MesopotamiaEndpoint;
 import org.kniftosoft.entity.User;
 import org.kniftosoft.thread.ClientUpDater;
 import org.kniftosoft.util.Constants;
@@ -44,17 +43,17 @@ public class Loginmanager {
 		    	AUTH ap = new AUTH();
 		    	ap.setSessionID(rp.getPeer().getSession().getId());
 		    	ap.setPeer(rp.getPeer());
+		    	ap.setUID(rp.getUID());
 		    	ap.setUserconfig(null);
-		    	MesopotamiaEndpoint.send(ap);
+		    	ap.send();
 		    }
 		    else
 		    {
-		    	NACK ap = new NACK(rp.getUID(), rp.getPeer());
-		    	MesopotamiaEndpoint.send(ap);
+		    	new NACK(rp.getUID(), rp.getPeer()).send();
 		    }
 		}catch(NoResultException e)
 		{
-			System.out.println("No Results:"+e.toString());
+			new NACK(rp.getUID(), rp.getPeer()).send();
 			return;
 		}
 	}
@@ -76,13 +75,11 @@ public class Loginmanager {
 		if(ClientUpDater.getpeer(rp.getSessionID()).isLoginverified())
 		{
 			//TODO add user config
-			REAUTH ap = new REAUTH(rp.getUID(), rp.getPeer(),rp.getPeer().getSession().getId(),null);
-	    	MesopotamiaEndpoint.send(ap);
+			new REAUTH(rp.getUID(), rp.getPeer(),rp.getPeer().getSession().getId(),null).send();
 		}
 		else
 		{			
-			NACK ap = new NACK(rp.getUID(), rp.getPeer());
-			MesopotamiaEndpoint.send(ap);
+			new NACK(rp.getUID(), rp.getPeer()).send();
 		}
 
 		

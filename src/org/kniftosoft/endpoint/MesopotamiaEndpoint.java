@@ -73,10 +73,5 @@ public class MesopotamiaEndpoint {
 		}
 	}
 	
-	public static
-	void send(Packet pack)
-	{
-		pack.getPeer().getSession().getAsyncRemote().sendObject(pack);
-	}
 
 }

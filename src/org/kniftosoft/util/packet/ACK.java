@@ -19,7 +19,7 @@ public class ACK extends Packet {
 	// NO DATA FIELDS
 	@Override
 	public JsonObject storeData() {
-		return null;
+		return new JsonObject();
 	}
 
 	@Override

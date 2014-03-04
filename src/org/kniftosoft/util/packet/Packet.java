@@ -26,6 +26,10 @@ public abstract class Packet
 	public abstract JsonObject storeData();
 	
 	public abstract PacketType getType();
+	public void send()
+	{
+		peer.getSession().getAsyncRemote().sendObject(this);
+	}
 	
 	public void setPeer(EuphratisSession peer)
 	{
