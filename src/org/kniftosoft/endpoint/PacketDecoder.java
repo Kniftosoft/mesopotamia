@@ -7,12 +7,12 @@ import javax.websocket.EndpointConfig;
 import org.kniftosoft.util.packet.Packet;
 import org.kniftosoft.util.packet.PacketType;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 public class PacketDecoder implements Decoder.Text<Packet>
 {
-	private JsonParser parser;
 	
 	@Override
 	public void destroy() 
@@ -25,14 +25,18 @@ public class PacketDecoder implements Decoder.Text<Packet>
 	{
 		
 		System.out.println("init decode");
-		parser = new JsonParser();
+		
 	}
-
+	
 	@Override
 	public Packet decode(String msg) throws DecodeException 
 	{
+		try{
 		System.out.println("recived: "+msg);
-		JsonObject jsonPacket = (JsonObject)parser.parse(msg);
+		JsonObject jsonPacket =  new Gson().fromJson("[[]", JsonObject.class);
+		//JsonObject jsonPacket = (JsonObject) new  JsonParser().parse(msg);
+		System.out.println("parse: "+msg);
+		System.out.flush();
 		
 		int packetTypeID = jsonPacket.get("typeID").getAsInt();
 		
@@ -58,6 +62,11 @@ public class PacketDecoder implements Decoder.Text<Packet>
 		}catch (IllegalAccessException e) 
 		{
 			throw new DecodeException(msg,"Could not instantiate packet class of packet type " + type.name());
+		}
+		}catch(Exception e)
+		{
+			System.out.println(e.toString());
+			throw new DecodeException(msg, "unknown");	
 		}
 	}
 
