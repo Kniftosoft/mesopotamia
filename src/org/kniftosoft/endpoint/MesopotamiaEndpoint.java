@@ -8,10 +8,12 @@ import javax.websocket.server.ServerEndpoint;
 
 import org.kniftosoft.entity.EuphratisSession;
 import org.kniftosoft.thread.ClientUpDater;
-import org.kniftosoft.util.packet.recived.HANDSHAKEPackage;
-import org.kniftosoft.util.packet.recived.RecivedPacket;
+import org.kniftosoft.util.packet.Packet;
 
-@ServerEndpoint(value = "/TIG_TEST_END",configurator=Mesoendconfigurator.class)
+@ServerEndpoint(value = "/TIG_TEST_END",
+configurator=Mesoendconfigurator.class,
+encoders = {PacketEncoder.class},
+decoders = {PacketDecoder.class})
 /**
  * 
  * @author julian
@@ -24,15 +26,15 @@ public class MesopotamiaEndpoint {
 	 * @param peer Client who sends message
 	 */
 	@OnMessage
-	public void onMessage(String message,Session peer)
+	public void onMessage(Packet rp,Session peer)
 	{
+		System.out.println("recive from decode"+rp+peer);
+		rp.setPeer(ClientUpDater.getpeer(peer));
 		//TODO remove before publishing
-		System.out.println("recive:"+message);
-		EuphratisSession es = ClientUpDater.getpeer(peer);
+		System.out.println("recived Packet:"+rp.toString());
 		//RecivedPacket packet = new RecivedPacket(message, es);
 		//packet.executerequest();
-		RecivedPacket hp = new RecivedPacket(message, es);
-		hp.executerequest();
+		rp.executerequest();
 			
 		
 	}
@@ -43,6 +45,7 @@ public class MesopotamiaEndpoint {
 	@OnOpen
 	public void onOpen (Session peer)
 	{
+		System.out.println("new peer: "+peer);
 		try{
 			EuphratisSession es = new EuphratisSession(peer);
 			es.setSalt(Long.toHexString(Double.doubleToLongBits(Math.random())));
@@ -59,6 +62,7 @@ public class MesopotamiaEndpoint {
 	@OnClose
 	public void onClose (Session peer)
 	{
+		System.out.println("remove peer: "+peer);
 		try
 		{
 			EuphratisSession es = new EuphratisSession(peer);
@@ -67,6 +71,12 @@ public class MesopotamiaEndpoint {
 		{
 			e.printStackTrace();
 		}
+	}
+	
+	public static
+	void send(Packet pack)
+	{
+		pack.getPeer().getSession().getAsyncRemote().sendObject(pack);
 	}
 
 }

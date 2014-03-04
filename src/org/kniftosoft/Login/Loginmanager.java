@@ -6,21 +6,24 @@ import javax.persistence.NoResultException;
 import javax.persistence.Persistence;
 import javax.persistence.TypedQuery;
 
+import org.kniftosoft.endpoint.MesopotamiaEndpoint;
 import org.kniftosoft.entity.User;
 import org.kniftosoft.thread.ClientUpDater;
 import org.kniftosoft.util.Constants;
 import org.kniftosoft.util.SHA256Generator;
-import org.kniftosoft.util.packet.answer.AUTHPacket;
-import org.kniftosoft.util.packet.answer.NACKPackage;
-import org.kniftosoft.util.packet.answer.REAUTHPackage;
-import org.kniftosoft.util.packet.recived.RecivedPacket;
+import org.kniftosoft.util.packet.AUTH;
+import org.kniftosoft.util.packet.LOGIN;
+import org.kniftosoft.util.packet.LOGOUT;
+import org.kniftosoft.util.packet.NACK;
+import org.kniftosoft.util.packet.REAUTH;
+import org.kniftosoft.util.packet.RELOG;
 
 
 public class Loginmanager {
 	
-	public static void login(RecivedPacket rp){
-		String email = rp.getData().get("username").getAsString().toLowerCase();
-		String pass = rp.getData().get("passwordHash").getAsString();
+	public static void login(LOGIN rp){
+		String email = rp.getUsername().toLowerCase();
+		String pass = rp.getPasswordHash();
 		try
 		{
 			EntityManagerFactory factory;
@@ -37,13 +40,14 @@ public class Loginmanager {
 		    	rp.getPeer().setLoginverified(true);
 		    	rp.getPeer().setUser(user);
 		    	ClientUpDater.updatepeer(rp.getPeer());	
-		    	AUTHPacket ap = new AUTHPacket(rp.getUid(), rp.getPeer());
-		    	ap.send();
+		    	//TODO add userconfig
+		    	AUTH ap = new AUTH(rp.getUID(), rp.getPeer(),null);
+		    	MesopotamiaEndpoint.send(ap);
 		    }
 		    else
 		    {
-		    	NACKPackage ap = new NACKPackage(rp.getUid(), rp.getPeer());
-		    	ap.send();
+		    	NACK ap = new NACK(rp.getUID(), rp.getPeer());
+		    	MesopotamiaEndpoint.send(ap);
 		    }
 		}catch(NoResultException e)
 		{
@@ -52,32 +56,30 @@ public class Loginmanager {
 		}
 	}
 	
-	public static void Logout(RecivedPacket rp)
+	public static void Logout(LOGOUT rp)
 	{
-		if(rp.getPeer().getSession().getId().equals(rp.getData().get("sessionID").getAsString()))
+		if(rp.getSessionID().equals(rp.getPeer().getSession().getId()))
 		{
 			//TODO remove sys out if checkt and handle different codes
-			System.out.println("logg out"+rp.getData().get("sessionID").getAsString());
+			System.out.println("logg out"+rp.getSessionID());
 			rp.getPeer().setLoginverified(false);
 			rp.getPeer().setUser(null);
 			ClientUpDater.updatepeer(rp.getPeer());	
 		}
 	}
 
-	public static void relog(RecivedPacket rp)
+	public static void relog(RELOG rp)
 	{
-		if(ClientUpDater.getpeer(rp.getData().get("sessionID").getAsString()).isLoginverified())
+		if(ClientUpDater.getpeer(rp.getSessionID()).isLoginverified())
 		{
-			REAUTHPackage ap = new REAUTHPackage(rp.getUid(), rp.getPeer());
-	    	//TODO add user config
-	    	ap.addDataProperty("newSessionID", rp.getPeer().getSession().getId());
-	    	ap.addDataProperty("userConfig", "");
-	    	ap.send();
+			//TODO add user config
+			REAUTH ap = new REAUTH(rp.getUID(), rp.getPeer(),rp.getPeer().getSession().getId(),null);
+	    	MesopotamiaEndpoint.send(ap);
 		}
 		else
 		{			
-			NACKPackage ap = new NACKPackage(rp.getUid(), rp.getPeer());
-			ap.send();
+			NACK ap = new NACK(rp.getUID(), rp.getPeer());
+			MesopotamiaEndpoint.send(ap);
 		}
 
 		
