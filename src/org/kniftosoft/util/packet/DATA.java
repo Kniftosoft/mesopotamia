@@ -37,7 +37,7 @@ public class DATA extends Packet {
 	}
 
 	@Override
-	protected JsonObject storeData() {
+	public JsonObject storeData() {
 		JsonObject data = new JsonObject();
 		data.add("queryResult", queryResult);
 		return data;

@@ -38,7 +38,7 @@ public class REAUTH extends Packet {
 		
 	}
 	@Override
-	protected JsonObject storeData() {
+	public JsonObject storeData() {
 		JsonObject data = new JsonObject();
 		data.addProperty("newSessionID", newSessionID);
 		data.add("userConfig",userConfig);

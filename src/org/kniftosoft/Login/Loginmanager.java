@@ -41,7 +41,10 @@ public class Loginmanager {
 		    	rp.getPeer().setUser(user);
 		    	ClientUpDater.updatepeer(rp.getPeer());	
 		    	//TODO add userconfig
-		    	AUTH ap = new AUTH(rp.getUID(), rp.getPeer(),null);
+		    	AUTH ap = new AUTH();
+		    	ap.setSessionID(rp.getPeer().getSession().getId());
+		    	ap.setPeer(rp.getPeer());
+		    	ap.setUserconfig(null);
 		    	MesopotamiaEndpoint.send(ap);
 		    }
 		    else

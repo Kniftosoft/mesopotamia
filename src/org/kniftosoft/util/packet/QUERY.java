@@ -39,7 +39,7 @@ public class QUERY extends Packet {
 	}
 
 	@Override
-	protected JsonObject storeData() {
+	public JsonObject storeData() {
 		JsonObject data = new JsonObject();
 		data.addProperty("sessionID", sessionID);
 		data.add("filterData", filterData);

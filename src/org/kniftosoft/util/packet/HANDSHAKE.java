@@ -4,7 +4,6 @@
 package org.kniftosoft.util.packet;
 
 import org.kniftosoft.endpoint.MesopotamiaEndpoint;
-import org.kniftosoft.entity.EuphratisSession;
 import org.kniftosoft.thread.ClientUpDater;
 import org.kniftosoft.util.Constants;
 
@@ -33,23 +32,14 @@ public class HANDSHAKE extends Packet {
 			ClientUpDater.removepeer(peer);
 		}
 	}
-	/**
-	 * @param message
-	 * @param peer
-	 */
-	public HANDSHAKE(int uid, EuphratisSession peer, String clientVersion) {
-		System.out.println("doing hs");
-		this.uid = uid;
-		this.peer = peer;
-		this.clientVersion = clientVersion;
-	}
+
 	@Override
 	public void createFromJSON(JsonObject o) {
 		clientVersion = o.get("clientVersion").getAsString();
 		
 	}
 	@Override
-	protected JsonObject storeData() {
+	public JsonObject storeData() {
 		JsonObject data = new JsonObject();
 		data.addProperty("clientVersion", clientVersion);
 		return data;

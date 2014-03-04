@@ -3,8 +3,6 @@
  */
 package org.kniftosoft.util.packet;
 
-import org.kniftosoft.entity.EuphratisSession;
-
 import com.google.gson.JsonObject;
 
 /**
@@ -13,15 +11,6 @@ import com.google.gson.JsonObject;
  */
 public class ACK extends Packet {
 
-	/**
-	 * @param uid
-	 * @param peer
-	 */
-	public ACK(int uid, EuphratisSession peer) {
-		this.uid = uid;
-		this.peer = peer;
-	}
-
 	// NO DATA FIELDS
 	@Override
 	public void createFromJSON(JsonObject o) {
@@ -29,7 +18,7 @@ public class ACK extends Packet {
 	}
 	// NO DATA FIELDS
 	@Override
-	protected JsonObject storeData() {
+	public JsonObject storeData() {
 		return null;
 	}
 

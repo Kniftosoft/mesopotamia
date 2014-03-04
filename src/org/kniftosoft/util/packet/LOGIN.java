@@ -4,7 +4,6 @@
 package org.kniftosoft.util.packet;
 
 import org.kniftosoft.Login.Loginmanager;
-import org.kniftosoft.entity.EuphratisSession;
 
 import com.google.gson.JsonObject;
 
@@ -20,16 +19,7 @@ public class LOGIN extends Packet {
 	public void executerequest(){
 		Loginmanager.login(this);
 	}
-	/**
-	 * @param message
-	 * @param peer
-	 */
-	public LOGIN(int uid, EuphratisSession peer,String username,String passwordHash) {
-		this.uid = uid;
-		this.peer = peer;
-		this.username = username;
-		this.passwordHash = passwordHash;
-	}
+
 	@Override
 	public void createFromJSON(JsonObject o) {
 		username = o.get("username").getAsString();
@@ -37,7 +27,7 @@ public class LOGIN extends Packet {
 		
 	}
 	@Override
-	protected JsonObject storeData() {
+	public JsonObject storeData() {
 		JsonObject data = new JsonObject();
 		data.addProperty("username", username);
 		data.addProperty("passwordHash", passwordHash);

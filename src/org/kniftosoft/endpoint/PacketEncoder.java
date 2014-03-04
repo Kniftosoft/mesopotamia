@@ -26,7 +26,7 @@ public class PacketEncoder implements Encoder.Text<Packet>
 	@Override
 	public String encode(Packet packet) throws EncodeException 
 	{
-		JsonObject jo = packet.storeToJSON();
+		JsonObject jo = packet.storeData();
 		
 		if(jo == null)
 		{
@@ -35,11 +35,13 @@ public class PacketEncoder implements Encoder.Text<Packet>
 		
 		JsonObject fullPacket = new JsonObject();
 		
-		fullPacket.add("data", jo);
+		
 		
 		fullPacket.addProperty("typeID", packet.getType().getTypeID());
 		
 		fullPacket.addProperty("uid", packet.getUID()); //TODO: Implement UID generator
+		
+		fullPacket.add("data", jo);
 		
 		return fullPacket.toString();
 	}

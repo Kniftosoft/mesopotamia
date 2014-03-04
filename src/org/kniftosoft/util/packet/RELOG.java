@@ -32,7 +32,7 @@ public class RELOG extends Packet {
 		Loginmanager.relog(this);
 	}
 	@Override
-	protected JsonObject storeData() {
+	public JsonObject storeData() {
 		JsonObject data = new JsonObject();
 		data.addProperty("sessionID", sessionID);
 		return data;

@@ -37,7 +37,7 @@ public class ERROR extends Packet {
 		
 	}
 	@Override
-	protected JsonObject storeData() {
+	public JsonObject storeData() {
 		JsonObject data = new JsonObject();
 		data.addProperty("errorCode", errorCode);
 		data.addProperty("errorMessage", errorMessage);

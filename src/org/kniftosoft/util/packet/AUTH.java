@@ -3,8 +3,6 @@
  */
 package org.kniftosoft.util.packet;
 
-import org.kniftosoft.entity.EuphratisSession;
-
 import com.google.gson.JsonObject;
 
 /**
@@ -15,15 +13,6 @@ public class AUTH extends Packet {
 
 	private String sessionID;
 	private JsonObject userconfig;
-	
-	/**
-	 * @param uid
-	 * @param peer
-	 */
-	public AUTH(int uid, EuphratisSession peer,JsonObject userconfig) {
-		this.sessionID = peer.getSession().getId();
-		this.userconfig = userconfig;
-	}
 
 	@Override
 	public void createFromJSON(JsonObject o) {
@@ -37,7 +26,7 @@ public class AUTH extends Packet {
 	}
 
 	@Override
-	protected JsonObject storeData() {
+	public JsonObject storeData() {
 		JsonObject data = new JsonObject();
 		data.addProperty("sessionID", sessionID);
 		data.add("userconfig", userconfig);
@@ -48,5 +37,19 @@ public class AUTH extends Packet {
 	public void executerequest() {
 		// TODO Auto-generated method stub
 		
+	}
+
+	/**
+	 * @param sessionID the sessionID to set
+	 */
+	public void setSessionID(String sessionID) {
+		this.sessionID = sessionID;
+	}
+
+	/**
+	 * @param userconfig the userconfig to set
+	 */
+	public void setUserconfig(JsonObject userconfig) {
+		this.userconfig = userconfig;
 	}
 }

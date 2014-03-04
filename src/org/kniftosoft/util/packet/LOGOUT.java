@@ -29,7 +29,7 @@ public class LOGOUT extends Packet {
 		
 	}
 	@Override
-	protected JsonObject storeData() {
+	public JsonObject storeData() {
 		JsonObject data = new JsonObject();
 		data.addProperty("sessionID", sessionID);
 		data.addProperty("reasonCode", reasonCode);

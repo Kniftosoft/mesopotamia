@@ -23,18 +23,10 @@ public abstract class Packet
 	
 	public abstract void executerequest();
 	
-	protected abstract JsonObject storeData();
+	public abstract JsonObject storeData();
 	
 	public abstract PacketType getType();
 	
-	public JsonObject storeToJSON()
-	{
-		JsonObject jo = new JsonObject();
-		jo.addProperty("typeID", this.typeID);
-		jo.addProperty("uid", this.uid);
-		jo.add("data", storeData());
-		return jo;
-	}
 	public void setPeer(EuphratisSession peer)
 	{
 		this.peer = peer;
