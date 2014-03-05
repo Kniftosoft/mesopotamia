@@ -81,7 +81,27 @@ public class TigrisTestEndpoint
 			if(pk.getUsername().equals(EXAMPLE_USER) && pk.getPasswordHash().toLowerCase().equals(exampleHash))
 			{
 				PacketAuth resp = new PacketAuth();
+				resp.setSessionID(EXAMPLE_SESSION);
 				resp.setUID(pk.getUID());
+				
+				peer.getAsyncRemote().sendObject(resp);
+			}else
+			{
+				PacketNack resp = new PacketNack();
+				resp.setUID(pk.getUID());
+				
+				peer.getAsyncRemote().sendObject(resp);
+			}
+		}else if(packet instanceof PacketRelog)
+		{
+			PacketRelog pk = (PacketRelog) packet;
+			
+			if(pk.getSessionID().equals(EXAMPLE_SESSION))
+			{
+				PacketReauth resp = new PacketReauth();
+				resp.setUID(pk.getUID());
+				
+				resp.setSessionID(EXAMPLE_SESSION);
 				
 				peer.getAsyncRemote().sendObject(resp);
 			}else
@@ -108,9 +128,10 @@ public class TigrisTestEndpoint
 	    return new String(hexChars);
 	}
 	
-	public static final String EUPHRATES_VERSION = "0.2.0";
+	public static final String EUPHRATES_VERSION = "0.2.1";
 	
 	public static final String EXAMPLE_USER = "otto";
 	public static final String EXAMPLE_PASSWORD_HASH = "c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2"; //hash of "foobar"
 	public static final String EXAMPLE_SALT = "IamDaveYognautAndIhaveTheBalls";
+	public static final String EXAMPLE_SESSION = "sessionWooOhMyGodILoveChiptune";
 }

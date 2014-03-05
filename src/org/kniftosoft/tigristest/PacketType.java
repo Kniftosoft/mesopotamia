@@ -7,6 +7,8 @@ public enum PacketType
 	ACCEPT(2, PacketAccept.class),
 	LOGIN(10, PacketLogin.class),
 	AUTH(11, PacketAuth.class),
+	RELOG(12, PacketRelog.class),
+	REAUTH(13, PacketReauth.class),
 	ACK(200, PacketAck.class),
 	NACK(201, PacketNack.class),
 	ERROR(242, PacketError.class);

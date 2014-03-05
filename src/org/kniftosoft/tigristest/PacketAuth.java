@@ -16,7 +16,7 @@ public class PacketAuth extends Packet
 	{
 		JsonObject jo = new JsonObject();
 		
-		jo.addProperty("sessionID", "thisIsYourSessionIDExample");
+		jo.addProperty("sessionID", sessionID);
 		
 		return jo;
 	}
@@ -27,4 +27,11 @@ public class PacketAuth extends Packet
 		return PacketType.AUTH;
 	}
 
+	
+	public void setSessionID(String sessionID)
+	{
+		this.sessionID = sessionID;
+	}
+	
+	private String sessionID;
 }

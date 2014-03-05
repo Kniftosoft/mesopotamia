@@ -7,7 +7,9 @@
  */
 
 //TODO: Implement better error handling all over the script
- 
+//TODO: Sort some code fragment so the source can be easier understood
+//TODO: Comment on stuff
+//TODO: Localization maybe?
 
 //Configure this to your Euphrates installation
 //If your endpoint is absolute, make sure you include the full URI (including protocol etc.)
@@ -17,7 +19,7 @@ var MESO_ENDPOINT = "ws://localhost:8080/mesopotamia/TIG_TEST_END"; //Link to Eu
 
 //Constants
 var TIGRIS_VERSION = "0.2.1";
-var TIGRIS_SESSION_COOKIE = "559-tigris-session";
+var TIGRIS_SESSION_COOKIE = "2324-tigris-session";
 
 
 var PTYPE =
@@ -48,12 +50,17 @@ var ERRORCODE =
 };
 
 
-var connectionData = {};
+var connectionData = 
+{
+		salt: null,
+		
+		sessionID: null
+};
 
 var socket;
 var sentPacketMap = {};
 
-var currentSub = null; //The data screen window currently displayed
+var currentTab = null; //The data screen tab currently displayed TODO: Make this a bit fancier
 
 $(document).ready(
 function()
@@ -62,8 +69,6 @@ function()
 	ui_init();
 	
 	n_init();
-	
-	ui_setUpDashboard();
 });
 
 
@@ -72,60 +77,87 @@ function()
 function ui_init()
 {
 
-	$("#data-screen").hide();
+	ui_showStatus("Connecting to the server..."); //Initially show messeage on connection status
 	
-	$("#login-screen").show();
-	
-	
+	//Set up events
 	$("#loginform").submit(function(e) 
 	{
 		e.preventDefault();
 		
-		i_tryLogin();
+		f_tryLogin();
 	});
 	
 	$(".sidebar-item").click(function(e)
 			{
 				ui_sidebarItemClicked(e.target);
 			});
+	
+	ui_setUpDashboard(); //Set up dashboard TODO: Review if this is really needed (currently only for testing)
 }
 
+/**
+ * Display data screen with fading animation. Used for the login->dataview-transition.
+ */
 function ui_showDataScreen()
 {
 	//Play nice fading animation
-	$("#login-screen").hide("puff", {}, 600, 
+	$("#screen-login").hide("puff", {}, 600, 
 			function()
 			{ 
-				$("#data-screen").fadeIn();
+				$("#screen-data").fadeIn();
 			});
 	
-	$("#data-frame > .data-frame-sub").hide();//Initially hide all subs and show dashboard
-	ui_data_showSub("dashboard");
+	$("#data-frame > .data-frame-tab").hide(); //Initially hide all data tabs...
+	ui_data_showTab("dashboard"); //and show dashboard
 }
 
-function ui_data_showSub(sub)
+/**
+ * Show screen with given name without any animation.
+ * 
+ * @param name The name of the screen to be displayed
+ */
+function ui_showScreen(name)
 {
-	if(currentSub != null)
+	$(".screen").hide(); //Hide all screens...
+	$("#screen-" + name).show(); //and show only disered one
+}
+
+function ui_showStatus(msg, error)
+{
+	$("#statusbox").html(msg);
+	if(error)
 	{
-		currentSub.fadeOut(function()
+		$("#statusbox").addClass("error");
+	}else
+	{
+		$("#statusbox").removeClass("error");
+	}
+	
+	ui_showScreen("status");
+}
+
+function ui_data_showTab(name)
+{
+	if(currentTab != null)
+	{
+		currentTab.fadeOut(function()
 				{
-					$("#sub-" + sub).fadeIn();
+					$("#tab-" + name).fadeIn();
 				});
 		
 	}else
 	{
-		$("#sub-" + sub).fadeIn();
+		$("#tab-" + name).fadeIn();
 	}
 	
-	currentSub = $("#sub-" + sub);
+	currentTab = $("#tab-" + name);
 }
 
 function ui_showError(msg)
 {
 	console.error(msg);
 	
-	alert("Put this in real error msg: " + msg);
-	
+	ui_showStatus(msg, true);
 }
 
 function ui_login_showError(msg)
@@ -153,7 +185,7 @@ function ui_sidebarItemClicked(eventTarget)
 		
 		var target = item.attr("data-target");
 		
-		ui_data_showSub(target);
+		ui_data_showTab(target);
 	}
 }
 
@@ -166,6 +198,9 @@ function ui_setUpDashboard()
 				handle: ".dashboard-tile-header",
 				placeholder: "dashboard-tile-placeholder"
 			});
+	
+	$(".data-frame-sub").hide(); //Hide all tabs
+	ui_data_showTab("dashboard"); //Initially show dashboard
 	
 	//Let's create some example tiles	
 	var tile0 = new Tile(0);
@@ -188,9 +223,9 @@ function ui_setUpDashboard()
 	$("#dashboard-col0").append(tile2.base);
 }
 
-//-------------Interaction stuff------------
+//-------------Functional stuff------------
 
-function i_tryLogin()
+function f_tryLogin()
 {
 	var username = $("#loginform_username").val();
 	
@@ -208,9 +243,9 @@ function i_tryLogin()
 		{
 			if(pk.typeID == PTYPE.AUTH)
 			{
-				//var sessionID = pk.data.sessionID;
+				var sessionID = pk.data.sessionID;
 				
-				ui_showDataScreen();
+				f_setUpSession(sessionID);
 				
 			}else if(pk.typeID == PTYPE.NACK)
 			{
@@ -221,6 +256,54 @@ function i_tryLogin()
 	n_sendPacket(packet);
 }
 
+function f_tryRelog()
+{
+	var cook = util_getCookie(TIGRIS_SESSION_COOKIE);
+	
+	if(cook != null)
+	{
+		//There was a session ID stored -> ask server if it is still valid
+		
+		var pk = new Packet_Relog(cook);
+		pk.onResponse = 
+			function(pk)
+			{
+				if(pk.typeID == PTYPE.REAUTH)
+				{
+					//The old session ID was still valid -> use echoed (maybe changed) session ID
+					connectionData.sessionID = pk.data.sessionID;
+					
+					//Store the new session ID to cookie TODO: maybe integrate this into f_setUpSession()
+					util_setCookie(TIGRIS_SESSION_COOKIE, pk.data.sessionID);
+					
+					//As the session was still valid, we can directly display the data view
+					ui_showScreen("data");
+					
+				}else if(pk.typeID == PTYPE.NACK)
+				{
+					//The old session ID has expired -> user has to login again
+					ui_showScreen("login");
+				}
+			};
+			
+		n_sendPacket(pk);
+		
+	}else
+	{
+		//No stored session -> user has to login
+		
+		ui_showScreen("login");
+	}
+}
+
+function f_setUpSession(sessionID)
+{
+	connectionData.sessionID = sessionID;
+	
+	util_setCookie(TIGRIS_SESSION_COOKIE,sessionID);
+	
+	ui_showDataScreen();
+}
 
 //-------------Network stuff------------------
 
@@ -350,14 +433,8 @@ function n_handshake()
 			
 			connectionData.salt = pk.data.salt;
 			
-			//TODO: Let handshake display login page
-			//ui_showLoginPage();
-			
-			//Automtaically login using test account
-			//TODO: ONLY FOR TESTING!!!! Remove later
-			$("#loginform_username").val("otto");
-			$("#loginform_password").val("foobar");
-			i_tryLogin();
+			//Connection to server is OK -> The user may log in
+			f_tryRelog(); //First look if there is already a session to be restored.
 			
 		}else if(pk.typeID == PTYPE.ERROR)
 		{
@@ -488,6 +565,18 @@ function Packet_Login(usr,pwrdHash)
 	this.onResponse = function(){};
 }
 
+function Packet_Relog(sessionID)
+{
+	this.typeID = PTYPE.RELOG;
+
+	this.data = {};
+	this.data.sessionID = sessionID;
+	
+	this.allowedResponses = [PTYPE.REAUTH, PTYPE.NACK];
+	
+	this.onResponse = function(){};
+}
+
 /**
 * @constructor
 */
@@ -502,4 +591,48 @@ function Packet_Error(code, message)
 	this.allowedResponses = [];
 	
 	this.onResponse = function(){};
+}
+
+//---------------utility stuff----------------
+
+/**
+ * Sets cookie with specific name, value and time-to-live.
+ * 
+ * @param name Name of the cookie
+ * @param value Value of the cookie
+ * @param ttl Lifespan of the cookie in seconds
+ */
+function util_setCookie(name, value, ttl)
+{
+	var expires = new Date();
+	expires.setSeconds(expires.getSeconds() + ttl);
+
+	var valueFormat = escape(value) + ((expires==null) ? "" : "; expires=" + expires.toUTCString());
+
+	document.cookie = name + "=" + valueFormat;
+}
+
+/**
+ * Returns the value of a cookie with a specific name. Undefined cookies
+ * will be returned as null.
+ * 
+ * @param name Name of the cookie to be returned
+ * 
+ * @returns Value of cookie or null if undefined
+ */
+function util_getCookie(name)
+{
+	var i, x, y;
+	var ARRcookies = document.cookie.split(";");
+
+	for (i = 0; i<ARRcookies.length; i++)
+	{
+		x = ARRcookies[i].substr(0,ARRcookies[i].indexOf("="));
+		y = ARRcookies[i].substr(ARRcookies[i].indexOf("=")+1);
+		x = x.replace(/^\s+|\s+$/g,"");
+		if (x == name)
+		{
+			return unescape(y);
+		}
+	}	
 }

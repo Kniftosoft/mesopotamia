@@ -22,17 +22,33 @@
 	
 	<body>
 	
-		<div id="login-screen" class="screen">
+		<div id="screen-status" class="screen">
+		
+			<!-- Since login-* classes are only visual, we can use them in status window too -->
 			
-			<div id="frame">
-				<div id="header">
+			<div class="login-frame">
+				<div class="login-header">
+					<span class="heading-major">Tigris</span><br>
+				</div>
+				
+				<div class="login-content">
+					<p id="statusbox">If you can read this, your browser does not support JavaScript. In that case, Tigris will not work.</p>
+				</div>
+			</div>
+		
+		</div>
+	
+		<div id="screen-login" class="screen" style="display:none;">
+			
+			<div class="login-frame">
+				<div class="login-header">
 					<span class="heading-major">Tigris</span><br>
 					<span class="heading-minor">&nbsp;Login</span>
 				</div>
 				
-				<form id="loginform">
+				<form id="loginform" class="login-content">
 				
-					<p id="loginerror"></p>
+					<p id="loginerror" class="error"></p>
 					<p><label for="username">User</label><br><input type="text" name="username" id="loginform_username" class="input"></p>
 					<p><label for="password">Pass</label><br><input type="password" name="password" id="loginform_password" class="input"></p>
 					
@@ -44,7 +60,7 @@
 		</div>
 	
 	
-		<div id="data-screen" class="screen">
+		<div id="screen-data" class="screen" style="display:none;">
 		
 			<div id="sidebar">
 			
@@ -63,7 +79,7 @@
 					Tigris 0.2.1
 				</div>
 				
-				<div id="sub-dashboard" class="data-frame-sub">
+				<div id="tab-dashboard" class="data-frame-tab">
 					
 					<div id="dashboard-col0" class="dashboard-column"></div>
 					<div id="dashboard-col1" class="dashboard-column"></div>
@@ -72,7 +88,7 @@
 					
 				</div>
 					
-				<div id="sub-machines" class="data-frame-sub">
+				<div id="tab-machines" class="data-frame-tab">
 					The following spam is used to test the scrollbars in the table view.<br>
 					As you can see, they are currently not working.<br><br> 
 					This is the sub for machines<br>
@@ -140,15 +156,15 @@
 					This is the sub for machines<br>
 				</div>
 				
-				<div id="sub-jobs" class="data-frame-sub">
+				<div id="tab-jobs" class="data-frame-tab">
 					This is the sub for jobs
 				</div>
 				
-				<div id="sub-warnings" class="data-frame-sub">
+				<div id="tab-warnings" class="data-frame-tab">
 					This is the sub for warnings
 				</div>
 				
-				<div id="sub-info" class="data-frame-sub">
+				<div id="tab-info" class="data-frame-tab">
 					This is the sub for info
 				</div>
 				

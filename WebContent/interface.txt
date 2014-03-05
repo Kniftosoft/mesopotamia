@@ -1,6 +1,5 @@
 +==========================================+
-| Mesopotamia Communication Protocol 1.2.1 |
-|			    Shatt al-Arab              |
+|  Mesopotamia Communication Protocol 1.3  |
 |         (C) Niklas Weissner 2014         |
 +==========================================+
 
@@ -22,15 +21,17 @@ Contents
 	
 1 - Changelog
 =============
-4.2.2014	1.0		Initial creation of protocol
+04.02.2014	1.0		Initial creation of protocol
 
-5.2.2014	1.1		Added LOGOUT-,QUERY-,DATA- and ERROR-packets and NACK-response to LOGIN, Basic communication chapter
+05.02.2014	1.1		Added LOGOUT-,QUERY-,DATA- and ERROR-packets and NACK-response to LOGIN, Basic communication chapter
 
-24.2.2014	1.2		Removed QUIT-packet, added ACCEPT-packet and defined a basic salting procedure (chapter "Security")
+24.02.2014	1.2		Removed QUIT-packet, added ACCEPT-packet and defined a basic salting procedure (chapter "Security")
 
-25.2.2014	1.2.1	Changed salting procedure to append salt to hashed password instead of unencrypted password
+25.02.2014	1.2.1	Changed salting procedure to append salt to hashed password instead of unencrypted password
 
-28.2.2014	1.2.2	Replaced NACK-response of HANDSHAKE with ERROR-response, defined new WRONG_VERSION and NOT_ALLOWED error code
+28.02.2014	1.2.2	Replaced NACK-response of HANDSHAKE with ERROR-response, defined new WRONG_VERSION and NOT_ALLOWED error code
+
+03.03.2014	1.3		
 
 
 2 - Foreword
@@ -52,6 +53,8 @@ Contents
 	isn't HANDSHAKE'd after a given timeout. 
 	When a HANDSHAKE is answered by the server using an ACCEPT packet, the client may continue with a LOGIN process.
 
+	After the LOGIN process, the client receives a session ID which is used for reconnection after connection loss.
+	
 
 
 
@@ -253,42 +256,58 @@ Contents
 	
 	QUERY
 	-----
-	Sent by the client to query MES data. The server answers the query by sending a DATA-packet.
-		!!! This packet will be further documented as soon as a data model
-		!!! is available. Until then it is not neccesary to implement
-		!!! its functionalities.
+	Sent by the client to query data. The server answers the query by sending a DATA-packet.
+	
 	
 	-Packet ID:		20
 	
 	-Direction:		C->S
 	
 	-Data fields:
-		string:		sessionID
-		struct:		filterData (Fields of this structure are documented in a later version of the protocol)
+		struct[]:	(Fields of this structure are documented in a later version of the protocol)
 		
 	-Possible responses:
-		DATA:		If the query succeeds and MES-data is transferred
-		NACK:		If the provided session key has expired
+		DATA:		If the query succeeds and data is transferred
  	
 	
 	
 	
 	DATA
 	----
-	Send by the server spontaneously or as a response to a QUERY-packet.
-		!!! This packet will be further documented as soon as a data model
-		!!! is available. Until then it is not neccesary to implement
-		!!! its functionalities.
+	Sent by the server spontaneously or as a response to a QUERY-packet. This packet contains
+	data of one or more data units which are displayed by the client upon receipt.
 	
 	-Packet ID:		21
 	
 	-Direction:		S->C
 	
 	-Data fields:
-		struct:		queryResult (Fields of this structure are documented in a later version of the protocol)
+		struct[]:	result (Array of data objects. The structure of these objects depend on their
+							category and are futher documented in chapter "7 - Data access")
 		
 	-Possible responses:
 		none (packet is response-only)
+	
+	
+	
+	
+	SUBSCRIBE
+	---------
+	Sent by the client to instruct the server to inform it on any changes of the specified data unit.
+	Changes are reported using a DATA packet (sent by the server without request). If the subscription
+	succeeds the server responds with an ACK, otherwise a NACK is sent (bad data unit etc.).
+	
+	-Packet ID:		22
+	
+	-Direction:		C->S
+	
+	-Data fields:
+		string:		category (For more information on these fields, see chapter "7 - Data access")
+		string:		ident
+		
+	-Possible responses:
+		ACK:		If the subscription succeeds
+		NACK:		If the subscription fails
 	
 	
 	

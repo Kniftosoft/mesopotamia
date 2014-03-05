@@ -16,86 +16,6 @@ body
 	background-color: #fff;
 }
 
-#login-screen #frame
-{
-	background-color: #efeff1;
-	
-	padding-bottom: 25px; 
-	
-	width: 25%;
-	min-height: 35%;
-	
-	position: relative;
-	top: 25%;
-	left: 37.5%;
-}
-
-#login-screen #header
-{
-	color: #fff;
-	
-	background-color: #0072c3;
-	
-	border-bottom: 1px solid #b3cfe5;
-	
-	width: 100%;
-	min-height: 15%;
-}
-
-#login-screen #header span
-{
-	position: relative;
-	left: 4px;
-}
-
-#login-screen #loginform
-{
-	color: #707070;
-	
-	
-	background-color: #efeff1;
-	
-	padding-top: 30px;
-	
-	
-	height: auto;
-	width: 100%;
-}
-
-#login-screen #loginform #loginerror
-{
-	font-size: 1.3em;
-	color: #c34400;
-	
-	margin-bottom: 20px;
-	
-	position: relative;
-	left: 2.5%;
-}
-
-#login-screen #loginform .button
-{
-	float: right;
-	
-	position: relative;
-	top: 15px;
-	right: 2.5%;
-}
-
-#login-screen #loginform label
-{
-	position: relative;
-	left: 2.5%;
-}
-
-#login-screen #loginform .input
-{
-	width: 95%;
-	
-	position: relative;
-	left: 2.5%;
-}
-
 
 #data-header
 {
@@ -209,6 +129,86 @@ body
 	cursor: text;
 }
 
+.login-frame
+{
+	background-color: #efeff1;
+	
+	padding-bottom: 25px; 
+	
+	width: 25%;
+	min-height: 35%;
+	
+	position: relative;
+	top: 25%;
+	left: 37.5%;
+}
+
+.login-header
+{
+	color: #fff;
+	
+	background-color: #0072c3;
+	
+	border-bottom: 1px solid #b3cfe5;
+	
+	width: 100%;
+	min-height: 15%;
+}
+
+.login-header span
+{
+	position: relative;
+	left: 4px;
+}
+
+.login-content
+{
+	color: #707070;
+	
+	
+	background-color: #efeff1;
+	
+	padding-top: 30px;
+	
+	
+	height: auto;
+	width: 100%;
+}
+
+.login-content .error
+{
+	font-size: 1.3em;
+	color: #c34400;
+	
+	margin-bottom: 20px;
+	
+	position: relative;
+	left: 2.5%;
+}
+
+.login-content .button
+{
+	float: right;
+	
+	position: relative;
+	top: 15px;
+	right: 2.5%;
+}
+
+.login-content label
+{
+	position: relative;
+	left: 2.5%;
+}
+
+.login-content .input
+{
+	width: 95%;
+	
+	position: relative;
+	left: 2.5%;
+}
+
 .sidebar-item
 {
 	font-size: 1.4em;
@@ -239,7 +239,7 @@ body
 }
 
 
-.data-frame-sub
+.data-frame-tab
 {
 	padding-top: 5px;
 	
