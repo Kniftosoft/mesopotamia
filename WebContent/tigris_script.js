@@ -68,7 +68,8 @@ function()
 	
 	ui_init();
 	
-	n_init();
+	ui_showScreen("data");
+	//n_init();
 });
 
 
@@ -91,6 +92,16 @@ function ui_init()
 			{
 				ui_sidebarItemClicked(e.target);
 			});
+	
+	$(".sidebar-item").mouseover(function(e)
+	{
+		$(e.target).addClass("sidebar-item-hover", 200);
+	});
+	
+	$(".sidebar-item").mouseleave(function(e)
+	{
+		$(e.target).removeClass("sidebar-item-hover", 200);
+	});
 	
 	ui_setUpDashboard(); //Set up dashboard TODO: Review if this is really needed (currently only for testing)
 }
@@ -336,7 +347,7 @@ function n_init()
 		socket = new WebSocket(wsURI);
 	}catch(e)
 	{
-		ui_showError("Error while opening connection:<br><b>" + e + "</b>");
+		ui_showError("Could not create socket.");
 		return;
 	}
 	
@@ -368,12 +379,16 @@ function n_ws_onMessage(msg)
 	{	
 		console.error("Message was not in JSON format or shit. \n" + e);
 		
+		ui_showError("A fatal communication error occurred: A message could not be parsed into a packet.");
+		
 		return;
 	}
 	
 	if(packet.uid == "undefined" || packet.typeID == "undefined" || packet.data == "undefined")
 	{
 		console.error("Packet had missing fields.");
+		
+		ui_showError("A fatal communication error occurred: Bad packet and shit.");
 		
 		return;
 	}
