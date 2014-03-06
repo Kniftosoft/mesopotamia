@@ -68,8 +68,7 @@ function()
 	
 	ui_init();
 	
-	ui_showScreen("data");
-	//n_init();
+	n_init();
 });
 
 
@@ -93,7 +92,7 @@ function ui_init()
 				ui_sidebarItemClicked(e.target);
 			});
 	
-	$(".sidebar-item").mouseover(function(e)
+	/*$(".sidebar-item").mouseover(function(e)
 	{
 		$(e.target).addClass("sidebar-item-hover", 200);
 	});
@@ -101,7 +100,7 @@ function ui_init()
 	$(".sidebar-item").mouseleave(function(e)
 	{
 		$(e.target).removeClass("sidebar-item-hover", 200);
-	});
+	});*/
 	
 	ui_setUpDashboard(); //Set up dashboard TODO: Review if this is really needed (currently only for testing)
 }
@@ -289,6 +288,8 @@ function f_tryRelog()
 					
 					//As the session was still valid, we can directly display the data view
 					ui_showScreen("data");
+					$("#data-frame > .data-frame-tab").hide(); //Initially hide all data tabs...
+					ui_data_showTab("dashboard"); //and show dashboard
 					
 				}else if(pk.typeID == PTYPE.NACK)
 				{

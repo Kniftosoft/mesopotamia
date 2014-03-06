@@ -1,0 +1,10 @@
+#This file contains example machine data for the Mesopotamia PSS
+
+#Machine ID ; Location ; Statuscode ; Job ID ; Job target ; Job start time
+
+1;Halle 1;0;345;1000;8:47
+2;Halle 7;1;346;3214;8:47
+4;Halle 3;1;362;4562;8:47
+3;Hof 7;1;367;9999;8:47
+23;Putzmittelraum 3;0;100;4352;8:47
+1;Halle 7;1;200;6445;8:47
