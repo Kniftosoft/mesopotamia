@@ -37,7 +37,7 @@ public class PacketEncoder implements Encoder.Text<Packet>
 		
 		fullPacket.addProperty("typeID", packet.getType().getTypeID());
 		
-		fullPacket.addProperty("uid", packet.getUID()); //TODO: Implement UID generator
+		fullPacket.addProperty("uid", packet.getUID());
 		
 		return fullPacket.toString();
 	}

@@ -9,6 +9,7 @@ public enum PacketType
 	AUTH(11, PacketAuth.class),
 	RELOG(12, PacketRelog.class),
 	REAUTH(13, PacketReauth.class),
+	LOGOUT(14, PacketLogout.class),
 	ACK(200, PacketAck.class),
 	NACK(201, PacketNack.class),
 	ERROR(242, PacketError.class);

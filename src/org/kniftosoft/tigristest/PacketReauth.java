@@ -17,6 +17,7 @@ public class PacketReauth extends Packet
 		JsonObject jo = new JsonObject();
 		
 		jo.addProperty("sessionID",sessionID);
+		jo.addProperty("username", username);
 		
 		return jo;
 	}
@@ -32,6 +33,12 @@ public class PacketReauth extends Packet
 		this.sessionID = sessionID;
 	}
 	
+	public void setUsername(String username)
+	{
+		this.username = username;
+	}
+	
 	private String sessionID;
+	private String username;
 	
 }

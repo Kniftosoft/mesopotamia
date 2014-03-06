@@ -1,6 +1,6 @@
 +==========================================+
-|  Mesopotamia Communication Protocol 1.3  |
-|         (C) Niklas Weissner 2014         |
+| Mesopotamia Communication Protocol 1.3.1 |
+|        (C) Niklas Weissner 2014          |
 +==========================================+
 
 
@@ -35,6 +35,7 @@ Contents
 
 03.03.2014	1.3		Reworked QUERY- and DATA-packet, added SUBSCRIBE-packet, added chapter "Data access"
 
+06.03.2014	1.3.1	Added username field to REAUTH packet
 
 
 
@@ -224,6 +225,7 @@ Contents
 	
 	-Data fields:
 		string:		newSessionID (is used for further connections by client)
+		string:		username (The name of the user who started the restored session)
 		struct:		userConfig (Fields of this structure are documented in a later version of the protocol)
 		
 	-Possible results:
@@ -381,7 +383,7 @@ Contents
 		string:		errorMessage (a human-readable message that might be displayed in a message dialog/server log)
 		
 	-Possible responses:
-		none (Packet is one-way)
+		none (Packet is one-way. It MUST not be answered)
 		
 	-Notes:
 		Possible values for the errorCode-field are:

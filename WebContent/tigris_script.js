@@ -1,15 +1,16 @@
 
 /*--------------------------
- *      Tigris 0.2.1
+ *      Tigris 0.2.2
  * 	Mesopotamia Client v1
  * (C) Niklas Weissner 2014
  *-------------------------- 
  */
 
 //TODO: Implement better error handling all over the script
-//TODO: Sort some code fragment so the source can be easier understood
+//TODO: Sort some code fragments so the source can be easier understood
 //TODO: Comment on stuff
 //TODO: Localization maybe?
+//TODO: Type safety in packets
 
 //Configure this to your Euphrates installation
 //If your endpoint is absolute, make sure you include the full URI (including protocol etc.)
@@ -18,9 +19,10 @@ var MESO_ENDPOINT = "ws://localhost:8080/mesopotamia/TIG_TEST_END"; //Link to Eu
 
 
 //Constants
-var TIGRIS_VERSION = "0.2.1";
+var TIGRIS_VERSION = "0.2.2";
 var TIGRIS_SESSION_COOKIE = "2324-tigris-session";
 
+var GENERAL_TIMEOUT = 2000; //Default timeout in milliseconds (may be overridden by some packets)
 
 var PTYPE =
 {
@@ -49,12 +51,21 @@ var ERRORCODE =
 	NOT_ALLOWED:		6
 };
 
+var LOGOUTREASON =
+{
+	UNKNOWN:			0,
+	CLOSED_BY_USER:		1,
+	SESSION_EXPIRED:	2,
+	INTERNAL_ERROR:		3,
+	REFUSED:			4
+};
 
 var connectionData = 
 {
 		salt: null,
 		
-		sessionID: null
+		sessionID: null,
+		username: ""
 };
 
 var socket;
@@ -80,16 +91,38 @@ function ui_init()
 	ui_showStatus("Connecting to the server..."); //Initially show messeage on connection status
 	
 	//Set up events
-	$("#loginform").submit(function(e) 
-	{
-		e.preventDefault();
-		
-		f_tryLogin();
-	});
+	$("#loginform").submit(
+			function(e) 
+			{
+				e.preventDefault();
+				
+				f_tryLogin();
+			});
 	
-	$(".sidebar-item").click(function(e)
+	$("#logout").click(
+			function(e)
+			{
+				f_tryLogout();
+			});
+	
+	$(".sidebar-item").click(
+			function(e)
 			{
 				ui_sidebarItemClicked(e.target);
+			});
+	
+	$("#sidebar-handle").mouseover(
+			function(e)
+			{
+				ui_slideOutSidebar();
+			});
+	
+	$("#sidebar").mouseout(function(e)
+			{
+				if(!$(e.relatedTarget).hasClass("sidebar-item") && (e.relatedTarget != document.getElementById("sidebar")))
+				{
+					ui_slideAwaySidebar();
+				}
 			});
 	
 	/*$(".sidebar-item").mouseover(function(e)
@@ -103,6 +136,19 @@ function ui_init()
 	});*/
 	
 	ui_setUpDashboard(); //Set up dashboard TODO: Review if this is really needed (currently only for testing)
+}
+
+
+
+/**
+ * Show screen with given name without any animation.
+ * 
+ * @param name The name of the screen to be displayed
+ */
+function ui_showScreen(name)
+{
+	$(".screen").hide(); //Hide all screens...
+	$("#screen-" + name).show(); //and show only disered one
 }
 
 /**
@@ -121,17 +167,6 @@ function ui_showDataScreen()
 	ui_data_showTab("dashboard"); //and show dashboard
 }
 
-/**
- * Show screen with given name without any animation.
- * 
- * @param name The name of the screen to be displayed
- */
-function ui_showScreen(name)
-{
-	$(".screen").hide(); //Hide all screens...
-	$("#screen-" + name).show(); //and show only disered one
-}
-
 function ui_showStatus(msg, error)
 {
 	$("#statusbox").html(msg);
@@ -144,6 +179,24 @@ function ui_showStatus(msg, error)
 	}
 	
 	ui_showScreen("status");
+}
+
+function ui_slideOutSidebar()
+{	
+	$("#sidebar-handle").fadeOut(100,
+			function()
+			{
+				$("#sidebar").show("slide",300);
+			});
+}
+
+function ui_slideAwaySidebar()
+{	
+	$("#sidebar").hide("slide", 300,
+			function()
+			{
+				$("#sidebar-handle").fadeIn(100);
+			});
 }
 
 function ui_data_showTab(name)
@@ -180,7 +233,7 @@ function ui_login_showError(msg)
 }
 
 function ui_sidebarItemClicked(eventTarget)
-{
+{	
 	var item = $(eventTarget);
 	
 	if(!item.hasClass("sidebar-item-active"))
@@ -252,7 +305,11 @@ function f_tryLogin()
 		{
 			if(pk.typeID == PTYPE.AUTH)
 			{
+				//Login successful -> store session data and open data view
 				var sessionID = pk.data.sessionID;
+				
+				connectionData.username = username;
+				$("#username").html(connectionData.username); //TODO: Put this somewhere it belongs
 				
 				f_setUpSession(sessionID);
 				
@@ -273,8 +330,8 @@ function f_tryRelog()
 	{
 		//There was a session ID stored -> ask server if it is still valid
 		
-		var pk = new Packet_Relog(cook);
-		pk.onResponse = 
+		var packet = new Packet_Relog(cook);
+		packet.onResponse = 
 			function(pk)
 			{
 				if(pk.typeID == PTYPE.REAUTH)
@@ -284,6 +341,10 @@ function f_tryRelog()
 					
 					//Store the new session ID to cookie TODO: maybe integrate this into f_setUpSession()
 					util_setCookie(TIGRIS_SESSION_COOKIE, pk.data.sessionID);
+					
+					//As there was no login, the server has to tell us who we are
+					connectionData.username = pk.data.username;
+					$("#username").html(connectionData.username); //TODO: Put this somewhere it belongs
 					
 					//As the session was still valid, we can directly display the data view
 					ui_showScreen("data");
@@ -297,7 +358,7 @@ function f_tryRelog()
 				}
 			};
 			
-		n_sendPacket(pk);
+		n_sendPacket(packet);
 		
 	}else
 	{
@@ -305,6 +366,35 @@ function f_tryRelog()
 		
 		ui_showScreen("login");
 	}
+}
+
+function f_tryLogout()
+{
+	
+	var packet = new Packet_Logout(LOGOUTREASON.CLOSED_BY_USER);
+	
+	packet.onResponse = 
+		function(pk)
+		{
+			if(pk.typeID == PTYPE.ACK)
+			{
+				//Server has acknowledged logout -> Remove old session cookie and do another HANDSHAKE before showing login form again
+				util_setCookie(TIGRIS_SESSION_COOKIE, "", -9999); //This cookie expired years ago! Spit it out!
+				
+				n_handshake();
+			}
+		};
+	packet.onTimeout =
+		function()
+		{
+			//The server did not confirm the logout. This may have unforeseen consequences, Dr. Freeman. So better not show the login page again. 
+			//And smell the ashes. Don't forget to smell the ashes.
+			
+			//We force the user to reload the page, so if there is really a problem with the server, he will notice on the next handshake
+			ui_showError("The server did not confirm the last logout. You can start another session by reloading Tigris.");
+		};
+	
+	n_sendPacket(packet);
 }
 
 function f_setUpSession(sessionID)
@@ -398,6 +488,12 @@ function n_ws_onMessage(msg)
 		
 		var requestingPacket = sentPacketMap["uid" + packet.uid]; //Get the packet that requested this answer
 		
+		//Remove the timeout before it goes off in our hands (if there is any)
+		if(requestingPacket.timeoutID != null)
+		{
+			window.clearTimeout(requestingPacket.timeoutID);
+		}
+		
 		delete sentPacketMap["uid" + packet.uid];
 		
 		if($.inArray(packet.typeID , requestingPacket.allowedResponses) == -1)
@@ -449,7 +545,7 @@ function n_handshake()
 			connectionData.salt = pk.data.salt;
 			
 			//Connection to server is OK -> The user may log in
-			f_tryRelog(); //First look if there is already a session to be restored.
+			f_tryRelog(); //First look if there is already a session to be restored. TODO: This is confusing. Make it better
 			
 		}else if(pk.typeID == PTYPE.ERROR)
 		{
@@ -505,6 +601,13 @@ function n_sendPacket(packet, uid)
 	if(socket.readyState == 1)
 	{
 		socket.send(jsonPacket);
+		
+		//Set a timeout for each packet that is removed upon response in the n_ws_onMessage methode (only if timeout is > 0)
+		if(packet.timeout > 0)
+		{
+			packet.timeoutID = window.setTimeout(packet.onTimeout, packet.timeout);
+		}
+		
 		sentPacketMap["uid" + packetToSend.uid] = packet;
 		
 		console.log("I sent this: " + jsonPacket);
@@ -512,9 +615,13 @@ function n_sendPacket(packet, uid)
 	}else if(socket.readyState == 2)
 	{
 		console.error("Tried to send after the connection was lost");
+		
+		ui_showError("Tried to send packet after the connection was lost. This is most likely the programmers fault.");
 	}else if(socket.readyState == 0)
 	{
 		console.error("Tried to send while the socket was still connecting");
+		
+		ui_showError("Tried to send packet while the socket was still connecting. This is most likely the programmers fault.");
 	}
 }
 
@@ -548,9 +655,9 @@ function Tile(id)
 
 //--------packet contructors-----------
 /**
-*
-* @constructor
-*/
+ *
+ * @constructor
+ */
 function Packet_Handshake()
 {
 	this.typeID = PTYPE.HANDSHAKE;
@@ -558,15 +665,18 @@ function Packet_Handshake()
 	this.data = {};
 	this.data.clientVersion = TIGRIS_VERSION;
 	
+	this.timeout = GENERAL_TIMEOUT; //TODO: Find something like superconstructor to init the stuff every packet has
+	this.timeoutID = null;
 	this.allowedResponses = [PTYPE.ACCEPT, PTYPE.ERROR];
 	
 	this.onResponse = function(){};
+	this.onTimeout = function(){ui_showError("The server took to long to respond.");};
 }
 
 /**
-*
-* @constructor
-*/
+ *
+ * @constructor
+ */
 function Packet_Login(usr,pwrdHash)
 {
 	this.typeID = PTYPE.LOGIN;
@@ -575,11 +685,18 @@ function Packet_Login(usr,pwrdHash)
 	this.data.username = usr;
 	this.data.passwordHash = pwrdHash;
 	
+	this.timeout = GENERAL_TIMEOUT;
+	this.timeoutID = null;
 	this.allowedResponses = [PTYPE.AUTH, PTYPE.NACK];
 	
 	this.onResponse = function(){};
+	this.onTimeout = function(){ui_showError("The server took to long to respond.");};
 }
 
+/**
+ * 
+ * @constructor
+ */
 function Packet_Relog(sessionID)
 {
 	this.typeID = PTYPE.RELOG;
@@ -587,14 +704,37 @@ function Packet_Relog(sessionID)
 	this.data = {};
 	this.data.sessionID = sessionID;
 	
+	this.timeout = GENERAL_TIMEOUT;
+	this.timeoutID = null;
 	this.allowedResponses = [PTYPE.REAUTH, PTYPE.NACK];
 	
 	this.onResponse = function(){};
+	this.onTimeout = function(){ui_showError("The server took to long to respond.");};
 }
 
 /**
-* @constructor
-*/
+ * 
+ * @constructor
+ */
+function Packet_Logout(reason)
+{
+	this.typeID = PTYPE.LOGOUT;
+	
+	this.data = {};
+	this.data.reasonCode = reason || LOGOUTREASON.UNKNOWN;
+	
+	this.timeout = GENERAL_TIMEOUT;
+	this.timeoutID = null;
+	this.allowedResponses = [PTYPE.ACK];
+	
+	this.onResponse = function(){};
+	this.onTimeout = function(){ui_showError("The server took to long to respond.");};
+}
+
+/**
+ * 
+ * @constructor
+ */
 function Packet_Error(code, message)
 {
 	this.typeID = PTYPE.ERROR;
@@ -603,9 +743,12 @@ function Packet_Error(code, message)
 	this.data.errorCode = code;
 	this.data.errorMessage = message;
 	
+	this.timeout = 0;
+	this.timeoutID = null;
 	this.allowedResponses = [];
 	
 	this.onResponse = function(){};
+	this.onTimeout = function(){};
 }
 
 //---------------utility stuff----------------
