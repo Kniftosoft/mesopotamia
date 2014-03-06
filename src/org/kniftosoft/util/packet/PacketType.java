@@ -16,6 +16,7 @@ public enum PacketType
 	LOGOUT(14,LOGOUT.class,Constants.bidirectional),
 	QUERY(20,QUERY.class,Constants.incoming),
 	DATA(21,DATA.class,Constants.outgoing),
+	SUBSCRIBE(22,SUBSCRIBE.class,Constants.incoming),
 	ACK(200, ACK.class,Constants.bidirectional),
 	NACK(201, NACK.class,Constants.bidirectional),
 	ERROR(242,ERROR.class,Constants.bidirectional);

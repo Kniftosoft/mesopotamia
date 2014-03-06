@@ -1,6 +1,5 @@
 +==========================================+
-| Mesopotamia Communication Protocol 1.2.1 |
-|			    Shatt al-Arab              |
+|  Mesopotamia Communication Protocol 1.3  |
 |         (C) Niklas Weissner 2014         |
 +==========================================+
 
@@ -16,25 +15,32 @@ Contents
 	4	-	Basic packet structure
 	5	-	Packet types
 	6	-	Security
+	7	-	Data access
 	
 	
 	
 	
 1 - Changelog
 =============
-4.2.2014	1.0		Initial creation of protocol
 
-5.2.2014	1.1		Added LOGOUT-,QUERY-,DATA- and ERROR-packets and NACK-response to LOGIN, Basic communication chapter
+04.02.2014	1.0		Initial creation of protocol
 
-24.2.2014	1.2		Removed QUIT-packet, added ACCEPT-packet and defined a basic salting procedure (chapter "Security")
+05.02.2014	1.1		Added LOGOUT-,QUERY-,DATA- and ERROR-packets and NACK-response to LOGIN, Basic communication chapter
 
-25.2.2014	1.2.1	Changed salting procedure to append salt to hashed password instead of unencrypted password
+24.02.2014	1.2		Removed QUIT-packet, added ACCEPT-packet and defined a basic salting procedure (chapter "Security")
 
-28.2.2014	1.2.2	Replaced NACK-response of HANDSHAKE with ERROR-response, defined new WRONG_VERSION and NOT_ALLOWED error code
+25.02.2014	1.2.1	Changed salting procedure to append salt to hashed password instead of unencrypted password
+
+28.02.2014	1.2.2	Replaced NACK-response of HANDSHAKE with ERROR-response, defined new WRONG_VERSION and NOT_ALLOWED error code
+
+03.03.2014	1.3		Reworked QUERY- and DATA-packet, added SUBSCRIBE-packet, added chapter "Data access"
+
+
 
 
 2 - Foreword
 ============
+
 	This is the specification for the Mesopotamia Communication Protocol (MCP) used by the
 	Mesopotamia producation-surveillance-system consisting of the client (codename "Tigris") and
 	the Glassfish-based server (codename "Euphrates"). 
@@ -52,6 +58,8 @@ Contents
 	isn't HANDSHAKE'd after a given timeout. 
 	When a HANDSHAKE is answered by the server using an ACCEPT packet, the client may continue with a LOGIN process.
 
+	After the LOGIN process, the client receives a session ID which is used for reconnection after connection loss.
+	
 
 
 
@@ -102,9 +110,11 @@ Contents
 			14	|	Both		|	LOGOUT		|
 			20	|	C->S		|	QUERY		|
 			21	|	S->C		|	DATA		|
+			22	|	C->S		|	SUBSCRIBE	|
 			200	|	Both		|	ACK			|
 			201	|	Both		|	NACK		|
 			242	|	Both		|	ERROR		|
+			
 	
 			
 	HANDSHAKE
@@ -253,42 +263,71 @@ Contents
 	
 	QUERY
 	-----
-	Sent by the client to query MES data. The server answers the query by sending a DATA-packet.
-		!!! This packet will be further documented as soon as a data model
-		!!! is available. Until then it is not neccesary to implement
-		!!! its functionalities.
+	!! NOTE: This packet is experimental. If it proves beeing usable, remove this note. !!
+	
+	Sent by the client to query data. The server answers the query by sending a DATA-packet.
+	The field ident is the identifier of the disired object. 
+	If all objects of a category are disired, the identifier may be '*'. 
+	Other wildcards (like 'a*' for all objects beginning with 'a') are currently not allowed.
+	This may be changed depending on what is possible server-side.
+	For further information, see chapter "7 - Data access".
 	
 	-Packet ID:		20
 	
 	-Direction:		C->S
 	
 	-Data fields:
-		string:		sessionID
-		struct:		filterData (Fields of this structure are documented in a later version of the protocol)
+		string:		category (For more information on these fields, see chapter "7 - Data access")
+		string:		ident
 		
 	-Possible responses:
-		DATA:		If the query succeeds and MES-data is transferred
-		NACK:		If the provided session key has expired
+		DATA:		If the query succeeds and data is transferred
  	
 	
 	
 	
 	DATA
 	----
-	Send by the server spontaneously or as a response to a QUERY-packet.
-		!!! This packet will be further documented as soon as a data model
-		!!! is available. Until then it is not neccesary to implement
-		!!! its functionalities.
+	!! NOTE: This packet is experimental. If it proves beeing usable, remove this note. !!
+	
+	Sent by the server spontaneously or as a response to a QUERY-packet. This packet contains
+	data of one data unit which is displayed by the client upon receipt. One DATA packet can only carry
+	data object of a single category at a time. For multiple categories, multiple DATA packets have to be transfered.
 	
 	-Packet ID:		21
 	
 	-Direction:		S->C
 	
 	-Data fields:
-		struct:		queryResult (Fields of this structure are documented in a later version of the protocol)
+		string:		category (The category of the transferred objects, see chapter "7 - Data access")
+		struct[]:	result (Array of resulting data objects. May be empty. The structure of the returned objects depends on their
+							category and is futher documented in chapter "7 - Data access")
 		
 	-Possible responses:
 		none (packet is response-only)
+	
+	
+	
+	
+	SUBSCRIBE
+	---------
+	!! NOTE: This packet is experimental. If it proves beeing usable, remove this note. !!
+	
+	Sent by the client to instruct the server to inform it on any changes of the specified data unit.
+	Changes are reported using a DATA packet (sent by the server without request). If the subscription
+	succeeds the server responds with an ACK, otherwise a NACK is sent (bad data unit etc.).
+	
+	-Packet ID:		22
+	
+	-Direction:		C->S
+	
+	-Data fields:
+		string:		category (For more information on these fields, see chapter "7 - Data access")
+		string:		ident
+		
+	-Possible responses:
+		ACK:		If the subscription succeeds
+		NACK:		If the subscription fails
 	
 	
 	
@@ -357,6 +396,7 @@ Contents
 	
 	
 	
+	
 6 - Security
 ============
 
@@ -403,5 +443,52 @@ Contents
 		|		8e8f8789710978ca5ac74cf6abecfaffc4d8c6b2a696b27b215df538ea6581a8
 		|
 		|	This value is now transmitted to the server together with the username "otto".
+	
+	
+
+	
+7 - Data access
+===============
+	
+	!! NOTE: This information is part of an experimental feature. If it proves beeing usable, remove this note. !!
+	
+	Data being displayed by Euphrates is split up into data units. 
+	Each data unit is identified by a category (machines, jobs, errors etc.) and an unique identifier (name of machine, number of job etc.).
+	Queries are category-orientated, so transfer of these data units may only happen with one category per group of data objects.
+	Same goes for queries using wildcards.
+
+	Data units may overlap in the database. The definition of data units is rather a thing of presentation than of storage. Machine and job data
+	may actually be stored in the same table of the database. The thing that matters is that the client can query and receive them as they each
+	were entities of their own.
+	
+	As stated above, data unit identifiers may use wildcards, so the (example) query
+	
+		"category":"machines",
+		"ident":"*"
+		
+	will result in all machines the server is able(and allows) to deliver.
+	Note that supporting more complex wildcards like 'a*' is currently not part of this protocol. It may, however, be added in a later version.
+	
+	As different data categories contain different information, the structure of returned entities when querying depends on the selected category.
+	Below you find a list of categories with their specific information.
+	
+	!! NOTE: At the moment, this table is only an example. It will be continued in the next update. For sure. !!
+	
+	Category	|	Properties
+	------------+-----------------
+	machine		|	string: id
+				|	int: status
+				|	int jobId
+	------------+-----------------
+	job			|	string: id
+				|	int: targetNumber
+				
+				
+	
+	
+	
+	
+	
+	
 	
 	

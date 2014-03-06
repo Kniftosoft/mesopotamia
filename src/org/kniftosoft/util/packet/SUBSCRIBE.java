@@ -9,7 +9,8 @@ import com.google.gson.JsonObject;
  * @author julian
  *
  */
-public class QUERY extends Packet {
+public class SUBSCRIBE extends Packet {
+
 	private String category;
 	private String ident;
 
@@ -18,7 +19,7 @@ public class QUERY extends Packet {
 	 */
 	@Override
 	public void executerequest() {
-		// TODO execute query
+		// TODO register subscribe
 
 	}
 
@@ -37,7 +38,7 @@ public class QUERY extends Packet {
 	 */
 	@Override
 	public PacketType getType() {
-		return PacketType.QUERY;
+		return PacketType.SUBSCRIBE;
 	}
 
 	/* (non-Javadoc)

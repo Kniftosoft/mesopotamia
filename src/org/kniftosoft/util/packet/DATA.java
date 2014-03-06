@@ -3,8 +3,7 @@
  */
 package org.kniftosoft.util.packet;
 
-import org.kniftosoft.entity.EuphratisSession;
-
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 /**
@@ -13,17 +12,12 @@ import com.google.gson.JsonObject;
  */
 public class DATA extends Packet {
 
-	private JsonObject queryResult;
-	
-	public DATA(int uid, EuphratisSession peer,JsonObject queryResult) {
-		
-		this.queryResult = queryResult;
-	}
+	private JsonArray queryResult;
+	private String category;
 
 	@Override
 	public void createFromJSON(JsonObject o) {
-		queryResult = o.get("queryResult").getAsJsonObject();
-		
+		queryResult = o.getAsJsonArray("queryResult");
 	}
 
 	@Override
@@ -43,6 +37,14 @@ public class DATA extends Packet {
 	public void executerequest() {
 		// TODO Auto-generated method stub
 		
+	}
+
+	public String getCategory() {
+		return category;
+	}
+
+	public void setCategory(String category) {
+		this.category = category;
 	}
 
 }
