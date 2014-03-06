@@ -14,11 +14,7 @@ import com.google.gson.JsonObject;
 public class DATA extends Packet {
 
 	private JsonObject queryResult;
-	/**
-	 * @param typeID
-	 * @param uid
-	 * @param peer
-	 */
+	
 	public DATA(int uid, EuphratisSession peer,JsonObject queryResult) {
 		
 		this.queryResult = queryResult;
@@ -27,12 +23,6 @@ public class DATA extends Packet {
 	@Override
 	public void createFromJSON(JsonObject o) {
 		queryResult = o.get("queryResult").getAsJsonObject();
-		
-	}
-
-	@Override
-	public void executerequest() {
-		// TODO Auto-generated method stub
 		
 	}
 
@@ -47,6 +37,12 @@ public class DATA extends Packet {
 	public PacketType getType() {
 		// TODO Auto-generated method stub
 		return PacketType.DATA;
+	}
+
+	@Override
+	public void executerequest() {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

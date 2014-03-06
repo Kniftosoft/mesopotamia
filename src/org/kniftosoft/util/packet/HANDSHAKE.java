@@ -19,7 +19,7 @@ public class HANDSHAKE extends Packet {
 	public void executerequest()
 	{
 		System.out.println("hp");
-		if(clientVersion.equals(Constants.getClientversion()))
+		if(clientVersion.equals(Constants.Clientversion))
 		{
 			new ACCEPT(uid, peer).send();
 		}

@@ -4,6 +4,7 @@ import javax.websocket.DecodeException;
 import javax.websocket.Decoder;
 import javax.websocket.EndpointConfig;
 
+import org.kniftosoft.util.Constants;
 import org.kniftosoft.util.packet.Packet;
 import org.kniftosoft.util.packet.PacketType;
 
@@ -41,7 +42,7 @@ public class PacketDecoder implements Decoder.Text<Packet>
 		
 		PacketType type = PacketType.byID(packetTypeID);
 		
-		if(type == null)
+		if(type == null|| type.getDirection()==Constants.outgoing)
 		{
 			throw new DecodeException(msg,"Invalid packet type ID: " + packetTypeID);
 		}

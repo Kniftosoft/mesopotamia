@@ -2,3 +2,5 @@ org.kniftosoft.Login
 org.kniftosoft.endpoint
 org.kniftosoft.entity
 org.kniftosoft.thread
+org.kniftosoft.util
+org.kniftosoft.util.packet

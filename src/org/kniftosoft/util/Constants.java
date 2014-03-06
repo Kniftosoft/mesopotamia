@@ -8,19 +8,9 @@ package org.kniftosoft.util;
  *
  */
 public class Constants {
-	private static final String Clientversion="0.2.1";
-	static final String PERSISTENCE_UNIT_NAME = "Euphratis";
-	/**
-	 * @return the version
-	 */
-	public static String getClientversion() {
-		return Clientversion;
-	}
-	/**
-	 * @return the persistenceUnitName
-	 */
-	public static String getPersistenceUnitName() {
-		return PERSISTENCE_UNIT_NAME;
-	}
-	
+	public static final String Clientversion="0.2.1";
+	public static final String PERSISTENCE_UNIT_NAME = "Euphratis";
+	public static final int incoming=1;
+	public static final int bidirectional=2;
+	public static final int outgoing=3;	
 }

@@ -11,7 +11,7 @@ import com.google.gson.JsonObject;
  * @author julian
  *
  */
-public class NACK extends Packet {
+public class NACK extends Packet{
 
 	/**
 	 * @param uid

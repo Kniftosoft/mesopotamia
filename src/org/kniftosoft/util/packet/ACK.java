@@ -9,7 +9,7 @@ import com.google.gson.JsonObject;
  * @author julian
  *
  */
-public class ACK extends Packet {
+public class ACK extends Packet{
 
 	// NO DATA FIELDS
 	@Override

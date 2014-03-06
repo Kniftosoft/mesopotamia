@@ -33,11 +33,6 @@ public class REAUTH extends Packet {
 		
 	}
 	@Override
-	public void executerequest() {
-		// TODO not executable
-		
-	}
-	@Override
 	public JsonObject storeData() {
 		JsonObject data = new JsonObject();
 		data.addProperty("newSessionID", newSessionID);
@@ -59,5 +54,10 @@ public class REAUTH extends Packet {
 	}
 	public void setUserConfig(JsonObject userConfig) {
 		this.userConfig = userConfig;
+	}
+	@Override
+	public void executerequest() {
+		// TODO Auto-generated method stub
+		
 	}
 }

@@ -1,31 +1,34 @@
 package org.kniftosoft.util.packet;
 
-import java.nio.channels.AcceptPendingException;
+import org.kniftosoft.util.Constants;
+
 
 public enum PacketType 
 {
 	
 
-	HANDSHAKE(1, HANDSHAKE.class),
-	ACCEPT(2, AcceptPendingException.class),
-	LOGIN(10, LOGIN.class),
-	AUTH(11, AUTH.class),
-	RELOG(12,RELOG.class),
-	REAUTH(13,REAUTH.class),
-	LOGOUT(14,LOGOUT.class),
-	QUERY(20,QUERY.class),
-	DATA(21,DATA.class),
-	ACK(200, ACK.class),
-	NACK(201, NACK.class),
-	ERROR(242,ERROR.class);
+	HANDSHAKE(1, HANDSHAKE.class,Constants.incoming),
+	ACCEPT(2, ACCEPT.class,Constants.outgoing),
+	LOGIN(10, LOGIN.class,Constants.incoming),
+	AUTH(11, AUTH.class,Constants.outgoing),
+	RELOG(12,RELOG.class,Constants.incoming),
+	REAUTH(13,REAUTH.class,Constants.outgoing),
+	LOGOUT(14,LOGOUT.class,Constants.bidirectional),
+	QUERY(20,QUERY.class,Constants.incoming),
+	DATA(21,DATA.class,Constants.outgoing),
+	ACK(200, ACK.class,Constants.bidirectional),
+	NACK(201, NACK.class,Constants.bidirectional),
+	ERROR(242,ERROR.class,Constants.bidirectional);
 	
 	private int typeID;
+	private int direction;
 	private Class<?> packetClass;
 	
-	private PacketType(int typeID, Class<?> packetClass)
+	private PacketType(int typeID, Class<?> packetClass,int direction)
 	{
 		this.typeID = typeID;
 		this.packetClass = packetClass;
+		this.direction = direction;
 	}
 	
 	
@@ -51,5 +54,15 @@ public enum PacketType
 		}
 		
 		return null;
+	}
+
+
+	public int getDirection() {
+		return direction;
+	}
+
+
+	public void setDirection(int direction) {
+		this.direction = direction;
 	}
 }

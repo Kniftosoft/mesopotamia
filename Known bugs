@@ -1,0 +1,2 @@
+User can not be casted to user in loginmanager 
+	it seems to be a glassfish bug restart glassfish

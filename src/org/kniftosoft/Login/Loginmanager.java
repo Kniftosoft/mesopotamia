@@ -26,7 +26,7 @@ public class Loginmanager {
 		try
 		{
 			EntityManagerFactory factory;
-			factory = Persistence.createEntityManagerFactory(Constants.getPersistenceUnitName());
+			factory = Persistence.createEntityManagerFactory(Constants.PERSISTENCE_UNIT_NAME);
 		    EntityManager em = factory.createEntityManager();
 		    em.getTransaction().begin();
 		    TypedQuery<User> userquery=em.createQuery("Select u FROM User u WHERE u.email = '"+email+"'", User.class).setMaxResults(1);
@@ -55,6 +55,9 @@ public class Loginmanager {
 		{
 			new NACK(rp.getUID(), rp.getPeer()).send();
 			return;
+		}catch(Exception e)
+		{
+			System.err.println(e.toString());
 		}
 	}
 	

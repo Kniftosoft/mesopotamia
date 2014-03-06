@@ -33,12 +33,6 @@ public class AUTH extends Packet {
 		return data;
 	}
 
-	@Override
-	public void executerequest() {
-		// TODO Auto-generated method stub
-		
-	}
-
 	/**
 	 * @param sessionID the sessionID to set
 	 */
@@ -51,5 +45,11 @@ public class AUTH extends Packet {
 	 */
 	public void setUserconfig(JsonObject userconfig) {
 		this.userconfig = userconfig;
+	}
+
+	@Override
+	public void executerequest() {
+		// TODO Auto-generated method stub
+		
 	}
 }

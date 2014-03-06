@@ -12,13 +12,10 @@ import com.google.gson.JsonObject;
  * @author julian
  *
  */
-public class RELOG extends Packet {
+public class RELOG extends Packet{
 
 	private String sessionID;
-	/**
-	 * @param message
-	 * @param peer
-	 */
+
 	public RELOG(String sessionID, EuphratisSession peer) {
 		this.setSessionID(sessionID);
 	}

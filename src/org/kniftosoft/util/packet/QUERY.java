@@ -33,12 +33,6 @@ public class QUERY extends Packet {
 	}
 
 	@Override
-	public void executerequest() {
-		// TODO execute query
-		
-	}
-
-	@Override
 	public JsonObject storeData() {
 		JsonObject data = new JsonObject();
 		data.addProperty("sessionID", sessionID);
@@ -49,6 +43,12 @@ public class QUERY extends Packet {
 	@Override
 	public PacketType getType() {
 		return PacketType.QUERY;
+	}
+
+	@Override
+	public void executerequest() {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

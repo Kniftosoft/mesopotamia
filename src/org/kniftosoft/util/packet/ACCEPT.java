@@ -15,7 +15,6 @@ public class ACCEPT extends Packet {
 
 	String salt;
 	/**
-	 * @param typeID
 	 * @param uid
 	 * @param peer
 	 */

@@ -22,19 +22,19 @@ decoders = {PacketDecoder.class})
 public class MesopotamiaEndpoint {
 	/**
 	 * 
-	 * @param message Received message from client
+	 * @param packet Received message from client
 	 * @param peer Client who sends message
 	 */
 	@OnMessage
-	public void onMessage(Packet rp,Session peer)
+	public void onMessage(Packet packet,Session peer)
 	{
-		System.out.println("recive from decode"+rp+peer);
-		rp.setPeer(ClientUpDater.getpeer(peer));
+		System.out.println("recive from decode"+packet+peer);
+		packet.setPeer(ClientUpDater.getpeer(peer));
 		//TODO remove before publishing
-		System.out.println("recived Packet:"+rp.toString());
+		System.out.println("recived Packet:"+packet.toString());
 		//RecivedPacket packet = new RecivedPacket(message, es);
 		//packet.executerequest();
-		rp.executerequest();
+		packet.executerequest();
 			
 		
 	}
