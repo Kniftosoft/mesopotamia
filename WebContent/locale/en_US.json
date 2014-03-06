@@ -1,0 +1,12 @@
+
+{
+	"LOCALE_CODE"			: "en_US",
+	"LOCALE_NAME"			: "English (United States)",
+	"LOCALE_VERSION"		: "0.1.0",
+
+	"APP_TITLE" 			: "Tigris",
+	
+	"ERR_COMM"				: "Communication error",
+	"ERR_COMM_BADPACKET"	: "The server sent a message that could not be parsed into a valid packet"
+
+}

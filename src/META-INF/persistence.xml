@@ -4,8 +4,8 @@
 	<persistence-unit name="mesopotamia" transaction-type="JTA">
 		<provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
 		<jta-data-source>java:app/jdbc/mesopotamia</jta-data-source>
-		<class>org.kniftosoft.entity.Test</class>
-		<class>org.kniftosoft.entity.Maschine</class>
+		<!--<class>org.kniftosoft.entity.Test</class>
+		<class>org.kniftosoft.entity.Maschine</class>-->
 		<properties>
 			<property name="eclipselink.jdbc.batch-writing" value="Buffered"/>
 			<property name="eclipselink.target-server" value="SunAS9"/>
