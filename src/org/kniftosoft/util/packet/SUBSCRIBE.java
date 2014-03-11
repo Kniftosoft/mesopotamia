@@ -3,6 +3,14 @@
  */
 package org.kniftosoft.util.packet;
 
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
+
+import org.kniftosoft.entity.App;
+import org.kniftosoft.entity.Subscribe;
+import org.kniftosoft.util.Constants;
+
 import com.google.gson.JsonObject;
 
 /**
@@ -11,7 +19,7 @@ import com.google.gson.JsonObject;
  */
 public class SUBSCRIBE extends Packet {
 
-	private String category;
+	private int category;
 	private String ident;
 
 	/* (non-Javadoc)
@@ -19,7 +27,15 @@ public class SUBSCRIBE extends Packet {
 	 */
 	@Override
 	public void executerequest() {
-		// TODO register subscribe
+		Subscribe sub = new Subscribe();
+		sub.setAppBean(App.getbyID(category));
+		EntityManagerFactory factory;
+		factory = Persistence.createEntityManagerFactory(Constants.PERSISTENCE_UNIT_NAME);
+	    EntityManager em = factory.createEntityManager();
+	    em.getTransaction().begin();
+	    em.persist(sub);
+	    em.getTransaction().commit();
+	    em.close();
 
 	}
 
@@ -28,7 +44,7 @@ public class SUBSCRIBE extends Packet {
 	 */
 	@Override
 	public void createFromJSON(JsonObject o) {
-		category = o.get("category").getAsString();
+		category = o.get("category").getAsInt();
 		ident = o.get("ident").getAsString();
 
 	}
@@ -52,11 +68,11 @@ public class SUBSCRIBE extends Packet {
 		return data;
 	}
 
-	public String getCategory() {
+	public int getCategory() {
 		return category;
 	}
 
-	public void setCategory(String category) {
+	public void setCategory(int category) {
 		this.category = category;
 	}
 

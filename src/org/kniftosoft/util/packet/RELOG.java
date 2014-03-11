@@ -4,7 +4,6 @@
 package org.kniftosoft.util.packet;
 
 import org.kniftosoft.Login.Loginmanager;
-import org.kniftosoft.entity.EuphratisSession;
 
 import com.google.gson.JsonObject;
 
@@ -16,9 +15,6 @@ public class RELOG extends Packet{
 
 	private String sessionID;
 
-	public RELOG(String sessionID, EuphratisSession peer) {
-		this.setSessionID(sessionID);
-	}
 	@Override
 	public void createFromJSON(JsonObject o) {
 		sessionID = o.get("sessionID").getAsString();

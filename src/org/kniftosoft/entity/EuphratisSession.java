@@ -7,6 +7,7 @@ public class EuphratisSession {
 	private Session session;
 	private User user;
 	private String salt;
+	private boolean saltused;
 	private boolean loginverified;
 	
 	/* (non-Javadoc)
@@ -67,5 +68,11 @@ public class EuphratisSession {
 	public EuphratisSession(Session session) {
 		super();
 		this.session = session;
+	}
+	public boolean isSaltused() {
+		return saltused;
+	}
+	public void setSaltused(boolean saltused) {
+		this.saltused = saltused;
 	}
 }

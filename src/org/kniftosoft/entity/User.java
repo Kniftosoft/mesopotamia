@@ -2,6 +2,7 @@ package org.kniftosoft.entity;
 
 import java.io.Serializable;
 import javax.persistence.*;
+import java.util.List;
 
 
 /**
@@ -9,67 +10,64 @@ import javax.persistence.*;
  * 
  */
 @Entity
-@Table(name="user")
 @NamedQuery(name="User.findAll", query="SELECT u FROM User u")
 public class User implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
-	@Column(unique=true, nullable=false)
-	private int user_ID;
+	@Column(name="USER_ID")
+	private int userId;
 
-	@Column(nullable=false)
-	private int acc_type;
+	@Column(name="ACC_TYPE")
+	private int accType;
 
-	private int config_ID;
+	@Column(name="CONFIG_ID")
+	private int configId;
 
-	@Column(nullable=false, length=45)
 	private String email;
 
-	@Column(length=45)
 	private String nachname;
 
-	@Column(length=30)
 	private String ort;
 
-	@Column(nullable=false, length=64)
 	private String password;
 
-	@Column(length=7)
 	private String plz;
 
-	@Column(length=45)
 	private String strasse;
 
-	@Column(length=45)
 	private String vorname;
+
+	//bi-directional many-to-one association to Subscribe
+	@OneToMany(mappedBy="userBean")
+	private List<Subscribe> subscribes;
 
 	public User() {
 	}
 
-	public int getUser_ID() {
-		return this.user_ID;
+	public int getUserId() {
+		return this.userId;
 	}
 
-	public void setUser_ID(int user_ID) {
-		this.user_ID = user_ID;
+	public void setUserId(int userId) {
+		this.userId = userId;
 	}
 
-	public int getAcc_type() {
-		return this.acc_type;
+	public int getAccType() {
+		return this.accType;
 	}
 
-	public void setAcc_type(int acc_type) {
-		this.acc_type = acc_type;
+	public void setAccType(int accType) {
+		this.accType = accType;
 	}
 
-	public int getConfig_ID() {
-		return this.config_ID;
+	public int getConfigId() {
+		return this.configId;
 	}
 
-	public void setConfig_ID(int config_ID) {
-		this.config_ID = config_ID;
+	public void setConfigId(int configId) {
+		this.configId = configId;
 	}
 
 	public String getEmail() {
@@ -128,5 +126,26 @@ public class User implements Serializable {
 		this.vorname = vorname;
 	}
 
+	public List<Subscribe> getSubscribes() {
+		return this.subscribes;
+	}
+
+	public void setSubscribes(List<Subscribe> subscribes) {
+		this.subscribes = subscribes;
+	}
+
+	public Subscribe addSubscribe(Subscribe subscribe) {
+		getSubscribes().add(subscribe);
+		subscribe.setUserBean(this);
+
+		return subscribe;
+	}
+
+	public Subscribe removeSubscribe(Subscribe subscribe) {
+		getSubscribes().remove(subscribe);
+		subscribe.setUserBean(null);
+
+		return subscribe;
+	}
 
 }

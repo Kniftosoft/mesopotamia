@@ -21,6 +21,9 @@ public class HANDSHAKE extends Packet {
 		System.out.println("hp");
 		if(clientVersion.equals(Constants.Clientversion))
 		{
+			peer.setSalt(Long.toHexString(Double.doubleToLongBits(Math.random())));
+			peer.setSaltused(false);
+			ClientUpDater.updatepeer(peer);
 			new ACCEPT(uid, peer).send();
 		}
 		else

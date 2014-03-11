@@ -28,12 +28,9 @@ public class MesopotamiaEndpoint {
 	@OnMessage
 	public void onMessage(Packet packet,Session peer)
 	{
-		System.out.println("recive from decode"+packet+peer);
 		packet.setPeer(ClientUpDater.getpeer(peer));
 		//TODO remove before publishing
 		System.out.println("recived Packet:"+packet.toString());
-		//RecivedPacket packet = new RecivedPacket(message, es);
-		//packet.executerequest();
 		packet.executerequest();
 			
 		
@@ -48,7 +45,6 @@ public class MesopotamiaEndpoint {
 		System.out.println("new peer: "+peer);
 		try{
 			EuphratisSession es = new EuphratisSession(peer);
-			es.setSalt(Long.toHexString(Double.doubleToLongBits(Math.random())));
 			ClientUpDater.addpeer(es);
 		}catch(Exception e)
 		{

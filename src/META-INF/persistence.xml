@@ -3,6 +3,8 @@
 	<persistence-unit name="Euphratis" transaction-type="JTA">
 		<jta-data-source>java:app/Euphratis</jta-data-source>
 		<class>org.kniftosoft.entity.User</class>
+		<class>org.kniftosoft.entity.App</class>
+		<class>org.kniftosoft.entity.Subscribe</class>
 		<properties>
 			<property name="eclipselink.target-database" value="MySQL"/>
 			<property name="eclipselink.profiler" value="QueryMonitor"/>
