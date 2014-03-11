@@ -1,6 +1,6 @@
 
 /*--------------------------
- *      Tigris 0.2.2
+ *      Tigris 0.3.0
  * 	Mesopotamia Client v1
  * (C) Niklas Weissner 2014
  *-------------------------- 
@@ -19,7 +19,7 @@ var MESO_ENDPOINT = "ws://localhost:8080/mesopotamia/TIG_TEST_END"; //Link to Eu
 
 
 //Constants
-var TIGRIS_VERSION = "0.2.2";
+var TIGRIS_VERSION = "0.3.0";
 var TIGRIS_SESSION_COOKIE = "2324-tigris-session";
 
 var GENERAL_TIMEOUT = 2000; //Default timeout in milliseconds (may be overridden by some packets)
@@ -58,14 +58,6 @@ var LOGOUTREASON =
 	SESSION_EXPIRED:	2,
 	INTERNAL_ERROR:		3,
 	REFUSED:			4
-};
-
-var connectionData = 
-{
-		salt: null,
-		
-		sessionID: null,
-		username: ""
 };
 
 var socket;
@@ -265,9 +257,8 @@ function ui_setUpDashboard()
 		
 	dashboard = new Dashboard();
 	
-	var full1 = dashboard.createTile(1, true);
-	
-	var half1 = dashboard.createTile(2, false);
+	var tile1 = new TileMachine(false, {id: 12345, name: "asdfg", speed:500});
+	dashboard.addTile(tile1);
 	
 	//TODO: Do this in the dashboard constructor
 	$(".dashboard-column").sortable(
@@ -353,14 +344,14 @@ function f_tryRelog()
 				if(pk.typeID == PTYPE.REAUTH)
 				{
 					//The old session ID was still valid -> use echoed (maybe changed) session ID
-					connectionData.sessionID = pk.data.sessionID;
+					Network.connectionData.sessionID = pk.data.sessionID;
 					
 					//Store the new session ID to cookie TODO: maybe integrate this into f_setUpSession()
 					util_setCookie(TIGRIS_SESSION_COOKIE, pk.data.sessionID);
 					
 					//As there was no login, the server has to tell us who we are
-					connectionData.username = pk.data.username;
-					$("#username").html(connectionData.username); //TODO: Put this somewhere it belongs
+					Network.connectionData.username = pk.data.username;
+					$("#username").html(Network.connectionData.username); //TODO: Put this somewhere it belongs
 					
 					//As the session was still valid, we can directly display the data view
 					ui_showScreen("data");
@@ -434,13 +425,13 @@ function f_updateTiles(category, data)
 	jQuery.each(data, 
 			function(index, item)
 			{
-				var dataUnitIdent = category + ":" + item.id;
+				var dataUnitIdent = category + "-" + item.id;
 				
 				if(dataUnitIdent in dashboard.tiles)
 				{
 					//There is a tile linked to the current data unit
 					
-					dashboard.tiles[dataUnitIndent].onUpdate(item);
+					dashboard.tiles[dataUnitIdent].onUpdate(item);
 				}
 				
 			});
@@ -453,6 +444,14 @@ var Network = {};
 
 Network.socket = null;
 Network.sentPacketMap = {};
+
+Network.connectionData = 
+{
+	salt: null,
+		
+	sessionID: null,
+	username: ""
+};
 
 Network.init = function()
 {
@@ -487,13 +486,13 @@ Network.init = function()
 		return;
 	}
 	
-	Network.socket.onopen = Network.n_ws_onOpen;
+	Network.socket.onopen = Network.ws_onOpen;
 	
-	Network.socket.onmessage = Network.n_ws_onMessage;
+	Network.socket.onmessage = Network.ws_onMessage;
 	
-	Network.socket.onclose = Network.n_ws_onClose;
+	Network.socket.onclose = Network.ws_onClose;
 	
-	Network.socket.onerror = Network.n_ws_onError;
+	Network.socket.onerror = Network.ws_onError;
 };
 
 Network.ws_onOpen = function()
@@ -685,7 +684,7 @@ Network.request = function(pk)
 
 function Dashboard()
 {
-	this.tiles = {}; //Map of tiles on the dashboard indexed with data unit identifier (category:ident)
+	this.tiles = {}; //Map of tiles on the dashboard indexed with data unit identifier (category-ident)
 	
 	this.root = $("#tab-dashboard");
 	
@@ -717,7 +716,7 @@ function Dashboard()
 	this.addTile = 
 		function(tile)
 		{
-			var dataUnitIdent = tile.dataUnitCategory + ":" + tile.dataUnitID;
+			var dataUnitIdent = tile.dataUnitCategory + "-" + tile.dataUnitID;
 		
 			if(dataUnitIdent in this.tiles)
 			{
@@ -743,9 +742,10 @@ function TileMachine(full, machine)
 	//Create the basic tile stuff every tile gets
 	this.dataUnitCategory = "machine";
 	this.dataUnitID = machine.id;
+	this.dataUnitIdent = this.dataUnitCategory + "-" + this.dataUnitID;
 	
 	this.base = $("<div>");
-	this.base.attr("id","tile" + id);
+	this.base.attr("id","tile_" + this.dataUnitIdent);
 	this.base.addClass("tile");
 	this.base.addClass(full ? "tile-full" : "tile-half");
 	this.base.css("height", dashboard.tileWidth); //TODO: Maybe do this without global access
@@ -757,16 +757,17 @@ function TileMachine(full, machine)
 	
 	//create gauge for production speed
 	this.speedGaugeCanvas = $("<canvas>");
-	this.base.append(this.speedGaugeCanvas);
+	this.speedGaugeCanvas.css("width", dashboard.tileWidth);
+	this.speedGaugeCanvas.css("height", dashboard.tileWidth * 0.88);
 	
-	this.speedGauge = new Gauge(this.speedGaugeCanvas).setOptions(
+	this.speedGauge = this.speedGaugeCanvas.gauge(
 		{
 			lines: 12, // The number of lines to draw
 			angle: 0.15, // The length of each line
 			lineWidth: 0.44, // The line thickness
 			pointer: 
 			{
-				length: 1, // The radius of the inner circle
+				length: 0.85, // The radius of the inner circle
 				strokeWidth: 0.02, // The rotation offset
 				color: '#000000' // Fill color
 			},
@@ -775,14 +776,9 @@ function TileMachine(full, machine)
 			colorStop: '#DA0404',    // just experiment with them
 			strokeColor: '#DA0404',   // to see which ones work best for you
 			generateGradient: false
-		});
+		}).data().gauge;
 	
-	
-	//When finished creating tile, update its information (when there is some)
-	if(machine)
-	{
-		this.onUpdate(machine);
-	}
+	this.base.append(this.speedGaugeCanvas);
 	
 	this.onUpdate = 
 		function(machine)
@@ -792,7 +788,13 @@ function TileMachine(full, machine)
 			this.speedGauge.maxValue = 1000; //TODO: Get max speed from somewhere
 			this.speedGauge.set(machine.speed);
 		};
-	
+		
+		
+	//When finished creating tile, update its information (when there is some)
+	if(machine)
+	{
+		this.onUpdate(machine);
+	}
 }
 
 
