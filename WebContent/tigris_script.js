@@ -73,13 +73,15 @@ var sentPacketMap = {};
 
 var currentTab = null; //The data screen tab currently displayed TODO: Make this a bit fancier
 
+var dashboard = null;
+
 $(document).ready(
 function()
 {
 	
 	ui_init();
 	
-	n_init();
+	Network.init();
 });
 
 
@@ -163,7 +165,7 @@ function ui_showDataScreen()
 				$("#screen-data").fadeIn();
 			});
 	
-	$("#data-frame > .data-frame-tab").hide(); //Initially hide all data tabs...
+	$(".data-frame-tab").hide(); //Initially hide all dashboard tabs...
 	ui_data_showTab("dashboard"); //and show dashboard
 }
 
@@ -183,6 +185,7 @@ function ui_showStatus(msg, error)
 
 function ui_slideOutSidebar()
 {	
+	//FIXME: Sidebar not dissappearing if user moves cursor out of handle while sliding out
 	$("#sidebar-handle").fadeOut(100,
 			function()
 			{
@@ -254,36 +257,49 @@ function ui_sidebarItemClicked(eventTarget)
 
 function ui_setUpDashboard()
 {
-
+	
+	
+	//TODO: Put this to data screen init
+	$(".data-frame-tab").hide(); //Hide all tabs
+	ui_data_showTab("dashboard"); //Initially show dashboard
+		
+	dashboard = new Dashboard();
+	
+	var full1 = dashboard.createTile(1, true);
+	
+	var half1 = dashboard.createTile(2, false);
+	
+	//TODO: Do this in the dashboard constructor
 	$(".dashboard-column").sortable(
 			{
 				connectWith: ".dashboard-column",
-				placeholder: "dashboard-tile-placeholder"
+				placeholder: "tile-placeholder",
+				
+				update: ui_dsh_resort,
+				start: ui_dsh_dragStart
 			});
-	
-	$(".data-frame-sub").hide(); //Hide all tabs
-	ui_data_showTab("dashboard"); //Initially show dashboard
-	
-	//Let's create some example tiles	
-	var tile0 = new Tile(0);
-	tile0.setTitle("Have some good chip music");
-	tile0.content.html("<audio controls> <source src='http://ftp.df.lth.se/pub/media/soasc/soasc_mp3/MUSICIANS/T/Trident/A_Short_One_T01.sid_CSG8580R5.mp3' type='audio/mpeg'></audio>" +
-			"<br>Adam Dunkels - A Short One");
-	$("#dashboard-col1").append(tile0.base);
-	
-	var tile1 = new Tile(1);
-	tile1.setTitle("These tiles are sortable");
-	tile1.content.html("The dashboard is split into four columns (WordPress-like).<br>" +
-			"You can move the tiles between the columns by dragging it by the header.<br>" +
-			"The columns are stacked top-down (This is the best thing I could do without fucking up the portability).");
-	$("#dashboard-col0").append(tile1.base);
-	
-	var tile2 = new Tile(2);
-	tile2.setTitle("Content coming soon");
-	tile2.content.html("These tiles are going to conatin statistics and stuff and will be creatable<br>" +
-			"by dragging items of the tableview to the dashboard.");
-	$("#dashboard-col0").append(tile2.base);
 }
+
+function ui_dsh_resort(e,ui)
+{
+	
+}
+
+function ui_dsh_dragStart(e,ui)
+{
+	//As jQuery UIs sortable does not support dynamic sized placeholders,
+	//we must change them manually
+	if(ui.item.hasClass("tile"))
+	{
+		//Only change the placeholder for actual tiles beeing dragged
+		
+		$(".tile-placeholder").css("height",dashboard.tileWidth); //Height is always the same
+		$(".tile-placeholder").css("width", ui.item.hasClass("tile-half") ? dashboard.tileWidth : dashboard.tileWidth*2);
+		
+	}
+	
+}
+
 
 //-------------Functional stuff------------
 
@@ -296,7 +312,7 @@ function f_tryLogin()
 	$("#loginform_password").val("");
 	var saltedPasswordHash = passwordHashObject.toString(CryptoJS.enc.Hex) + connectionData.salt; //TODO: replace hex encoder with self written one. plain ridicolous to use a library for that
 	var finalPasswordHash = CryptoJS.SHA256(saltedPasswordHash).toString(CryptoJS.enc.Hex);
-	delete passwordHashObject; //Delete unneeded vars containing sensible data. For safety. God, I think someone is watching me!
+	delete passwordHashObject; //Delete unneeded vars containing sensible data. For safety :)
 	delete saltedPasswordHash;
 	
 	var packet = new Packet_Login(username, finalPasswordHash);
@@ -319,7 +335,7 @@ function f_tryLogin()
 			}
 		};
 		
-	n_sendPacket(packet);
+	Network.sendPacket(packet);
 }
 
 function f_tryRelog()
@@ -358,7 +374,7 @@ function f_tryRelog()
 				}
 			};
 			
-		n_sendPacket(packet);
+		Network.sendPacket(packet);
 		
 	}else
 	{
@@ -381,9 +397,10 @@ function f_tryLogout()
 				//Server has acknowledged logout -> Remove old session cookie and do another HANDSHAKE before showing login form again
 				util_setCookie(TIGRIS_SESSION_COOKIE, "", -9999); //This cookie expired years ago! Spit it out!
 				
-				n_handshake();
+				Network.handshake();
 			}
 		};
+		
 	packet.onTimeout =
 		function()
 		{
@@ -394,7 +411,7 @@ function f_tryLogout()
 			ui_showError("The server did not confirm the last logout. You can start another session by reloading Tigris.");
 		};
 	
-	n_sendPacket(packet);
+	Network.sendPacket(packet);
 }
 
 function f_setUpSession(sessionID)
@@ -406,9 +423,38 @@ function f_setUpSession(sessionID)
 	ui_showDataScreen();
 }
 
-//-------------Network stuff------------------
+/**
+ * Updates all tiles on the dashboard.
+ * 
+ * @param category String containing the category of data sent
+ * @param data Array of data objects sent by the server
+ */
+function f_updateTiles(category, data)
+{
+	jQuery.each(data, 
+			function(index, item)
+			{
+				var dataUnitIdent = category + ":" + item.id;
+				
+				if(dataUnitIdent in dashboard.tiles)
+				{
+					//There is a tile linked to the current data unit
+					
+					dashboard.tiles[dataUnitIndent].onUpdate(item);
+				}
+				
+			});
+}
 
-function n_init()
+/**
+ * Namespace for network related functions
+ */
+var Network = {};
+
+Network.socket = null;
+Network.sentPacketMap = {};
+
+Network.init = function()
 {
 	//Set up socket
 	var wsURI;
@@ -434,28 +480,28 @@ function n_init()
 	
 	try
 	{
-		socket = new WebSocket(wsURI);
+		Network.socket = new WebSocket(wsURI);
 	}catch(e)
 	{
 		ui_showError("Could not create socket.");
 		return;
 	}
 	
-	socket.onopen = n_ws_onOpen;
+	Network.socket.onopen = Network.n_ws_onOpen;
 	
-	socket.onmessage = n_ws_onMessage;
+	Network.socket.onmessage = Network.n_ws_onMessage;
 	
-	socket.onclose = n_ws_onClose;
+	Network.socket.onclose = Network.n_ws_onClose;
 	
-	socket.onerror = n_ws_onError;
-}
+	Network.socket.onerror = Network.n_ws_onError;
+};
 
-function n_ws_onOpen()
+Network.ws_onOpen = function()
 {
-	n_handshake(); //Only start handshaking after connection has been established
-}
+	Network.handshake(); //Only start handshaking after connection has been established
+};
 
-function n_ws_onMessage(msg)
+Network.ws_onMessage = function(msg)
 {
 	console.log("I received this: " + msg.data);
 	
@@ -483,10 +529,10 @@ function n_ws_onMessage(msg)
 		return;
 	}
 	
-	if(("uid" + packet.uid) in sentPacketMap) //UID is registered -> Packet is an answer
+	if(("uid" + packet.uid) in Network.sentPacketMap) //UID is registered -> Packet is an answer
 	{
 		
-		var requestingPacket = sentPacketMap["uid" + packet.uid]; //Get the packet that requested this answer
+		var requestingPacket = Network.sentPacketMap["uid" + packet.uid]; //Get the packet that requested this answer
 		
 		//Remove the timeout before it goes off in our hands (if there is any)
 		if(requestingPacket.timeoutID != null)
@@ -494,7 +540,7 @@ function n_ws_onMessage(msg)
 			window.clearTimeout(requestingPacket.timeoutID);
 		}
 		
-		delete sentPacketMap["uid" + packet.uid];
+		delete Network.sentPacketMap["uid" + packet.uid];
 		
 		if($.inArray(packet.typeID , requestingPacket.allowedResponses) == -1)
 		{
@@ -515,23 +561,23 @@ function n_ws_onMessage(msg)
 			
 	}else // -> Packet is a request
 	{
-		n_request(packet);
+		Network.request(packet);
 	}
-}
+};
 
-function n_ws_onClose()
+Network.ws_onClose = function()
 {
 	console.log("The connection was closed");
-}
+};
 
-function n_ws_onError(e)
+Network.ws_onError = function(e)
 {
 	console.error("Network error");
 	
 	ui_showError("A network error occurred. Please contact the system admin you do not know."); //ERR_COMM_NETWORK
-}
+};
 
-function n_handshake()
+Network.handshake = function()
 {
 
 	var packet = new Packet_Handshake();
@@ -542,7 +588,7 @@ function n_handshake()
 		{
 			console.log("Handshake successful");
 			
-			connectionData.salt = pk.data.salt;
+			Network.connectionData.salt = pk.data.salt;
 			
 			//Connection to server is OK -> The user may log in
 			f_tryRelog(); //First look if there is already a session to be restored. TODO: This is confusing. Make it better
@@ -566,10 +612,10 @@ function n_handshake()
 		}
 	};
 	
-	n_sendPacket(packet);
-}
+	Network.sendPacket(packet);
+};
 
-function n_generateUID()
+Network.generateUID = function()
 {
 	var uid = 0;
 	var rounds = 0;
@@ -586,21 +632,21 @@ function n_generateUID()
 	}
 	
 	return uid;
-}
+};
 
-function n_sendPacket(packet, uid)
+Network.sendPacket = function(packet, uid)
 {
 	var packetToSend = {};
 	
 	packetToSend.typeID = packet.typeID;
 	packetToSend.data = packet.data;
-	packetToSend.uid = uid || n_generateUID();
+	packetToSend.uid = uid || Network.generateUID();
 	
 	var jsonPacket = JSON.stringify(packetToSend);
 	
-	if(socket.readyState == 1)
+	if(Network.socket.readyState == 1)
 	{
-		socket.send(jsonPacket);
+		Network.socket.send(jsonPacket);
 		
 		//Set a timeout for each packet that is removed upon response in the n_ws_onMessage methode (only if timeout is > 0)
 		if(packet.timeout > 0)
@@ -608,48 +654,145 @@ function n_sendPacket(packet, uid)
 			packet.timeoutID = window.setTimeout(packet.onTimeout, packet.timeout);
 		}
 		
-		sentPacketMap["uid" + packetToSend.uid] = packet;
+		Network.sentPacketMap["uid" + packetToSend.uid] = packet;
 		
 		console.log("I sent this: " + jsonPacket);
 		
-	}else if(socket.readyState == 2)
+	}else if(Network.socket.readyState == 2)
 	{
 		console.error("Tried to send after the connection was lost");
 		
 		ui_showError("Tried to send packet after the connection was lost. This is most likely the programmers fault.");
-	}else if(socket.readyState == 0)
+	}else if(Network.socket.readyState == 0)
 	{
 		console.error("Tried to send while the socket was still connecting");
 		
 		ui_showError("Tried to send packet while the socket was still connecting. This is most likely the programmers fault.");
 	}
-}
+};
 
-function n_request()
+Network.request = function(pk)
 {
 	
-}
+	if(pk.typeID == PTYPE.DATA)
+	{
+		f_updateTiles(pk.data.category, pk.data.result);
+	}
+	
+};
 
+//------screen constructors----------
+
+function Dashboard()
+{
+	this.tiles = {}; //Map of tiles on the dashboard indexed with data unit identifier (category:ident)
+	
+	this.root = $("#tab-dashboard");
+	
+	//The jQuery width method seems not to work with a hidden object thats css defines only percentages.
+	//As the dashboard has the width of the document with absolute margins, we can calculate the tile sizes using the documents width
+	this.width = $(document).width() - 10;
+	this.height = $(document).height() - 47;
+	
+	this.columnCount = 5; //Work with a fixed column count for now
+	this.columns = new Array();
+	this.columnWidth = this.width / this.columnCount;
+	
+	this.tileWidth = (this.columnWidth - 10) / 2; //Width of a half tile (including the 5px margin on each side)
+	
+	//Create columns
+	for(var i = 0; i < this.columnCount ; i++)
+	{
+		var col = $("<div>");
+		col.attr("id","dash-col-" + i);
+		col.addClass("dashboard-column");
+		col.css("width",this.columnWidth);
+		
+		this.root.append(col);
+		
+		this.columns[i] = col;
+	}
+	
+	
+	this.addTile = 
+		function(tile)
+		{
+			var dataUnitIdent = tile.dataUnitCategory + ":" + tile.dataUnitID;
+		
+			if(dataUnitIdent in this.tiles)
+			{
+				//Tile linking to the same data source is already on the dashboard -> refuse adding
+				return;
+			}
+			
+			this.tiles[dataUnitIdent] = tile;
+		
+			this.columns[0].append(tile.base); //For testing: append tile 0 to dashboard TODO: Add parameter for desired column
+		};
+	
+	
+}
 
 //-------tile constructors------------
 
-function Tile(id)
+/**
+ * @constructor
+ */
+function TileMachine(full, machine)
 {
+	//Create the basic tile stuff every tile gets
+	this.dataUnitCategory = "machine";
+	this.dataUnitID = machine.id;
 	
-	this.base = $("<div>").addClass("dashboard-tile");
-	this.base.attr("id","tile"+id);
+	this.base = $("<div>");
+	this.base.attr("id","tile" + id);
+	this.base.addClass("tile");
+	this.base.addClass(full ? "tile-full" : "tile-half");
+	this.base.css("height", dashboard.tileWidth); //TODO: Maybe do this without global access
+	this.base.css("width", full ? dashboard.tileWidth*2 : dashboard.tileWidth);
 	
-	this.header = $("<div>").addClass("dashboard-tile-header");
-	this.base.append(this.header);
 	
-	this.content = $("<div>").addClass("dashboard-tile-content");
-	this.base.append(this.content);
+	this.title = $("<h2>");
+	this.base.append(this.title);
 	
-	this.setTitle = 
-		function(title)
+	//create gauge for production speed
+	this.speedGaugeCanvas = $("<canvas>");
+	this.base.append(this.speedGaugeCanvas);
+	
+	this.speedGauge = new Gauge(this.speedGaugeCanvas).setOptions(
 		{
-			this.header.html(title);
+			lines: 12, // The number of lines to draw
+			angle: 0.15, // The length of each line
+			lineWidth: 0.44, // The line thickness
+			pointer: 
+			{
+				length: 1, // The radius of the inner circle
+				strokeWidth: 0.02, // The rotation offset
+				color: '#000000' // Fill color
+			},
+			limitMax: 'false',   // If true, the pointer will not go past the end of the gauge
+			colorStart: '#DA0404',   // Colors
+			colorStop: '#DA0404',    // just experiment with them
+			strokeColor: '#DA0404',   // to see which ones work best for you
+			generateGradient: false
+		});
+	
+	
+	//When finished creating tile, update its information (when there is some)
+	if(machine)
+	{
+		this.onUpdate(machine);
+	}
+	
+	this.onUpdate = 
+		function(machine)
+		{
+			this.title.html("Machine '" + machine.name + "'");
+			
+			this.speedGauge.maxValue = 1000; //TODO: Get max speed from somewhere
+			this.speedGauge.set(machine.speed);
 		};
+	
 }
 
 
