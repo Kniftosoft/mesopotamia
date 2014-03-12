@@ -6,11 +6,9 @@
  *-------------------------- 
  */
 
-//TODO: Implement better error handling all over the script
 //TODO: Sort some code fragments so the source can be easier understood
 //TODO: Comment on stuff
 //TODO: Localization maybe?
-//TODO: Type safety in packets
 
 //Configure this to your Euphrates installation
 //If your endpoint is absolute, make sure you include the full URI (including protocol etc.)
@@ -82,7 +80,7 @@ function()
 function ui_init()
 {
 
-	ui_showStatus("Connecting to the server..."); //Initially show messeage on connection status
+	ui_showStatus("Connecting to the server..."); //Initially show message on connection status
 	
 	//Set up events
 	$("#loginform").submit(
@@ -259,49 +257,19 @@ function ui_setUpDashboard()
 	
 	var tile1 = new TileMachine(false, {id: 12345, name: "asdfg", speed:500});
 	dashboard.addTile(tile1);
-	
-	//TODO: Do this in the dashboard constructor
-	$(".dashboard-column").sortable(
-			{
-				connectWith: ".dashboard-column",
-				placeholder: "tile-placeholder",
-				
-				update: ui_dsh_resort,
-				start: ui_dsh_dragStart
-			});
 }
-
-function ui_dsh_resort(e,ui)
-{
-	
-}
-
-function ui_dsh_dragStart(e,ui)
-{
-	//As jQuery UIs sortable does not support dynamic sized placeholders,
-	//we must change them manually
-	if(ui.item.hasClass("tile"))
-	{
-		//Only change the placeholder for actual tiles beeing dragged
-		
-		$(".tile-placeholder").css("height",dashboard.tileWidth); //Height is always the same
-		$(".tile-placeholder").css("width", ui.item.hasClass("tile-half") ? dashboard.tileWidth : dashboard.tileWidth*2);
-		
-	}
-	
-}
-
 
 //-------------Functional stuff------------
 
 function f_tryLogin()
 {
 	var username = $("#loginform_username").val();
+	var remember = $("#loginform_remember").is(":checked");
 	
 	//Encrypt password in accordance with specification of MCP 1.2.1
 	var passwordHashObject = CryptoJS.SHA256($("#loginform_password").val());
 	$("#loginform_password").val("");
-	var saltedPasswordHash = passwordHashObject.toString(CryptoJS.enc.Hex) + connectionData.salt; //TODO: replace hex encoder with self written one. plain ridicolous to use a library for that
+	var saltedPasswordHash = passwordHashObject.toString(CryptoJS.enc.Hex) + Network.connectionData.salt; //TODO: replace hex encoder with self written one. plain ridicolous to use a library for that
 	var finalPasswordHash = CryptoJS.SHA256(saltedPasswordHash).toString(CryptoJS.enc.Hex);
 	delete passwordHashObject; //Delete unneeded vars containing sensible data. For safety :)
 	delete saltedPasswordHash;
@@ -315,8 +283,10 @@ function f_tryLogin()
 				//Login successful -> store session data and open data view
 				var sessionID = pk.data.sessionID;
 				
-				connectionData.username = username;
-				$("#username").html(connectionData.username); //TODO: Put this somewhere it belongs
+				Network.connectionData.username = username;
+				$("#username").html(Network.connectionData.username); //TODO: Put this somewhere it belongs
+				
+				Network.remember = remember;
 				
 				f_setUpSession(sessionID);
 				
@@ -347,6 +317,7 @@ function f_tryRelog()
 					Network.connectionData.sessionID = pk.data.sessionID;
 					
 					//Store the new session ID to cookie TODO: maybe integrate this into f_setUpSession()
+					//Since this cookie was created in a session the user wanted to keep, we can assume the user wants still to keep it
 					util_setCookie(TIGRIS_SESSION_COOKIE, pk.data.sessionID);
 					
 					//As there was no login, the server has to tell us who we are
@@ -385,7 +356,7 @@ function f_tryLogout()
 		{
 			if(pk.typeID == PTYPE.ACK)
 			{
-				//Server has acknowledged logout -> Remove old session cookie and do another HANDSHAKE before showing login form again
+				//Server has acknowledged logout -> Remove any old session cookie and do another HANDSHAKE before showing login form again
 				util_setCookie(TIGRIS_SESSION_COOKIE, "", -9999); //This cookie expired years ago! Spit it out!
 				
 				Network.handshake();
@@ -407,9 +378,12 @@ function f_tryLogout()
 
 function f_setUpSession(sessionID)
 {
-	connectionData.sessionID = sessionID;
+	Network.connectionData.sessionID = sessionID;
 	
-	util_setCookie(TIGRIS_SESSION_COOKIE,sessionID);
+	if(Network.remember)
+	{
+		util_setCookie(TIGRIS_SESSION_COOKIE,sessionID);
+	}
 	
 	ui_showDataScreen();
 }
@@ -444,6 +418,8 @@ var Network = {};
 
 Network.socket = null;
 Network.sentPacketMap = {};
+
+Network.remember = false;
 
 Network.connectionData = 
 {
@@ -543,18 +519,40 @@ Network.ws_onMessage = function(msg)
 		
 		if($.inArray(packet.typeID , requestingPacket.allowedResponses) == -1)
 		{
-			//This packet type is not allowed as a response to the requesting packet
-			// -> send INVALID_ANSWER ERROR packet
-			
-			//TODO: Send packet
-			console.error("Received invalid response packet: " + packet.typeID + " is not allowed as a response to " + requestingPacket.typeID);
-			
-			ui_showError("Received invalid response packet: " + packet.typeID + " is not allowed as a response to " + requestingPacket.typeID);
+			if(packet.typeID == PTYPE.ERROR)
+			{
+				//ERROR packets can be sent in response to any packet, but are
+				//directed to the general error handler if the requesting packet does not care for it
+				
+				Network.generalError(packet);
+				
+			}else
+			{
+				//The server did something wrong. We should tell him
+				var errorMsg = packet.typeID + " is not allowed as a response to " + requestingPacket.typeID;
+				var errorPacket = new Packet_Error(ERRORCODE.INVALID_RESPONSE, errorMsg);
+				
+				Network.sendPacket(errorPacket);
+				
+				//We should tell the user, too
+				console.error("Received invalid response packet: " + errorMsg);
+				ui_showError("Received invalid response packet: " + errorMsg);
+			}
 			
 		}else
 		{
 		
-			requestingPacket.onResponse(packet);
+			if(packet.typeID == PTYPE.ERROR)
+			{
+				//ERROR sent as request is considered as a general error
+				
+				Network.generalError();
+				
+			}else
+			{
+				//Direct response to the requesting packet handler
+				requestingPacket.onResponse(packet);
+			}
 			
 		}
 			
@@ -594,8 +592,6 @@ Network.handshake = function()
 			
 		}else if(pk.typeID == PTYPE.ERROR)
 		{
-			//TODO: This one can be omitted after error packets are bypassed to general error processing
-			//TODO: Maybe not. Review this later
 			
 			if(pk.data.errorCode == ERRORCODE.WRONG_VERSION)
 			{
@@ -653,8 +649,12 @@ Network.sendPacket = function(packet, uid)
 			packet.timeoutID = window.setTimeout(packet.onTimeout, packet.timeout);
 		}
 		
-		Network.sentPacketMap["uid" + packetToSend.uid] = packet;
-		
+		//Store packet for response processing (only if packet wants any responses)
+		if(packet.length > 0)
+		{
+			Network.sentPacketMap["uid" + packetToSend.uid] = packet;
+		}
+			
 		console.log("I sent this: " + jsonPacket);
 		
 	}else if(Network.socket.readyState == 2)
@@ -667,6 +667,32 @@ Network.sendPacket = function(packet, uid)
 		console.error("Tried to send while the socket was still connecting");
 		
 		ui_showError("Tried to send packet while the socket was still connecting. This is most likely the programmers fault.");
+	}
+};
+
+/**
+ * Called when an ERROR packet is sent as a request
+ * or as a response to a packet that does not listen for ERROR packets.
+ * 
+ * @param id The error code
+ * @param msg A human readable message which might be supplied by the server
+ */
+Network.generalError = function(id, msg)
+{
+	//TODO: Add more detailed error descriptions
+	switch(id)
+	{
+	case ERRORCODE.INTERNAL_EXCEPTION:
+		ui_showError("The server reported an internal exception.");
+		break;
+		
+	case ERRORCODE.SESSION_EXPIRED:
+		ui_showError("Your session has expired. Reload the page for relog.");
+		break;
+		
+	default:
+		ui_showError("The server reported an error: " + msg);
+	
 	}
 };
 
@@ -688,12 +714,12 @@ function Dashboard()
 	
 	this.root = $("#tab-dashboard");
 	
-	//The jQuery width method seems not to work with a hidden object thats css defines only percentages.
+	//The jQuery width method seems not to work with a hidden object that defines only percentage dimensions.
 	//As the dashboard has the width of the document with absolute margins, we can calculate the tile sizes using the documents width
 	this.width = $(document).width() - 10;
 	this.height = $(document).height() - 47;
 	
-	this.columnCount = 5; //Work with a fixed column count for now
+	this.columnCount = 4; //Work with a fixed column count for now TODO: Select this value dynamically
 	this.columns = new Array();
 	this.columnWidth = this.width / this.columnCount;
 	
@@ -729,7 +755,27 @@ function Dashboard()
 			this.columns[0].append(tile.base); //For testing: append tile 0 to dashboard TODO: Add parameter for desired column
 		};
 	
-	
+	//Everything is created -> now we can add jQuery UI stuff
+	$(".dashboard-column").sortable(
+			{
+				connectWith: ".dashboard-column",
+				placeholder: "tile-placeholder",
+				
+				start: function(event, ui)
+				{
+					//As jQuery UIs sortable does not support dynamic sized placeholders,
+					//we must change them manually
+					if(ui.item.hasClass("tile"))
+					{
+						//Only change the placeholder for actual tiles beeing dragged
+						
+						$(".tile-placeholder").css("height",dashboard.tileWidth); //Height is always the same
+						$(".tile-placeholder").css("width", ui.item.hasClass("tile-half") ? dashboard.tileWidth : dashboard.tileWidth*2);
+						
+					}
+					
+				}
+			});
 }
 
 //-------tile constructors------------

@@ -172,6 +172,13 @@ body
 	cursor: text;
 }
 
+.checkbox
+{
+	background-color: #fff;
+	
+	border: 1px solid #c4c4c4;
+}
+
 .login-frame
 {
 	background-color: #efeff1;
@@ -229,13 +236,22 @@ body
 	left: 2.5%;
 }
 
-.login-content .button
+.login-content #loginbutton
 {
 	float: right;
 	
 	position: relative;
 	top: 15px;
 	right: 2.5%;
+}
+
+.login-content #rememberBox
+{
+	float: left;
+	
+	position: relative;
+	top: 15px;
+	left: 2.5%;
 }
 
 .login-content label

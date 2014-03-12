@@ -1,5 +1,5 @@
 +==========================================+
-| Mesopotamia Communication Protocol 1.3.1 |
+| Mesopotamia Communication Protocol 1.3.2 |
 |        (C) Niklas Weissner 2014          |
 +==========================================+
 
@@ -37,6 +37,8 @@ Contents
 
 06.03.2014	1.3.1	Added username field to REAUTH packet
 
+12.03.2014	1.3.2	Changed category in data access to int, defined new data unit structure
+
 
 
 2 - Foreword
@@ -47,12 +49,12 @@ Contents
 	the Glassfish-based server (codename "Euphrates"). 
 	This protocol is build around Websocket technology and uses the JavaScript Object Notation (JSON) 
 	for packet wrapping. 
-	The JSON specification is provided under the licence viewable at [http://www.json.org/license.html].
+	The JSON specification is provided under the license viewable at [http://www.json.org/license.html].
 	
 	
 	
 	
-3 - Basic communiaction
+3 - Basic communication
 =======================
 
 	A connection is opened with a client sending a HANDSHAKE. The server may abandon a connection that
@@ -264,11 +266,11 @@ Contents
 	
 	QUERY
 	-----
-	!! NOTE: This packet is experimental. If it proves beeing usable, remove this note. !!
+	!! NOTE: This packet is experimental. If it proves being usable, remove this note. !!
 	
 	Sent by the client to query data. The server answers the query by sending a DATA-packet.
-	The field ident is the identifier of the disired object. 
-	If all objects of a category are disired, the identifier may be '*'. 
+	The field ident is the identifier of the desired object. 
+	If all objects of a category are desired, the identifier may be '*'. 
 	Other wildcards (like 'a*' for all objects beginning with 'a') are currently not allowed.
 	This may be changed depending on what is possible server-side.
 	For further information, see chapter "7 - Data access".
@@ -278,7 +280,7 @@ Contents
 	-Direction:		C->S
 	
 	-Data fields:
-		string:		category (For more information on these fields, see chapter "7 - Data access")
+		int:		category (For more information on these fields, see chapter "7 - Data access")
 		string:		ident
 		
 	-Possible responses:
@@ -289,7 +291,7 @@ Contents
 	
 	DATA
 	----
-	!! NOTE: This packet is experimental. If it proves beeing usable, remove this note. !!
+	!! NOTE: This packet is experimental. If it proves being usable, remove this note. !!
 	
 	Sent by the server spontaneously or as a response to a QUERY-packet. This packet contains
 	data of one data unit which is displayed by the client upon receipt. One DATA packet can only carry
@@ -300,7 +302,7 @@ Contents
 	-Direction:		S->C
 	
 	-Data fields:
-		string:		category (The category of the transferred objects, see chapter "7 - Data access")
+		int:		category (The category ID of the transferred objects, see chapter "7 - Data access")
 		struct[]:	result (Array of resulting data objects. May be empty. The structure of the returned objects depends on their
 							category and is futher documented in chapter "7 - Data access")
 		
@@ -312,7 +314,7 @@ Contents
 	
 	SUBSCRIBE
 	---------
-	!! NOTE: This packet is experimental. If it proves beeing usable, remove this note. !!
+	!! NOTE: This packet is experimental. If it proves being usable, remove this note. !!
 	
 	Sent by the client to instruct the server to inform it on any changes of the specified data unit.
 	Changes are reported using a DATA packet (sent by the server without request). If the subscription
@@ -323,7 +325,7 @@ Contents
 	-Direction:		C->S
 	
 	-Data fields:
-		string:		category (For more information on these fields, see chapter "7 - Data access")
+		int:		category (For more information on these fields, see chapter "7 - Data access")
 		string:		ident
 		
 	-Possible responses:
@@ -420,10 +422,10 @@ Contents
 	from the database and encrypt the password in exactly the same way as the client did using the same random salt string.
 	When only the password hashes are stored in the database like suggested in the paragraph above, the server may skip the
 	first hashing, as the hashed password (without salt) is already obtained from the database. 
-	If the resulting string matches with the one recieved by the client in the LOGIN packet, the password is correct.
+	If the resulting string matches with the one received by the client in the LOGIN packet, the password is correct.
 	
 	It is important that the salt string is different for any connection, so when a hacker intercepts a login packet and reads out
-	the password hash, he is not able to use this hash on an other connetion.
+	the password hash, he is not able to use this hash on an other connection.
 	
 	It is necessary that both the client and the server use the same coding for string representations of hash values.
 	As of MCP 1.2.1 the default coding is hexadecimal with lowercase letters (0123456789abcdef). Leading zeroes must NOT be omitted.
@@ -464,29 +466,51 @@ Contents
 	
 	As stated above, data unit identifiers may use wildcards, so the (example) query
 	
-		"category":"machines",
+		"category":1,
 		"ident":"*"
 		
 	will result in all machines the server is able(and allows) to deliver.
 	Note that supporting more complex wildcards like 'a*' is currently not part of this protocol. It may, however, be added in a later version.
 	
 	As different data categories contain different information, the structure of returned entities when querying depends on the selected category.
+	
+	The only field every data unit MUST have is the field "id". It contains an integer which allows to identify different machines/jobs etc. 
+	
 	Below you find a list of categories with their specific information.
 	
-	!! NOTE: At the moment, this table is only an example. It will be continued in the next update. For sure. !!
 	
-	Category	|	Properties
-	------------+-----------------
-	machine		|	string: id
-				|	int: status
-				|	int jobId
-	------------+-----------------
-	job			|	string: id
-				|	int: targetNumber
-				
-				
+	MACHINE
+	-------
 	
+	-Category ID:	1
 	
+	-Data fields:
+		string:		name
+		int:		job (The id of the machines job)
+		double:		speed (The machines production speed given in units per hour)
+		int:		status (For a list of possible values, see "Notes")
+	
+	-Notes:
+		Possible values for the status field:
+			
+		Status code	|	Machine state
+		------------+----------------
+			1		|	Running
+			2		|	Error
+			3		|	Repair
+			4		|	Modification for new type of screws
+			5		|	Cleaning
+			
+			
+	JOB
+	---
+	
+	-Category ID:	2
+	
+	-Data fields:
+		int:		target (The target amount of units that are to be produced)
+		long:		startTime (The start time of the job given in milliseconds after 1970/1/1)
+		int:		productType (The type ID of the product the job is about) 
 	
 	
 	
