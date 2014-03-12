@@ -13,7 +13,7 @@ import com.google.gson.JsonObject;
 public class DATA extends Packet {
 
 	private JsonArray queryResult;
-	private String category;
+	private int category;
 
 	@Override
 	public void createFromJSON(JsonObject o) {
@@ -39,11 +39,11 @@ public class DATA extends Packet {
 		
 	}
 
-	public String getCategory() {
+	public int getCategory() {
 		return category;
 	}
 
-	public void setCategory(String category) {
+	public void setCategory(int category) {
 		this.category = category;
 	}
 

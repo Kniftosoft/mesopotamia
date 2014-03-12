@@ -62,24 +62,39 @@
 	
 		<div id="screen-data" class="screen" style="display:none;">
 		
-			<div id="sidebar">
+			<div id="sidebar" style="display:none;">
 			
-				<div id="sidebar_dashboard_link" class="sidebar-item sidebar-item-active" data-target="dashboard">Dashboard</div>
+				<a id="sidebar_dashboard_link" class="sidebar-item sidebar-item-active" data-target="dashboard">Dashboard</a>
 				
-				<div class="sidebar-item" data-target="machines">Machines</div>
-				<div class="sidebar-item" data-target="jobs">Jobs</div>
-				<div class="sidebar-item" data-target="warnings">Warnings</div>
-				<div class="sidebar-item" data-target="info">Info</div>
+				<a class="sidebar-item" data-target="machines">Machines</a>
+				<a class="sidebar-item" data-target="jobs">Jobs</a>
+				<a class="sidebar-item" data-target="warnings">Warnings</a>
+				<a class="sidebar-item" data-target="info">Info</a>
 				
+			</div>
+			
+			<div id="sidebar-handle">
+				<!-- Long vertical bar  -->
 			</div>
 			
 			<div id="data-frame">
 				
 				<div id="data-header">
-					Tigris 0.2.1
+					Tigris 0.2.2
+					
+					<div id="user-controls">
+
+						<span id="username"></span>
+					
+						<a id="logout"><img src="css/images/exit.png"></a>
+					
+					</div>
+					
 				</div>
 				
 				<div id="tab-dashboard" class="data-frame-tab">
+					
+					<div id="left-dropper"></div>
 					
 					<div id="dashboard-col0" class="dashboard-column"></div>
 					<div id="dashboard-col1" class="dashboard-column"></div>

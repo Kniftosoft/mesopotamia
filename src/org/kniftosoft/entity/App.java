@@ -1,11 +1,7 @@
 package org.kniftosoft.entity;
 
 import java.io.Serializable;
-
 import javax.persistence.*;
-
-import org.kniftosoft.util.Constants;
-
 import java.util.List;
 
 
@@ -25,26 +21,12 @@ public class App implements Serializable {
 	private String beschreibung;
 
 	//bi-directional many-to-one association to Subscribe
-	@OneToMany(mappedBy="appBean")
+	@OneToMany(mappedBy="appBean", cascade={CascadeType.PERSIST})
 	private List<Subscribe> subscribes;
 
 	public App() {
 	}
-	public App(int idapp) {
 
-    
-	}
-	public static App getbyID(int idapp)
-	{
-		EntityManagerFactory factory;
-		factory = Persistence.createEntityManagerFactory(Constants.PERSISTENCE_UNIT_NAME);
-	    EntityManager em = factory.createEntityManager();
-	    em.getTransaction().begin();
-	    App temp = em.find(App.class, idapp);
-	    em.getTransaction().commit();
-	    em.close();
-	    return temp;
-	}
 	public int getIdapp() {
 		return this.idapp;
 	}

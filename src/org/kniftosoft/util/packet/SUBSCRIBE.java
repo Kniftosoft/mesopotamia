@@ -27,12 +27,12 @@ public class SUBSCRIBE extends Packet {
 	 */
 	@Override
 	public void executerequest() {
-		Subscribe sub = new Subscribe();
-		sub.setAppBean(App.getbyID(category));
 		EntityManagerFactory factory;
 		factory = Persistence.createEntityManagerFactory(Constants.PERSISTENCE_UNIT_NAME);
 	    EntityManager em = factory.createEntityManager();
 	    em.getTransaction().begin();
+	    Subscribe sub = new Subscribe();
+		sub.setAppBean(em.find(App.class, category));
 	    em.persist(sub);
 	    em.getTransaction().commit();
 	    em.close();

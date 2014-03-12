@@ -10,7 +10,7 @@ import com.google.gson.JsonObject;
  *
  */
 public class QUERY extends Packet {
-	private String category;
+	private int category;
 	private String ident;
 
 	/* (non-Javadoc)
@@ -27,7 +27,7 @@ public class QUERY extends Packet {
 	 */
 	@Override
 	public void createFromJSON(JsonObject o) {
-		category = o.get("category").getAsString();
+		category = o.get("category").getAsInt();
 		ident = o.get("ident").getAsString();
 
 	}
@@ -51,11 +51,11 @@ public class QUERY extends Packet {
 		return data;
 	}
 
-	public String getCategory() {
+	public int getCategory() {
 		return category;
 	}
 
-	public void setCategory(String category) {
+	public void setCategory(int category) {
 		this.category = category;
 	}
 

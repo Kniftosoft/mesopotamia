@@ -9,6 +9,7 @@ import java.util.Map;
 import javax.websocket.Session;
 
 import org.kniftosoft.entity.EuphratisSession;
+import org.kniftosoft.thread.updater.SubscribeUpDater;
 
 /**
  * Thread Stores Connected peers and updates them 
@@ -76,6 +77,7 @@ public class ClientUpDater extends Thread {
 		try {
 			while(true) {
 	        	System.out.println("update" +Thread.currentThread().getName()+peers.toString());
+	        	SubscribeUpDater.updateSubscriptions();
 				Thread.currentThread();
 				Thread.sleep(sleepTime);
 

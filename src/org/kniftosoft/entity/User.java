@@ -40,8 +40,12 @@ public class User implements Serializable {
 	private String vorname;
 
 	//bi-directional many-to-one association to Subscribe
-	@OneToMany(mappedBy="userBean")
+	@OneToMany(mappedBy="userBean", cascade={CascadeType.PERSIST})
 	private List<Subscribe> subscribes;
+
+	//bi-directional many-to-one association to Useraccess
+	@OneToMany(mappedBy="userBean")
+	private List<Useraccess> useraccesses;
 
 	public User() {
 	}
@@ -146,6 +150,28 @@ public class User implements Serializable {
 		subscribe.setUserBean(null);
 
 		return subscribe;
+	}
+
+	public List<Useraccess> getUseraccesses() {
+		return this.useraccesses;
+	}
+
+	public void setUseraccesses(List<Useraccess> useraccesses) {
+		this.useraccesses = useraccesses;
+	}
+
+	public Useraccess addUseraccess(Useraccess useraccess) {
+		getUseraccesses().add(useraccess);
+		useraccess.setUserBean(this);
+
+		return useraccess;
+	}
+
+	public Useraccess removeUseraccess(Useraccess useraccess) {
+		getUseraccesses().remove(useraccess);
+		useraccess.setUserBean(null);
+
+		return useraccess;
 	}
 
 }

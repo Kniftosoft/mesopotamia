@@ -1,7 +1,6 @@
 package org.kniftosoft.util.packet;
 
 import org.kniftosoft.Login.Loginmanager;
-import org.kniftosoft.entity.EuphratisSession;
 
 import com.google.gson.JsonObject;
 
@@ -11,11 +10,9 @@ public class LOGOUT extends Packet {
 	private String reasonMessage;
 	
 	
-	public LOGOUT(int uid, EuphratisSession peer,int reasoncode,String reasonmessage) {
-		this.sessionID = peer.getSession().getId();
-		this.reasonCode = reasoncode;
-		this.reasonMessage = reasonmessage;
+	public LOGOUT() {
 	}
+	
 	@Override
 	public void createFromJSON(JsonObject o) {
 		sessionID = o.get("sessionID").getAsString();

@@ -1,10 +1,7 @@
 package org.kniftosoft.entity;
 
 import java.io.Serializable;
-
 import javax.persistence.*;
-
-import org.kniftosoft.util.Constants;
 
 
 /**
@@ -21,28 +18,18 @@ public class Subscribe implements Serializable {
 	private int idSubscribe;
 
 	//bi-directional many-to-one association to App
-	@ManyToOne
+	@ManyToOne(cascade={CascadeType.PERSIST})
 	@JoinColumn(name="app")
 	private App appBean;
 
 	//bi-directional many-to-one association to User
-	@ManyToOne
+	@ManyToOne(cascade={CascadeType.PERSIST})
 	@JoinColumn(name="user")
 	private User userBean;
 
 	public Subscribe() {
 	}
 
-	public static Subscribe getbyID(int idSubscribe) {
-		EntityManagerFactory factory;
-		factory = Persistence.createEntityManagerFactory(Constants.PERSISTENCE_UNIT_NAME);
-	    EntityManager em = factory.createEntityManager();
-	    em.getTransaction().begin();
-	    Subscribe temp = em.find(Subscribe.class, idSubscribe);
-	    em.getTransaction().commit();
-	    em.close();
-	    return temp;
-	}
 	public int getIdSubscribe() {
 		return this.idSubscribe;
 	}

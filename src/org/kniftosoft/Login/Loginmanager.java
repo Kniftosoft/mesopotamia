@@ -10,6 +10,7 @@ import org.kniftosoft.entity.User;
 import org.kniftosoft.thread.ClientUpDater;
 import org.kniftosoft.util.Constants;
 import org.kniftosoft.util.SHA256Generator;
+import org.kniftosoft.util.packet.ACK;
 import org.kniftosoft.util.packet.AUTH;
 import org.kniftosoft.util.packet.LOGIN;
 import org.kniftosoft.util.packet.LOGOUT;
@@ -75,6 +76,9 @@ public class Loginmanager {
 			rp.getPeer().setUser(null);
 			rp.getPeer().setSalt(null);
 			ClientUpDater.updatepeer(rp.getPeer());	
+			ACK ap = new ACK();
+			ap.setPeer(rp.getPeer());
+			ap.send();
 		}
 	}
 
