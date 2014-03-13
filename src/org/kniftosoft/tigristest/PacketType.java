@@ -10,6 +10,7 @@ public enum PacketType
 	RELOG(12, PacketRelog.class),
 	REAUTH(13, PacketReauth.class),
 	LOGOUT(14, PacketLogout.class),
+	QUERY(20, PacketQuery.class),
 	DATA(21, PacketData.class),
 	ACK(200, PacketAck.class),
 	NACK(201, PacketNack.class),

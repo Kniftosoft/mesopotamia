@@ -9,6 +9,7 @@
 		<title>Shining new Tigris GUI</title>
 		
 		<link rel="stylesheet" href="./css/tigris_styles.css">
+		<link rel="stylesheet" href="./css/jquery.dataTables.css">
 		
 		<script src="lib/jquery-1.11.0.js"></script>
 		<script src="lib/jquery-ui.js"></script>
@@ -16,6 +17,7 @@
 		<script src="lib/CryptoJS/format-hex.js"></script>
 		<script src="lib/CryptoJS/sha256.js"></script>
 		<script src="lib/gauge.js"></script><!-- Lovely canvas gauge lib from http://bernii.github.io/gauge.js/ -->
+		<script src="lib/jquery.dataTables.min.js"></script>
 		
 		<script src="tigris_script.js"></script>
 	
@@ -33,7 +35,7 @@
 				</div>
 				
 				<div class="login-content">
-					<p id="statusbox">If you can read this, your browser does not support JavaScript. In that case, Tigris will not work.</p>
+					<span id="statusbox">If you can read this, your browser does not support JavaScript. In that case, Tigris will not work.</span>
 				</div>
 			</div>
 		
@@ -81,7 +83,7 @@
 			</div>
 			
 			<div id="data-header">
-				Tigris 0.3.0
+				Tigris 0.3.1
 				
 				<div id="user-controls">
 
@@ -100,66 +102,36 @@
 				
 			<div id="tab-machines" class="data-frame-tab">
 			
-				nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-			nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-			nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-			nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-			nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-			nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-			nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-			nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-				nope<br>
-			
+				<table id="table-machine" class="data-view-table">
+				
+					<thead>
+						<tr>
+							<th>Machine ID</th>
+							<th>Name</th>
+							<th>Job ID</th>
+							<th>Production speed</th>
+							<th>Status</th>
+						</tr>
+					</thead>
+					
+				</table>
+				
 			</div>
 			
 			<div id="tab-jobs" class="data-frame-tab">
 			
-				This is the tab for jobs
+				<table id="table-jobs" class="data-view-table">
+				
+					<thead>
+						<tr>
+							<th>Job ID</th>
+							<th>Target product count</th>
+							<th>Start time</th>
+							<th>Product type</th>
+						</tr>
+					</thead>
+					
+				</table>
 			
 			</div>
 			

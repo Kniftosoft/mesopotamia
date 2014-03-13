@@ -44,7 +44,7 @@ body
 #user-controls
 {
 	
-	margin-right: 20px;
+	margin-right: 30px;
 	
 	float: right;
 	
@@ -179,12 +179,21 @@ body
 	border: 1px solid #c4c4c4;
 }
 
+.select,select
+{
+	boder: 1px solid #c4c4c4;
+	border-radius: 0px;
+	
+	background-color: #fff;
+	
+}
+
 .login-frame
 {
 	background-color: #efeff1;
 	
 	padding-bottom: 25px;
-	
+
 	width: 25%;
 	min-height: 35%;
 	
@@ -215,14 +224,12 @@ body
 {
 	color: #707070;
 	
-	
 	background-color: #efeff1;
 	
-	padding-top: 30px;
+	padding: 28px 20px 5px 0px;
 	
 	
 	height: auto;
-	width: 100%;
 }
 
 .login-content .error
@@ -248,6 +255,8 @@ body
 .login-content #rememberBox
 {
 	float: left;
+	
+	margin-right: 3px;
 	
 	position: relative;
 	top: 15px;

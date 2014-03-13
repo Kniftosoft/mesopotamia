@@ -285,6 +285,7 @@ Contents
 		
 	-Possible responses:
 		DATA:		If the query succeeds and data is transferred
+		ERROR:		If there is was any problem with the query
  	
 	
 	
@@ -338,7 +339,8 @@ Contents
 	ACK
 	---
 	Sent by client/server as a response to packets with no specific return data. An ACK represents a
-	successful request while a NACK reports a failure.
+	successful request while a NACK reports a failure. This packet should never be sent as a 
+	request as it makes no sense at all.
 	
 	-Packet ID:		200
 	
@@ -356,7 +358,8 @@ Contents
 	NACK
 	----
 	Sent by client/server as a response to packets with no specific return data. An ACK represents a
-	successful request while a NACK reports a failure.
+	successful request while a NACK reports a failure. This packet should never be sent as a 
+	request as it makes no sense at all.
 	
 	-Packet ID:		201
 	
@@ -396,7 +399,7 @@ Contents
 		4 = INVALID_RESPONSE (A packet was answered with an incompatible packet type)
 		5 = WRONG_VERSION (The client's version did not match the server's - used when handshaking)
 		6 = NOT_ALLOWED (The client issued something he is not allowed to)
-	
+		7 = BAD_QUERY (A QUERY packet with a bad query string was sent)
 	
 	
 	
@@ -470,7 +473,7 @@ Contents
 		"ident":"*"
 		
 	will result in all machines the server is able(and allows) to deliver.
-	Note that supporting more complex wildcards like 'a*' is currently not part of this protocol. It may, however, be added in a later version.
+	Note that supporting more complex wildcards like 'a*' is currently NOT part of this protocol. It may, however, be added in a later version.
 	
 	As different data categories contain different information, the structure of returned entities when querying depends on the selected category.
 	
@@ -500,6 +503,8 @@ Contents
 			3		|	Repair
 			4		|	Modification for new type of screws
 			5		|	Cleaning
+			
+			
 			
 			
 	JOB

@@ -1,6 +1,6 @@
 
 /*--------------------------
- *      Tigris 0.3.0
+ *      Tigris 0.3.1
  * 	Mesopotamia Client v1
  * (C) Niklas Weissner 2014
  *-------------------------- 
@@ -9,15 +9,16 @@
 //TODO: Sort some code fragments so the source can be easier understood
 //TODO: Comment on stuff
 //TODO: Localization maybe?
+//TODO: Maybe check for type specific fields?
 
 //Configure this to your Euphrates installation
 //If your endpoint is absolute, make sure you include the full URI (including protocol etc.)
-var ENDPOINT_IS_RELATIVE = false;
-var MESO_ENDPOINT = "ws://localhost:8080/mesopotamia/TIG_TEST_END"; //Link to Euphrates
+var ENDPOINT_IS_RELATIVE = true;
+var MESO_ENDPOINT = "TIG_TEST_END"; //Link to Euphrates
 
 
 //Constants
-var TIGRIS_VERSION = "0.3.0";
+var TIGRIS_VERSION = "0.3.1";
 var TIGRIS_SESSION_COOKIE = "2324-tigris-session";
 
 var GENERAL_TIMEOUT = 2000; //Default timeout in milliseconds (may be overridden by some packets)
@@ -36,6 +37,12 @@ var PTYPE =
 	ACK: 		200,
 	NACK: 		201,
 	ERROR: 		242
+};
+
+var DCAT =
+{
+	MACHINE:	1,
+	JOB:		2
 };
 
 var ERRORCODE =
@@ -69,7 +76,7 @@ $(document).ready(
 function()
 {
 	
-	ui_init();
+	UI.init();
 	
 	Network.init();
 });
@@ -77,11 +84,15 @@ function()
 
 //-------------UI stuff---------------
 
-function ui_init()
-{
+/**
+ * Namespace for user interface related functions
+ */
+var UI = {};
 
-	ui_showStatus("Connecting to the server..."); //Initially show message on connection status
-	
+UI.currentScreen = "status"; //Status message for noscript is displayed by default
+
+UI.init = function()
+{	
 	//Set up events
 	$("#loginform").submit(
 			function(e) 
@@ -100,35 +111,51 @@ function ui_init()
 	$(".sidebar-item").click(
 			function(e)
 			{
-				ui_sidebarItemClicked(e.target);
+				UI.sidebarItemClicked(e.target);
 			});
 	
 	$("#sidebar-handle").mouseover(
 			function(e)
 			{
-				ui_slideOutSidebar();
+				UI.slideOutSidebar();
 			});
 	
 	$("#sidebar").mouseout(function(e)
 			{
 				if(!$(e.relatedTarget).hasClass("sidebar-item") && (e.relatedTarget != document.getElementById("sidebar")))
 				{
-					ui_slideAwaySidebar();
+					UI.slideAwaySidebar();
 				}
 			});
 	
-	/*$(".sidebar-item").mouseover(function(e)
-	{
-		$(e.target).addClass("sidebar-item-hover", 200);
-	});
+	//Create tables
+	//Status values decoded for testing
+	UI.statusTest = {};
+	UI.statusTest[1] = "Running";
+	UI.statusTest[2] = "Error";
+	UI.statusTest[3] = "Repair";
+	UI.statusTest[4] = "Modification";
+	UI.statusTest[5] = "Cleaning";
+	 
+	UI.machineTable = $("#table-machine").dataTable({
+		"aoColumns": [
+		              { "mData": "id" },
+                      { "mData": "name" },
+                      { "mData": "job" },
+                      { "mData": "speed" },
+                      { "mData": function(data, type, val) { return UI.statusTest[data.status]; }}
+                    ]});
 	
-	$(".sidebar-item").mouseleave(function(e)
-	{
-		$(e.target).removeClass("sidebar-item-hover", 200);
-	});*/
+	$("#table-job").dataTable({
+		"aoColumns": [
+		              { "mData": "id" },
+                      { "mData": "target" },
+                      { "mData": "startTime" },
+                      { "mData": "productType" }
+                    ]});
 	
-	ui_setUpDashboard(); //Set up dashboard TODO: Review if this is really needed (currently only for testing)
-}
+	UI.showStatus("Connecting to the server..."); //Initially show message on connection status
+};
 
 
 
@@ -137,29 +164,54 @@ function ui_init()
  * 
  * @param name The name of the screen to be displayed
  */
-function ui_showScreen(name)
+UI.showScreen = function(name)
 {
 	$(".screen").hide(); //Hide all screens...
 	$("#screen-" + name).show(); //and show only disered one
-}
+	
+	UI.currentScreen = name;
+};
 
 /**
- * Display data screen with fading animation. Used for the login->dataview-transition.
+ * Displays login screen and hides any error message in the login dialog.
  */
-function ui_showDataScreen()
+UI.showLogin = function()
 {
-	//Play nice fading animation
-	$("#screen-login").hide("puff", {}, 600, 
-			function()
-			{ 
-				$("#screen-data").fadeIn();
-			});
+	UI.showScreen("login");
+	
+	$("#loginerror").hide();
+};
+
+/**
+ * Displays data screen. Plays fading animation when transiting from login to data screen.
+ */
+UI.showData = function()
+{
+	if(UI.currentScreen == "login")
+	{
+		//Play nice fading animation
+		$("#screen-login").hide("puff", {}, 600, 
+				function()
+				{ 
+					$("#screen-data").fadeIn();
+				});
+	}else
+	{
+		UI.showScreen("data");
+	}
+	
+	//Set up user information
+	$("#username").html(Network.connectionData.username);
+	
 	
 	$(".data-frame-tab").hide(); //Initially hide all dashboard tabs...
-	ui_data_showTab("dashboard"); //and show dashboard
-}
+	UI.data_showTab("dashboard"); //and show dashboard
+};
 
-function ui_showStatus(msg, error)
+/**
+ * Displays status screen with optional error coloring for the error message.
+ */
+UI.showStatus = function(msg, error)
 {
 	$("#statusbox").html(msg);
 	if(error)
@@ -170,10 +222,21 @@ function ui_showStatus(msg, error)
 		$("#statusbox").removeClass("error");
 	}
 	
-	ui_showScreen("status");
-}
+	UI.showScreen("status");
+};
 
-function ui_slideOutSidebar()
+/**
+ * Displays status screen with error message and logs it to console.error for debugging.
+ */
+UI.showError = function(msg)
+{
+	console.error(msg);
+	
+	UI.showStatus(msg, true);
+};
+
+
+UI.slideOutSidebar = function()
 {	
 	//FIXME: Sidebar not dissappearing if user moves cursor out of handle while sliding out
 	$("#sidebar-handle").fadeOut(100,
@@ -181,51 +244,18 @@ function ui_slideOutSidebar()
 			{
 				$("#sidebar").show("slide",300);
 			});
-}
+};
 
-function ui_slideAwaySidebar()
+UI.slideAwaySidebar = function()
 {	
 	$("#sidebar").hide("slide", 300,
 			function()
 			{
 				$("#sidebar-handle").fadeIn(100);
 			});
-}
+};
 
-function ui_data_showTab(name)
-{
-	if(currentTab != null)
-	{
-		currentTab.fadeOut(function()
-				{
-					$("#tab-" + name).fadeIn();
-				});
-		
-	}else
-	{
-		$("#tab-" + name).fadeIn();
-	}
-	
-	currentTab = $("#tab-" + name);
-}
-
-function ui_showError(msg)
-{
-	console.error(msg);
-	
-	ui_showStatus(msg, true);
-}
-
-function ui_login_showError(msg)
-{
-	$("#loginerror").html(msg);
-	
-	$("#loginerror").show();
-	
-	$("#loginerror").effect("shake");
-}
-
-function ui_sidebarItemClicked(eventTarget)
+UI.sidebarItemClicked = function(eventTarget)
 {	
 	var item = $(eventTarget);
 	
@@ -241,23 +271,71 @@ function ui_sidebarItemClicked(eventTarget)
 		
 		var target = item.attr("data-target");
 		
-		ui_data_showTab(target);
-	}
-}
-
-function ui_setUpDashboard()
-{
-	
-	
-	//TODO: Put this to data screen init
-	$(".data-frame-tab").hide(); //Hide all tabs
-	ui_data_showTab("dashboard"); //Initially show dashboard
+		var targetTabTable = $("#tab-" +target + " table");//TODO: Find a fancier way to do this
+		if(targetTabTable)
+		{
+			//Target tab is table view -> Load table
+			
+			UI.data_updateTable(targetTabTable);
+		}
 		
-	dashboard = new Dashboard();
+		UI.data_showTab(target);
+	}
+};
+
+
+UI.login_showError = function(msg)
+{
+	$("#loginerror").html(msg);
 	
-	var tile1 = new TileMachine(false, {id: 12345, name: "asdfg", speed:500});
-	dashboard.addTile(tile1);
-}
+	$("#loginerror").show();
+	
+	$("#loginerror").effect("shake");
+};
+
+
+UI.data_showTab = function(name)
+{
+	if(currentTab != null)
+	{
+		currentTab.fadeOut(function()
+				{
+					$("#tab-" + name).fadeIn();
+				});
+		
+	}else
+	{
+		$("#tab-" + name).fadeIn();
+	}
+	
+	currentTab = $("#tab-" + name);
+};
+
+/**
+ * Updates a data view table.
+ * 
+ * @param table A jQuery object of the table to be updated
+ */
+UI.data_updateTable = function(table)
+{	
+	
+	//Update machine table for testing
+	var tab = UI.machineTable;
+	
+	var pkq = new Packet_Query(DCAT.MACHINE, "*");
+	pkq.onResponse = function(pk)
+	{
+		tab.fnClearTable();
+		
+		if(pk.typeID == PTYPE.DATA)
+		{
+			tab.fnAddData(pk.data.result);
+		}
+	};
+	Network.sendPacket(pkq);
+	
+};
+
 
 //-------------Functional stuff------------
 
@@ -281,18 +359,22 @@ function f_tryLogin()
 			if(pk.typeID == PTYPE.AUTH)
 			{
 				//Login successful -> store session data and open data view
-				var sessionID = pk.data.sessionID;
+				Network.connectionData.sessionID = pk.data.sessionID;
 				
 				Network.connectionData.username = username;
-				$("#username").html(Network.connectionData.username); //TODO: Put this somewhere it belongs
 				
-				Network.remember = remember;
+				//Store remember state for this session
+				Network.connectionData.remember = remember;
+				if(remember) //Store session ID in cookie if session is to be remembered
+				{
+					util_setCookie(TIGRIS_SESSION_COOKIE, Network.connectionData.sessionID);
+				}
 				
-				f_setUpSession(sessionID);
+				UI.showData(); //Everything is set up -> Show data screen
 				
 			}else if(pk.typeID == PTYPE.NACK)
 			{
-				ui_login_showError("Your login data is incorrect"); //MSG_LOGIN_BADLOGINDATA
+				UI.login_showError("Your login data is incorrect"); //MSG_LOGIN_BADLOGINDATA
 			}
 		};
 		
@@ -325,14 +407,12 @@ function f_tryRelog()
 					$("#username").html(Network.connectionData.username); //TODO: Put this somewhere it belongs
 					
 					//As the session was still valid, we can directly display the data view
-					ui_showScreen("data");
-					$("#data-frame > .data-frame-tab").hide(); //Initially hide all data tabs...
-					ui_data_showTab("dashboard"); //and show dashboard
+					UI.showData();
 					
 				}else if(pk.typeID == PTYPE.NACK)
 				{
 					//The old session ID has expired -> user has to login again
-					ui_showScreen("login");
+					UI.showLogin();
 				}
 			};
 			
@@ -342,24 +422,25 @@ function f_tryRelog()
 	{
 		//No stored session -> user has to login
 		
-		ui_showScreen("login");
+		UI.showLogin();
 	}
 }
 
 function f_tryLogout()
 {
 	
-	var packet = new Packet_Logout(LOGOUTREASON.CLOSED_BY_USER);
+	var packet = new Packet_Logout(LOGOUTREASON.CLOSED_BY_USER, "User requested logout");
 	
 	packet.onResponse = 
 		function(pk)
 		{
 			if(pk.typeID == PTYPE.ACK)
 			{
-				//Server has acknowledged logout -> Remove any old session cookie and do another HANDSHAKE before showing login form again
-				util_setCookie(TIGRIS_SESSION_COOKIE, "", -9999); //This cookie expired years ago! Spit it out!
+				//Server has acknowledged logout -> Remove session data and do another HANDSHAKE before showing login form again
+				Network.clearSession();
 				
-				Network.handshake();
+				//Handshake takes care of showing login form
+				Network.handshake(false); //Don't try a relog this time. It won't succeed anyway
 			}
 		};
 		
@@ -370,23 +451,27 @@ function f_tryLogout()
 			//And smell the ashes. Don't forget to smell the ashes.
 			
 			//We force the user to reload the page, so if there is really a problem with the server, he will notice on the next handshake
-			ui_showError("The server did not confirm the last logout. You can start another session by reloading Tigris.");
+			UI.showError("The server did not confirm the last logout. You can start another session by reloading Tigris.");
 		};
 	
 	Network.sendPacket(packet);
 }
 
-function f_setUpSession(sessionID)
+function f_serverSideLogout(reason)
 {
-	Network.connectionData.sessionID = sessionID;
+	var msgs = {};
+	msgs[LOGOUTREASON.UNKNOWN] = "of an unknown reason.";
+	msgs[LOGOUTREASON.SESSION_EXPIRED] = "your session lost its validity.";
+	msgs[LOGOUTREASON.INTERNAL_ERROR] = "an internal server error occurred.";
+	msgs[LOGOUTREASON.REFUSED] = "you were somehow suddenly refused.";
+	msgs[LOGOUTREASON.CLOSED_BY_USER] = "it says the user did it. Alright, who was it then?";
 	
-	if(Network.remember)
-	{
-		util_setCookie(TIGRIS_SESSION_COOKIE,sessionID);
-	}
+	Network.clearSession();
 	
-	ui_showDataScreen();
+	UI.showLogin();
+	UI.login_showError("The server logged you out because " + msgs[reason]);
 }
+
 
 /**
  * Updates all tiles on the dashboard.
@@ -429,6 +514,17 @@ Network.connectionData =
 	username: ""
 };
 
+/**
+ * Removes any session related data to begin a new session.
+ */
+Network.clearSession = function()
+{
+	Network.connectionData.sessionID = null;
+	Network.connectionData.username = "";
+	
+	util_setCookie(TIGRIS_SESSION_COOKIE, "", -9999);
+};
+
 Network.init = function()
 {
 	//Set up socket
@@ -436,6 +532,7 @@ Network.init = function()
 	
 	if(ENDPOINT_IS_RELATIVE)
 	{
+		//The endpoint path is relative -> we must construct absolute path from our current URL
 		var loc = window.location;
 		
 		if(loc.protocol === "https:")
@@ -443,11 +540,13 @@ Network.init = function()
 			wsURI = "wss:";
 			
 		}else{
+			
 			wsURI = "ws:";
 		}
 		
 		wsURI += "//" + loc.host;
 		wsURI += loc.pathname + MESO_ENDPOINT;
+		
 	}else
 	{
 		wsURI = MESO_ENDPOINT;
@@ -458,16 +557,14 @@ Network.init = function()
 		Network.socket = new WebSocket(wsURI);
 	}catch(e)
 	{
-		ui_showError("Could not create socket.");
+		UI.showError("Could not create socket. Your browser probably doesn't support WebSockets.");
 		return;
 	}
 	
+	//Redirect the socket's handlers to our script
 	Network.socket.onopen = Network.ws_onOpen;
-	
 	Network.socket.onmessage = Network.ws_onMessage;
-	
 	Network.socket.onclose = Network.ws_onClose;
-	
 	Network.socket.onerror = Network.ws_onError;
 };
 
@@ -488,18 +585,14 @@ Network.ws_onMessage = function(msg)
 		
 	}catch(e)
 	{	
-		console.error("Message was not in JSON format or shit. \n" + e);
-		
-		ui_showError("A fatal communication error occurred: A message could not be parsed into a packet.");
+		UI.showError("A fatal communication error occurred: A message could not be parsed into a packet.");
 		
 		return;
 	}
 	
-	if(packet.uid == "undefined" || packet.typeID == "undefined" || packet.data == "undefined")
+	if(packet.uid === "undefined" || packet.typeID === "undefined" || packet.data === "undefined")
 	{
-		console.error("Packet had missing fields.");
-		
-		ui_showError("A fatal communication error occurred: Bad packet and shit.");
+		UI.showError("A fatal communication error occurred: Bad packet and shit.");
 		
 		return;
 	}
@@ -517,6 +610,7 @@ Network.ws_onMessage = function(msg)
 		
 		delete Network.sentPacketMap["uid" + packet.uid];
 		
+		//Check if the received response is applicable to the requesting packets response handler
 		if($.inArray(packet.typeID , requestingPacket.allowedResponses) == -1)
 		{
 			if(packet.typeID == PTYPE.ERROR)
@@ -524,7 +618,7 @@ Network.ws_onMessage = function(msg)
 				//ERROR packets can be sent in response to any packet, but are
 				//directed to the general error handler if the requesting packet does not care for it
 				
-				Network.generalError(packet);
+				Network.generalError(packet.data.errorCode, packet.data.errorMessage);
 				
 			}else
 			{
@@ -535,46 +629,44 @@ Network.ws_onMessage = function(msg)
 				Network.sendPacket(errorPacket);
 				
 				//We should tell the user, too
-				console.error("Received invalid response packet: " + errorMsg);
-				ui_showError("Received invalid response packet: " + errorMsg);
+				UI.showError("Received invalid response packet: " + errorMsg);
 			}
 			
 		}else
 		{
-		
-			if(packet.typeID == PTYPE.ERROR)
-			{
-				//ERROR sent as request is considered as a general error
-				
-				Network.generalError();
-				
-			}else
-			{
-				//Direct response to the requesting packet handler
-				requestingPacket.onResponse(packet);
-			}
+			//Direct response to the requesting packet handler
+			requestingPacket.onResponse(packet);
 			
 		}
 			
 	}else // -> Packet is a request
 	{
-		Network.request(packet);
+		if(packet.typeID == PTYPE.ERROR)
+		{
+			//ERROR sent as request is considered as a general error
+			
+			Network.generalError(packet.data.errorCode, packet.data.errorMessage);
+			
+		}else
+		{
+			Network.request(packet);
+		}
 	}
 };
 
 Network.ws_onClose = function()
 {
 	console.log("The connection was closed");
+	
+	UI.showStatus("The connection to the server was closed.");
 };
 
 Network.ws_onError = function(e)
 {
-	console.error("Network error");
-	
-	ui_showError("A network error occurred. Please contact the system admin you do not know."); //ERR_COMM_NETWORK
+	UI.showError("A network error occurred. Please contact the system admin you do not know."); //ERR_COMM_NETWORK
 };
 
-Network.handshake = function()
+Network.handshake = function(tryRelog)
 {
 
 	var packet = new Packet_Handshake();
@@ -588,21 +680,25 @@ Network.handshake = function()
 			Network.connectionData.salt = pk.data.salt;
 			
 			//Connection to server is OK -> The user may log in
-			f_tryRelog(); //First look if there is already a session to be restored. TODO: This is confusing. Make it better
+			//First look if there is already a session to be restored.
+			
+			if(tryRelog || true)
+			{
+				f_tryRelog(); //This method also displays login screen if no session is to be restored; No need for us to take care of that
+			}else
+			{
+				UI.showLogin();
+			}
 			
 		}else if(pk.typeID == PTYPE.ERROR)
 		{
 			
 			if(pk.data.errorCode == ERRORCODE.WRONG_VERSION)
 			{
-				console.error("Handshake refused: Client version is incompatible with server");
-			
-				ui_showError("Connection refused by server: This version of Tigris is too old/new"); //ERR_COMM_CLIENTINCOMPATIBLE
+				UI.showError("Connection refused by server: This version of Tigris is too old/new"); //ERR_COMM_CLIENTINCOMPATIBLE
 			}else
 			{
-				console.error("Handshake refused: Unknown reason");
-				
-				ui_showError("Connection refused by server for unknown reason");
+				UI.showError("Connection refused by server for unknown reason");
 			}
 		}
 	};
@@ -619,9 +715,9 @@ Network.generateUID = function()
 	{
 		uid += 2; //Generate only even UIDs
 		
-		if(rounds++ > 256) //Don't mess around too long in this unperformant routine
+		if(rounds++ > 256) //Don't mess around too long in this unperformant routine TODO: Make this routine more performant
 		{
-			console.error("Packet queue overloaded!");
+			UI.showError("Packet queue overloaded! This is most likely a bug.");
 			return -1;
 		}
 	}
@@ -629,6 +725,14 @@ Network.generateUID = function()
 	return uid;
 };
 
+/**
+ * Sends a packet to the server. Stores it if it awaits any responses so they can
+ * be passed to the response handler in the packet object. This method generates
+ * an UID if it is not specified.
+ * 
+ * @param packet The packet object to be sent
+ * @param uid Optional: The uid the packet should be sent with
+ */
 Network.sendPacket = function(packet, uid)
 {
 	var packetToSend = {};
@@ -643,30 +747,31 @@ Network.sendPacket = function(packet, uid)
 	{
 		Network.socket.send(jsonPacket);
 		
-		//Set a timeout for each packet that is removed upon response in the n_ws_onMessage methode (only if timeout is > 0)
-		if(packet.timeout > 0)
+		//Check if packet expects any responses
+		if(packet.allowedResponses.length > 0)
 		{
-			packet.timeoutID = window.setTimeout(packet.onTimeout, packet.timeout);
-		}
-		
-		//Store packet for response processing (only if packet wants any responses)
-		if(packet.length > 0)
-		{
+			//Store packet so a response can be passed to its response handler
 			Network.sentPacketMap["uid" + packetToSend.uid] = packet;
+			
+			//Set a timeout for each packet that is removed upon response in the n_ws_onMessage methode (only if timeout is > 0)
+			if(packet.timeout > 0)
+			{
+				packet.timeoutID = window.setTimeout(packet.onTimeout, packet.timeout);
+			}
 		}
 			
 		console.log("I sent this: " + jsonPacket);
 		
 	}else if(Network.socket.readyState == 2)
 	{
-		console.error("Tried to send after the connection was lost");
 		
-		ui_showError("Tried to send packet after the connection was lost. This is most likely the programmers fault.");
+		UI.showError("Tried to send packet after the connection was lost. This is most likely a bug.");
+		
 	}else if(Network.socket.readyState == 0)
 	{
-		console.error("Tried to send while the socket was still connecting");
 		
-		ui_showError("Tried to send packet while the socket was still connecting. This is most likely the programmers fault.");
+		UI.showError("Tried to send packet while the socket was still connecting. This is most likely a bug.");
+		
 	}
 };
 
@@ -683,25 +788,46 @@ Network.generalError = function(id, msg)
 	switch(id)
 	{
 	case ERRORCODE.INTERNAL_EXCEPTION:
-		ui_showError("The server reported an internal exception.");
+		UI.showError("The server reported an internal exception.");
 		break;
 		
 	case ERRORCODE.SESSION_EXPIRED:
-		ui_showError("Your session has expired. Reload the page for relog.");
+		UI.showError("Your session has expired. Reload the page for relog.");
 		break;
 		
 	default:
-		ui_showError("The server reported an error: " + msg);
+		UI.showError("The server reported an error: " + msg);
 	
 	}
 };
 
+/**
+ * Processes a packet that was not sent in response to another packet. 
+ * ERROR-packets are handled by Network.generalError.
+ * 
+ * @param pk The packet object
+ */
 Network.request = function(pk)
 {
 	
 	if(pk.typeID == PTYPE.DATA)
 	{
 		f_updateTiles(pk.data.category, pk.data.result);
+		
+	}else if(pk.typeID == PTYPE.LOGOUT)
+	{
+		f_serverSideLogout(pk.data.reasonCode);
+		
+		//We should tell the server we acknowledge the logout
+		var resp = new Packet_Ack();
+		Network.sendPacket(resp, pk.uid);
+		
+	}else
+	{
+		//This packet type was not recognized. Tell the server we did not understand his message
+		
+		var errorPacket = new Packet_Error(ERRORCODE.INVALID_PACKET, "The request was not recognized. You packet may be C->S only.");
+		Network.sendPacket(errorPacket);
 	}
 	
 };
@@ -861,7 +987,7 @@ function Packet_Handshake()
 	this.allowedResponses = [PTYPE.ACCEPT, PTYPE.ERROR];
 	
 	this.onResponse = function(){};
-	this.onTimeout = function(){ui_showError("The server took to long to respond.");};
+	this.onTimeout = function(){UI.showError("The server took to long to respond to handshake.");};
 }
 
 /**
@@ -881,7 +1007,7 @@ function Packet_Login(usr,pwrdHash)
 	this.allowedResponses = [PTYPE.AUTH, PTYPE.NACK];
 	
 	this.onResponse = function(){};
-	this.onTimeout = function(){ui_showError("The server took to long to respond.");};
+	this.onTimeout = function(){UI.showError("The server took to long to respond to login.");};
 }
 
 /**
@@ -900,26 +1026,47 @@ function Packet_Relog(sessionID)
 	this.allowedResponses = [PTYPE.REAUTH, PTYPE.NACK];
 	
 	this.onResponse = function(){};
-	this.onTimeout = function(){ui_showError("The server took to long to respond.");};
+	this.onTimeout = function(){UI.showError("The server took to long to respond to relog.");};
 }
 
 /**
  * 
  * @constructor
  */
-function Packet_Logout(reason)
+function Packet_Query(category, ident)
+{
+	this.typeID = PTYPE.QUERY;
+
+	this.data = {};
+	this.data.category = category;
+	this.data.ident = ident;
+	
+	this.timeout = GENERAL_TIMEOUT;
+	this.timeoutID = null;
+	this.allowedResponses = [PTYPE.DATA]; //Even though the protocol asks us to put ERROR here, there is no need to process it separately
+	
+	this.onResponse = function(){};
+	this.onTimeout = function(){UI.showError("The server took to long to respond to query.");};
+}
+
+/**
+ * 
+ * @constructor
+ */
+function Packet_Logout(reason, msg)
 {
 	this.typeID = PTYPE.LOGOUT;
 	
 	this.data = {};
 	this.data.reasonCode = reason || LOGOUTREASON.UNKNOWN;
+	this.data.reasonMessage = msg || "No message specified";
 	
 	this.timeout = GENERAL_TIMEOUT;
 	this.timeoutID = null;
 	this.allowedResponses = [PTYPE.ACK];
 	
 	this.onResponse = function(){};
-	this.onTimeout = function(){ui_showError("The server took to long to respond.");};
+	this.onTimeout = function(){UI.showError("The server took to long to respond to logout.");};
 }
 
 /**
