@@ -24,6 +24,8 @@ public class PacketEncoder implements Encoder.Text<Packet>
 	@Override
 	public String encode(Packet packet) throws EncodeException 
 	{
+		System.out.println("Sent packet: " + packet.getType().name());
+		
 		JsonObject jo = packet.storeToJSON();
 		
 		if(jo == null)

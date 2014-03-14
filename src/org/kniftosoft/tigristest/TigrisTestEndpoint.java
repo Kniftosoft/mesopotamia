@@ -1,5 +1,8 @@
 package org.kniftosoft.tigristest;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -8,6 +11,9 @@ import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 @ServerEndpoint(
 		value = "/TIG_TEST_END",
@@ -125,11 +131,104 @@ public class TigrisTestEndpoint
 			
 		}else if(packet instanceof PacketQuery)
 		{
-			//Instead of evaluating the clients request, send him the same data over and over again. Should irritate him lol
+			PacketQuery pk = (PacketQuery) packet;
 			
 			PacketData resp = new PacketData();
 			resp.setUID(packet.getUID());
 			
+			JsonArray result = new JsonArray();
+			
+			if(pk.getCategory() == 1)
+			{
+				BufferedReader in = new BufferedReader(new InputStreamReader((PacketData.class.getResourceAsStream("exampleMachines.csv"))));
+				
+				try
+				{
+					String line;
+					
+					while((line = in.readLine()) != null)
+					{
+						if(line.startsWith("#") || line.isEmpty())
+						{
+							continue;
+						}
+						
+						String[] set = line.split(";");
+						
+						int id = Integer.parseInt(set[0]);
+						String name = set[1];
+						int job = Integer.parseInt(set[2]);
+						double speed = Double.parseDouble(set[3]) + (Math.random() * 30);
+						int status = Integer.parseInt(set[4]);
+						
+						Machine m = new Machine(id,name,job,speed,status);
+						result.add(m.toJson());
+					}
+					
+				} catch (IOException e)
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					
+					System.out.println(e.toString());
+				}
+			}else if(pk.getCategory() == 2) //jobs
+			{
+				
+				BufferedReader in = new BufferedReader(new InputStreamReader((PacketData.class.getResourceAsStream("exampleJobs.csv"))));
+				
+				try
+				{
+					String line;
+					
+					while((line = in.readLine()) != null)
+					{
+						if(line.startsWith("#") || line.isEmpty())
+						{
+							continue;
+						}
+						
+						String[] set = line.split(";");
+						
+						JsonObject jobob = new JsonObject();
+						
+						jobob.addProperty("id",Integer.parseInt(set[0]));
+						jobob.addProperty("target",Integer.parseInt(set[1]));
+						jobob.addProperty("startTime",Long.parseLong(set[2]));
+						jobob.addProperty("productType",Integer.parseInt(set[3]));
+						
+						result.add(jobob);
+					}
+					
+				} catch (Exception e)
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					
+					System.out.println(e.toString());
+				}
+				
+				
+			}else if(pk.getCategory() == 11) //Product
+			{
+				JsonObject o = new JsonObject();
+				
+				o.addProperty("id", 1);
+				o.addProperty("name", "M14 screws");
+				
+				result.add(o);
+			}else if(pk.getCategory() == 20) //Config
+			{
+				JsonObject o = new JsonObject();
+				
+				o.addProperty("id", "locale");
+				o.addProperty("value", "en-US");
+				
+				result.add(o);
+			}
+				
+			resp.setResult(result);
+			resp.setCategory(pk.getCategory());
 			peer.getAsyncRemote().sendObject(resp);
 		}
 	}
@@ -148,7 +247,7 @@ public class TigrisTestEndpoint
 	    return new String(hexChars);
 	}
 	
-	public static final String EUPHRATES_VERSION = "0.3.1";
+	public static final String EUPHRATES_VERSION = "0.3.2";
 	
 	public static final String EXAMPLE_USER = "otto";
 	public static final String EXAMPLE_PASSWORD_HASH = "c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2"; //hash of "foobar"

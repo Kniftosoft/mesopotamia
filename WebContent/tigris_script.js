@@ -1,6 +1,6 @@
 
 /*--------------------------
- *      Tigris 0.3.1
+ *      Tigris 0.3.2
  * 	Mesopotamia Client v1
  * (C) Niklas Weissner 2014
  *-------------------------- 
@@ -9,7 +9,7 @@
 //TODO: Sort some code fragments so the source can be easier understood
 //TODO: Comment on stuff
 //TODO: Localization maybe?
-//TODO: Maybe check for type specific fields?
+//TODO: Maybe check if a packet is missing fields it should have according to its type
 
 //Configure this to your Euphrates installation
 //If your endpoint is absolute, make sure you include the full URI (including protocol etc.)
@@ -18,7 +18,7 @@ var MESO_ENDPOINT = "TIG_TEST_END"; //Link to Euphrates
 
 
 //Constants
-var TIGRIS_VERSION = "0.3.1";
+var TIGRIS_VERSION = "0.3.2";
 var TIGRIS_SESSION_COOKIE = "2324-tigris-session";
 
 var GENERAL_TIMEOUT = 2000; //Default timeout in milliseconds (may be overridden by some packets)
@@ -34,6 +34,9 @@ var PTYPE =
 	LOGOUT: 	14,
 	QUERY: 		20,
 	DATA: 		21,
+	SUBSCRIBE:	22,
+	UNSUBSCRIBE:23,
+	CONFIG:		50,
 	ACK: 		200,
 	NACK: 		201,
 	ERROR: 		242
@@ -42,7 +45,11 @@ var PTYPE =
 var DCAT =
 {
 	MACHINE:	1,
-	JOB:		2
+	JOB:		2,
+	
+	PRODUCT:	11,
+	
+	CONFIG:		20	
 };
 
 var ERRORCODE =
@@ -65,12 +72,6 @@ var LOGOUTREASON =
 	REFUSED:			4
 };
 
-var socket;
-var sentPacketMap = {};
-
-var currentTab = null; //The data screen tab currently displayed TODO: Make this a bit fancier
-
-var dashboard = null;
 
 $(document).ready(
 function()
@@ -79,6 +80,7 @@ function()
 	UI.init();
 	
 	Network.init();
+	
 });
 
 
@@ -89,7 +91,13 @@ function()
  */
 var UI = {};
 
-UI.currentScreen = "status"; //Status message for noscript is displayed by default
+UI.currentScreen = "status"; //Status message for noscript is displayed by default through pure html
+UI.currentTab = null;
+
+UI.dashboard = null;
+UI.sidebarEnabled = true;
+
+UI.productTypes = {};
 
 UI.init = function()
 {	
@@ -128,8 +136,15 @@ UI.init = function()
 				}
 			});
 	
+	$("#tilecreator").droppable(
+			{
+				drop: UI.table_createTile,
+				
+				hoverClass: "hover-highlight"
+			});
+	
 	//Create tables
-	//Status values decoded for testing
+	//Status values decoded for testing TODO: Localize this
 	UI.statusTest = {};
 	UI.statusTest[1] = "Running";
 	UI.statusTest[2] = "Error";
@@ -146,13 +161,37 @@ UI.init = function()
                       { "mData": function(data, type, val) { return UI.statusTest[data.status]; }}
                     ]});
 	
-	$("#table-job").dataTable({
-		"aoColumns": [
+	$("#table-machine tbody").sortable({
+		
+		distance: 10,
+		
+		start: UI.table_dragStart,
+		stop: UI.table_dragStop,
+		
+		helper: "clone"
+		
+	});
+	
+	UI.jobTable = $("#table-job").dataTable(
+			{
+				"aoColumns": [
 		              { "mData": "id" },
                       { "mData": "target" },
-                      { "mData": "startTime" },
-                      { "mData": "productType" }
-                    ]});
+                      { "mData": function(data, type, val) { return util_formatDate(new Date(data.startTime));} },
+                      { "mData": function(data, type, val) { return UI.productTypes[data.productType];} }
+                ]
+			});
+	
+	$("#table-job tbody").sortable({
+		
+		distance: 10,
+		
+		start: UI.table_dragStart,
+		stop: UI.table_dragStop,
+		
+		helper: "clone"
+		
+	});
 	
 	UI.showStatus("Connecting to the server..."); //Initially show message on connection status
 };
@@ -183,25 +222,21 @@ UI.showLogin = function()
 };
 
 /**
- * Displays data screen. Plays fading animation when transiting from login to data screen.
+ * Displays data screen with fading animation.
  */
 UI.showData = function()
 {
-	if(UI.currentScreen == "login")
-	{
-		//Play nice fading animation
-		$("#screen-login").hide("puff", {}, 600, 
-				function()
-				{ 
-					$("#screen-data").fadeIn();
-				});
-	}else
-	{
-		UI.showScreen("data");
-	}
+	//Play nice fading animation
+	$("#screen-" + UI.currentScreen).hide("puff", {}, 600, 
+			function()
+			{ 
+				$("#screen-data").fadeIn();
+			});
+	
+	UI.currentScreen = "data";
 	
 	//Set up user information
-	$("#username").html(Network.connectionData.username);
+	$("#username").html(Session.username);
 	
 	
 	$(".data-frame-tab").hide(); //Initially hide all dashboard tabs...
@@ -239,11 +274,15 @@ UI.showError = function(msg)
 UI.slideOutSidebar = function()
 {	
 	//FIXME: Sidebar not dissappearing if user moves cursor out of handle while sliding out
-	$("#sidebar-handle").fadeOut(100,
-			function()
-			{
-				$("#sidebar").show("slide",300);
-			});
+	
+	if(UI.sidebarEnabled)
+	{
+		$("#sidebar-handle").fadeOut(100,
+				function()
+				{
+					$("#sidebar").show("slide",300);
+				});
+	}
 };
 
 UI.slideAwaySidebar = function()
@@ -271,13 +310,8 @@ UI.sidebarItemClicked = function(eventTarget)
 		
 		var target = item.attr("data-target");
 		
-		var targetTabTable = $("#tab-" +target + " table");//TODO: Find a fancier way to do this
-		if(targetTabTable)
-		{
-			//Target tab is table view -> Load table
-			
-			UI.data_updateTable(targetTabTable);
-		}
+		//Update target tab, then show it
+		UI.data_updateTab(target);
 		
 		UI.data_showTab(target);
 	}
@@ -296,9 +330,9 @@ UI.login_showError = function(msg)
 
 UI.data_showTab = function(name)
 {
-	if(currentTab != null)
+	if(UI.currentTab != null)
 	{
-		currentTab.fadeOut(function()
+		$("#tab-" + UI.currentTab).fadeOut(function()
 				{
 					$("#tab-" + name).fadeIn();
 				});
@@ -308,34 +342,89 @@ UI.data_showTab = function(name)
 		$("#tab-" + name).fadeIn();
 	}
 	
-	currentTab = $("#tab-" + name);
+	UI.currentTab = name;
+};
+
+
+/**
+ * Updates the whole data view.
+ */
+UI.dataUpdate = function()
+{
+	if(UI.currentScreen == "data")
+	{
+		UI.data_updateTab(UI.currentTab);
+	}
 };
 
 /**
- * Updates a data view table.
+ * Updates a data tab.
  * 
- * @param table A jQuery object of the table to be updated
+ * @param target The name of the target data tab
  */
-UI.data_updateTable = function(table)
+UI.data_updateTab = function(target)
 {	
+	var table = null;
+	var category = 0;
 	
-	//Update machine table for testing
-	var tab = UI.machineTable;
+	if(target == "machines")
+	{
+		table = UI.machineTable;
+		category = DCAT.MACHINE;
+	}else if(target == "jobs")
+	{
+		table = UI.jobTable;
+		category = DCAT.JOB;
+	}else
+	{
+		//Target not supported
+		return;
+	}
 	
-	var pkq = new Packet_Query(DCAT.MACHINE, "*");
+	var pkq = new Packet_Query(category, "*");
 	pkq.onResponse = function(pk)
 	{
-		tab.fnClearTable();
+		table.fnClearTable();
 		
 		if(pk.typeID == PTYPE.DATA)
 		{
-			tab.fnAddData(pk.data.result);
+			table.fnAddData(pk.data.result);
 		}
 	};
 	Network.sendPacket(pkq);
 	
 };
 
+UI.table_dragStart = function(event, ui)
+{
+	$("#tilecreator").show("slide");
+	
+	UI.sidebarEnabled = false;
+};
+
+UI.table_dragStop = function(event, ui)
+{
+	$("#tilecreator").hide("slide");
+	
+	UI.sidebarEnabled = true;
+	
+};
+
+UI.table_createTile = function(event, ui)
+{
+	
+};
+
+/*UI.table_createColHelper = function()
+{
+	var row = $(this);
+	
+	var helper = $("<div>");
+	helper.addClass("tile-creator-helper");
+	helper.css("width","120px");
+	
+	return helper;
+};*/
 
 //-------------Functional stuff------------
 
@@ -347,7 +436,7 @@ function f_tryLogin()
 	//Encrypt password in accordance with specification of MCP 1.2.1
 	var passwordHashObject = CryptoJS.SHA256($("#loginform_password").val());
 	$("#loginform_password").val("");
-	var saltedPasswordHash = passwordHashObject.toString(CryptoJS.enc.Hex) + Network.connectionData.salt; //TODO: replace hex encoder with self written one. plain ridicolous to use a library for that
+	var saltedPasswordHash = passwordHashObject.toString(CryptoJS.enc.Hex) + Session.salt; //TODO: replace hex encoder with self written one. plain ridicolous to use a library for that
 	var finalPasswordHash = CryptoJS.SHA256(saltedPasswordHash).toString(CryptoJS.enc.Hex);
 	delete passwordHashObject; //Delete unneeded vars containing sensible data. For safety :)
 	delete saltedPasswordHash;
@@ -359,18 +448,19 @@ function f_tryLogin()
 			if(pk.typeID == PTYPE.AUTH)
 			{
 				//Login successful -> store session data and open data view
-				Network.connectionData.sessionID = pk.data.sessionID;
+				Session.sessionID = pk.data.sessionID;
 				
-				Network.connectionData.username = username;
+				Session.username = username;
 				
 				//Store remember state for this session
-				Network.connectionData.remember = remember;
+				Session.remember = remember;
 				if(remember) //Store session ID in cookie if session is to be remembered
 				{
-					util_setCookie(TIGRIS_SESSION_COOKIE, Network.connectionData.sessionID);
+					util_setCookie(TIGRIS_SESSION_COOKIE, Session.sessionID);
 				}
 				
-				UI.showData(); //Everything is set up -> Show data screen
+				//As the user is now logged in, we can load his configuration stored on the server
+				f_loadServerSideConfig(); //This method displays data screen when done
 				
 			}else if(pk.typeID == PTYPE.NACK)
 			{
@@ -396,18 +486,18 @@ function f_tryRelog()
 				if(pk.typeID == PTYPE.REAUTH)
 				{
 					//The old session ID was still valid -> use echoed (maybe changed) session ID
-					Network.connectionData.sessionID = pk.data.sessionID;
+					Session.sessionID = pk.data.sessionID;
 					
 					//Store the new session ID to cookie TODO: maybe integrate this into f_setUpSession()
 					//Since this cookie was created in a session the user wanted to keep, we can assume the user wants still to keep it
 					util_setCookie(TIGRIS_SESSION_COOKIE, pk.data.sessionID);
 					
 					//As there was no login, the server has to tell us who we are
-					Network.connectionData.username = pk.data.username;
-					$("#username").html(Network.connectionData.username); //TODO: Put this somewhere it belongs
+					Session.username = pk.data.username;
+					$("#username").html(Session.username); //TODO: Put this somewhere it belongs
 					
-					//As the session was still valid, we can directly display the data view
-					UI.showData();
+					//As the session was still valid, we can directly display the data view (after loading configs)
+					f_loadServerSideConfig(); //This method automatically displays data view after everything was loaded up
 					
 				}else if(pk.typeID == PTYPE.NACK)
 				{
@@ -437,7 +527,7 @@ function f_tryLogout()
 			if(pk.typeID == PTYPE.ACK)
 			{
 				//Server has acknowledged logout -> Remove session data and do another HANDSHAKE before showing login form again
-				Network.clearSession();
+				Session.clear();
 				
 				//Handshake takes care of showing login form
 				Network.handshake(false); //Don't try a relog this time. It won't succeed anyway
@@ -459,6 +549,7 @@ function f_tryLogout()
 
 function f_serverSideLogout(reason)
 {
+	//TODO: Put this to central location
 	var msgs = {};
 	msgs[LOGOUTREASON.UNKNOWN] = "of an unknown reason.";
 	msgs[LOGOUTREASON.SESSION_EXPIRED] = "your session lost its validity.";
@@ -466,12 +557,52 @@ function f_serverSideLogout(reason)
 	msgs[LOGOUTREASON.REFUSED] = "you were somehow suddenly refused.";
 	msgs[LOGOUTREASON.CLOSED_BY_USER] = "it says the user did it. Alright, who was it then?";
 	
-	Network.clearSession();
+	Session.clear();
 	
 	UI.showLogin();
 	UI.login_showError("The server logged you out because " + msgs[reason]);
 }
 
+function f_loadServerSideConfig()
+{
+	//Load a list of product types so IDs can be resolved to names
+	var queryProducts = new Packet_Query(DCAT.PRODUCT,"*");
+	queryProducts.onResponse = function(pk)
+	{
+		if(pk.typeID == PTYPE.DATA)
+		{
+			jQuery.each(pk.data.result, 
+					function(index, value)
+					{
+						UI.productTypes[value.id] = value.name;
+					});
+			
+			UI.showData(); //Everything is set up -> Show data screen
+		}
+	};
+	
+	
+	//Fetch config data from server
+	var queryConfig = new Packet_Query(DCAT.CONFIG,"*");
+	queryConfig.onResponse = function(pk)
+	{
+		if(pk.typeID == PTYPE.DATA)
+		{
+			//Store all of the returned config values
+			jQuery.each(pk.data.result, 
+					function(index, value)
+					{
+						Session.config[value.id] = value.name;
+					});
+			
+			//When we are finished loading config, we may continue with the product names (ensures everything is done in order)
+			Network.sendPacket(queryProducts);
+		}
+	};
+	
+	//First load config, then load product names
+	Network.sendPacket(queryConfig); 
+}
 
 /**
  * Updates all tiles on the dashboard.
@@ -497,33 +628,35 @@ function f_updateTiles(category, data)
 }
 
 /**
+ * Object for storage of session related data.
+ */
+var Session = {};
+
+Session.salt = null;
+Session.sessionID = null;
+Session.config = {};
+Session.username = "";
+Session.remember = false;
+
+/**
+ * Removes any session related data to begin a new session.
+ */
+Session.clear = function()
+{
+	Session.sessionID = null;
+	Session.username = "";
+	
+	util_setCookie(TIGRIS_SESSION_COOKIE, "", -9999);
+};
+
+
+/**
  * Namespace for network related functions
  */
 var Network = {};
 
 Network.socket = null;
 Network.sentPacketMap = {};
-
-Network.remember = false;
-
-Network.connectionData = 
-{
-	salt: null,
-		
-	sessionID: null,
-	username: ""
-};
-
-/**
- * Removes any session related data to begin a new session.
- */
-Network.clearSession = function()
-{
-	Network.connectionData.sessionID = null;
-	Network.connectionData.username = "";
-	
-	util_setCookie(TIGRIS_SESSION_COOKIE, "", -9999);
-};
 
 Network.init = function()
 {
@@ -677,7 +810,7 @@ Network.handshake = function(tryRelog)
 		{
 			console.log("Handshake successful");
 			
-			Network.connectionData.salt = pk.data.salt;
+			Session.salt = pk.data.salt;
 			
 			//Connection to server is OK -> The user may log in
 			//First look if there is already a session to be restored.
@@ -711,7 +844,7 @@ Network.generateUID = function()
 	var uid = 0;
 	var rounds = 0;
 	
-	while(("uid" + uid) in sentPacketMap)
+	while(("uid" + uid) in Network.sentPacketMap)
 	{
 		uid += 2; //Generate only even UIDs
 		
@@ -900,7 +1033,9 @@ function Dashboard()
 						
 					}
 					
-				}
+				},
+			
+				revert: true
 			});
 }
 
@@ -1131,4 +1266,17 @@ function util_getCookie(name)
 			return unescape(y);
 		}
 	}	
+}
+
+/**
+ * Formats a Date object according to german date convention. TODO: Localize this
+ * 
+ * @param d The Date object
+ * @returns {String}
+ */
+function util_formatDate(d)
+{
+	
+	return d.getDate() + "." + (d.getMonth() + 1) + "." + d.getFullYear() + " " + d.getHours() + ":" + d.getMinutes();
+	
 }
