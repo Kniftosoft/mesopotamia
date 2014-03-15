@@ -481,7 +481,7 @@ Contents
 	
 	Below you find a list of categories with their specific information.
 	
-	
+
 	MACHINE
 	-------
 	

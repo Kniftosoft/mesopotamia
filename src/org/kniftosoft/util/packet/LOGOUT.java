@@ -1,34 +1,51 @@
 package org.kniftosoft.util.packet;
 
-import org.kniftosoft.Login.Loginmanager;
+import org.kniftosoft.thread.ClientUpDater;
 
 import com.google.gson.JsonObject;
 
 public class LOGOUT extends Packet {
-	private String sessionID;
 	private int reasonCode;
 	private String reasonMessage;
 	
 	
 	public LOGOUT() {
 	}
+	private void Logout()
+	{
+		
+		/*TODO need session id back 
+		EntityManagerFactory factory;
+		factory = Persistence.createEntityManagerFactory(Constants.PERSISTENCE_UNIT_NAME);
+	    EntityManager em = factory.createEntityManager();
+	    em.remove(em.find(Session.class, rp.getsessionID));
+	    em.close();
+	    */
+		//TODO remove sys out if checkt and handle different codes
+		System.out.println("logg out"+peer.getSession().getId());
+		peer.setLoginverified(false);
+		peer.setUser(null);
+		peer.setSalt(null);
+		ClientUpDater.updatepeer(peer);	
+		ACK ap = new ACK();
+		ap.setPeer(peer);
+		ap.setUID(uid);
+		ap.send();
+	}
 	
 	@Override
 	public void createFromJSON(JsonObject o) {
-		sessionID = o.get("sessionID").getAsString();
 		reasonCode = o.get("reasonCode").getAsInt();
 		reasonMessage = o.get("reasonMessage").getAsString();
 		
 	}
 	@Override
 	public void executerequest() {
-		Loginmanager.Logout(this);
-		
+		Logout();
 	}
 	@Override
 	public JsonObject storeData() {
 		JsonObject data = new JsonObject();
-		data.addProperty("sessionID", sessionID);
 		data.addProperty("reasonCode", reasonCode);
 		data.addProperty("reasonMessage", reasonMessage);
 		return null;
@@ -38,18 +55,6 @@ public class LOGOUT extends Packet {
 		return PacketType.LOGOUT;
 	}
 
-	/**
-	 * @return the sessionID
-	 */
-	public String getSessionID() {
-		return sessionID;
-	}
-	/**
-	 * @param sessionID the sessionID to set
-	 */
-	public void setSessionID(String sessionID) {
-		this.sessionID = sessionID;
-	}
 	/**
 	 * @return the reasonCode
 	 */

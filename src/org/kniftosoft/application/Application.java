@@ -3,6 +3,9 @@
  */
 package org.kniftosoft.application;
 
+import java.util.List;
+
+import org.kniftosoft.entity.Maschine;
 import org.kniftosoft.entity.Subscribe;
 
 import com.google.gson.JsonArray;
@@ -15,6 +18,8 @@ public abstract  class Application {
 
 	//TODO think about somethin intelligent about user rights
 	public abstract JsonArray getdata(Subscribe sub);
+	
+	public abstract JsonArray getdata(List<Maschine> maschines);
 	/**
 	 * 
 	 */

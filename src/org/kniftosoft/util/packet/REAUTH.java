@@ -13,22 +13,22 @@ import com.google.gson.JsonObject;
  */
 
 public class REAUTH extends Packet {
-	private String newSessionID;
+	private int newSessionID;
 	private JsonObject userConfig;
 	/**
 	 * @param uid
 	 * @param peer
 	 */
-	public REAUTH(int uid, EuphratisSession peer,String newSessionID,JsonObject userConfig) {
+	public REAUTH(int uid, EuphratisSession peer,int i,JsonObject userConfig) {
 		// TODO Auto-generated constructor stub
 		this.uid = uid;
 		this.peer = peer;
-		this.setNewSessionID(newSessionID);
+		this.setNewSessionID(i);
 		this.setUserConfig(userConfig);
 	}
 	@Override
 	public void createFromJSON(JsonObject o) {
-		newSessionID = o.get("newSessionID").getAsString();
+		newSessionID = o.get("newSessionID").getAsInt();
 		userConfig = o.getAsJsonObject("userConfig");
 		
 	}
@@ -43,11 +43,11 @@ public class REAUTH extends Packet {
 	public PacketType getType() {
 		return PacketType.REAUTH;
 	}
-	public String getNewSessionID() {
+	public int getNewSessionID() {
 		return newSessionID;
 	}
-	public void setNewSessionID(String newSessionID) {
-		this.newSessionID = newSessionID;
+	public void setNewSessionID(int i) {
+		this.newSessionID = i;
 	}
 	public JsonObject getUserConfig() {
 		return userConfig;

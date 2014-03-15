@@ -6,6 +6,7 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
+
 import org.kniftosoft.util.EuphratisSession;
 import org.kniftosoft.thread.ClientUpDater;
 import org.kniftosoft.util.packet.Packet;
@@ -33,7 +34,6 @@ public class MesopotamiaEndpoint {
 		System.out.println("recived Packet:"+packet.toString());
 		packet.executerequest();
 			
-		
 	}
 	/**
 	 * 

@@ -15,7 +15,6 @@ public class Maschine implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GeneratedValue(strategy=GenerationType.AUTO)
 	private int idmaschine;
 
 	private String name;
@@ -26,13 +25,13 @@ public class Maschine implements Serializable {
 	@OneToMany(mappedBy="maschineBean")
 	private List<Log> logs;
 
-	//bi-directional many-to-one association to Useraccess
-	@OneToMany(mappedBy="maschineBean")
-	private List<Useraccess> useraccesses;
-
 	//bi-directional many-to-one association to Subbedmaschine
 	@OneToMany(mappedBy="maschineBean")
 	private List<Subbedmaschine> subbedmaschines;
+
+	//bi-directional many-to-one association to Useraccess
+	@OneToMany(mappedBy="maschineBean")
+	private List<Useraccess> useraccesses;
 
 	public Maschine() {
 	}
@@ -83,28 +82,6 @@ public class Maschine implements Serializable {
 		return log;
 	}
 
-	public List<Useraccess> getUseraccesses() {
-		return this.useraccesses;
-	}
-
-	public void setUseraccesses(List<Useraccess> useraccesses) {
-		this.useraccesses = useraccesses;
-	}
-
-	public Useraccess addUseraccess(Useraccess useraccess) {
-		getUseraccesses().add(useraccess);
-		useraccess.setMaschineBean(this);
-
-		return useraccess;
-	}
-
-	public Useraccess removeUseraccess(Useraccess useraccess) {
-		getUseraccesses().remove(useraccess);
-		useraccess.setMaschineBean(null);
-
-		return useraccess;
-	}
-
 	public List<Subbedmaschine> getSubbedmaschines() {
 		return this.subbedmaschines;
 	}
@@ -125,6 +102,28 @@ public class Maschine implements Serializable {
 		subbedmaschine.setMaschineBean(null);
 
 		return subbedmaschine;
+	}
+
+	public List<Useraccess> getUseraccesses() {
+		return this.useraccesses;
+	}
+
+	public void setUseraccesses(List<Useraccess> useraccesses) {
+		this.useraccesses = useraccesses;
+	}
+
+	public Useraccess addUseraccess(Useraccess useraccess) {
+		getUseraccesses().add(useraccess);
+		useraccess.setMaschineBean(this);
+
+		return useraccess;
+	}
+
+	public Useraccess removeUseraccess(Useraccess useraccess) {
+		getUseraccesses().remove(useraccess);
+		useraccess.setMaschineBean(null);
+
+		return useraccess;
 	}
 
 }

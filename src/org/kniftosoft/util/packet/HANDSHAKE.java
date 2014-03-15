@@ -18,7 +18,6 @@ public class HANDSHAKE extends Packet {
 	@Override
 	public void executerequest()
 	{
-		System.out.println("hp");
 		if(clientVersion.equals(Constants.Clientversion))
 		{
 			peer.setSalt(Long.toHexString(Double.doubleToLongBits(Math.random())));

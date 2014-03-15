@@ -1,8 +1,13 @@
 package org.kniftosoft.entity;
 
 import java.io.Serializable;
-import javax.persistence.*;
 import java.util.List;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
 
 
 /**
@@ -15,7 +20,6 @@ public class User implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GeneratedValue(strategy=GenerationType.AUTO)
 	@Column(name="USER_ID")
 	private int userId;
 
@@ -39,8 +43,12 @@ public class User implements Serializable {
 
 	private String vorname;
 
+	//bi-directional many-to-one association to Session
+	@OneToMany(mappedBy="userBean")
+	private List<Session> sessions;
+
 	//bi-directional many-to-one association to Subscribe
-	@OneToMany(mappedBy="userBean", cascade={CascadeType.PERSIST})
+	@OneToMany(mappedBy="userBean")
 	private List<Subscribe> subscribes;
 
 	//bi-directional many-to-one association to Useraccess
@@ -128,6 +136,28 @@ public class User implements Serializable {
 
 	public void setVorname(String vorname) {
 		this.vorname = vorname;
+	}
+
+	public List<Session> getSessions() {
+		return this.sessions;
+	}
+
+	public void setSessions(List<Session> sessions) {
+		this.sessions = sessions;
+	}
+
+	public Session addSession(Session session) {
+		getSessions().add(session);
+		session.setUserBean(this);
+
+		return session;
+	}
+
+	public Session removeSession(Session session) {
+		getSessions().remove(session);
+		session.setUserBean(null);
+
+		return session;
 	}
 
 	public List<Subscribe> getSubscribes() {

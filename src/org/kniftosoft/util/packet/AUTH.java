@@ -11,12 +11,12 @@ import com.google.gson.JsonObject;
  */
 public class AUTH extends Packet {
 
-	private String sessionID;
+	private int sessionID;
 	private JsonObject userconfig;
 
 	@Override
 	public void createFromJSON(JsonObject o) {
-		sessionID = o.get("sessionID").getAsString();
+		sessionID = o.get("sessionID").getAsInt();
 		userconfig = o.get("userconfig").getAsJsonObject();
 	}
 
@@ -34,10 +34,10 @@ public class AUTH extends Packet {
 	}
 
 	/**
-	 * @param sessionID the sessionID to set
+	 * @param i the sessionID to set
 	 */
-	public void setSessionID(String sessionID) {
-		this.sessionID = sessionID;
+	public void setSessionID(int idSessions) {
+		this.sessionID = idSessions;
 	}
 
 	/**
@@ -52,4 +52,6 @@ public class AUTH extends Packet {
 		// TODO Auto-generated method stub
 		
 	}
+
+
 }

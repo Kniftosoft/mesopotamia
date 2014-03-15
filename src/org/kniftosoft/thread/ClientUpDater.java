@@ -76,8 +76,9 @@ public class ClientUpDater extends Thread {
 	public void run() {
 		try {
 			while(true) {
-	        	System.out.println("update" +Thread.currentThread().getName()+peers.toString());
-	        	SubscribeUpDater.updateSubscriptions();
+				//TODO remove
+	        	//System.out.println("update" +Thread.currentThread().getName()+peers.toString());
+	        	//SubscribeUpDater.updateSubscriptions();
 				Thread.currentThread();
 				Thread.sleep(sleepTime);
 

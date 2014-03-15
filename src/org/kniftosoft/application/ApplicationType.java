@@ -5,7 +5,7 @@ package org.kniftosoft.application;
 public enum ApplicationType 
 {
 	
-	Test(1, Test.class);
+	Maschineapp(1, Maschineapp.class);
 
 	
 	private int typeID;
@@ -30,7 +30,7 @@ public enum ApplicationType
 	
 	public static ApplicationType byID(int id)
 	{
-		System.out.println("male application by id");
+		System.out.println("made application by id");
 		for(ApplicationType a : ApplicationType.values())
 		{
 			if(a.getTypeID() == id)

@@ -3,4 +3,5 @@
 	<listener>
         <listener-class>org.kniftosoft.endpoint.DeploymentConfig</listener-class>
     </listener>
+
 </web-app>

@@ -33,9 +33,7 @@ public class PacketDecoder implements Decoder.Text<Packet>
 	{
 		try{
 		parser = new JsonParser();
-		System.out.println("recived: "+msg);
 		JsonObject jsonPacket = (JsonObject)parser.parse(msg);
-		System.out.println("parse: "+msg);
 		System.out.flush();
 		
 		int packetTypeID = jsonPacket.get("typeID").getAsInt();
@@ -51,24 +49,22 @@ public class PacketDecoder implements Decoder.Text<Packet>
 		{
 			System.out.println("create packet: "+msg);
 			Packet packet = (Packet) type.getPacketClass().newInstance();
-			packet.createFromJSON(jsonPacket.get("data").getAsJsonObject());
 			packet.setUID(jsonPacket.get("uid").getAsInt());
+			packet.createFromJSON(jsonPacket.get("data").getAsJsonObject());
 			
 			return packet;
 			
 		}catch (InstantiationException e) 
 		{
-			System.out.println("error: "+e.toString());
 			throw new DecodeException(msg,"Could not instantiate packet class of packet type " + type.name());
 			
 		}catch (IllegalAccessException e) 
 		{
-			System.out.println("error: "+e.toString());
 			throw new DecodeException(msg,"Could not instantiate packet class of packet type " + type.name());
 		}
 		}catch(Exception e)
 		{
-			System.err.println(e.toString());
+			e.printStackTrace();
 			throw new DecodeException(msg, "unknown");	
 		}
 	}
