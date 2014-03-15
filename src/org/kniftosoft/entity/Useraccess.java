@@ -17,15 +17,15 @@ public class Useraccess implements Serializable {
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	private int iduseraccess;
 
-	//bi-directional many-to-one association to User
-	@ManyToOne
-	@JoinColumn(name="user")
-	private User userBean;
-
 	//bi-directional many-to-one association to Maschine
 	@ManyToOne
 	@JoinColumn(name="maschine")
 	private Maschine maschineBean;
+
+	//bi-directional many-to-one association to User
+	@ManyToOne
+	@JoinColumn(name="user")
+	private User userBean;
 
 	public Useraccess() {
 	}
@@ -38,20 +38,20 @@ public class Useraccess implements Serializable {
 		this.iduseraccess = iduseraccess;
 	}
 
-	public User getUserBean() {
-		return this.userBean;
-	}
-
-	public void setUserBean(User userBean) {
-		this.userBean = userBean;
-	}
-
 	public Maschine getMaschineBean() {
 		return this.maschineBean;
 	}
 
 	public void setMaschineBean(Maschine maschineBean) {
 		this.maschineBean = maschineBean;
+	}
+
+	public User getUserBean() {
+		return this.userBean;
+	}
+
+	public void setUserBean(User userBean) {
+		this.userBean = userBean;
 	}
 
 }

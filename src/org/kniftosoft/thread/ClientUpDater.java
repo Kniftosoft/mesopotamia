@@ -8,7 +8,7 @@ import java.util.Map;
 
 import javax.websocket.Session;
 
-import org.kniftosoft.entity.EuphratisSession;
+import org.kniftosoft.util.EuphratisSession;
 import org.kniftosoft.thread.updater.SubscribeUpDater;
 
 /**

@@ -18,6 +18,8 @@ public class Maschine implements Serializable {
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	private int idmaschine;
 
+	private String name;
+
 	private String standort;
 
 	//bi-directional many-to-one association to Log
@@ -28,6 +30,10 @@ public class Maschine implements Serializable {
 	@OneToMany(mappedBy="maschineBean")
 	private List<Useraccess> useraccesses;
 
+	//bi-directional many-to-one association to Subbedmaschine
+	@OneToMany(mappedBy="maschineBean")
+	private List<Subbedmaschine> subbedmaschines;
+
 	public Maschine() {
 	}
 
@@ -37,6 +43,14 @@ public class Maschine implements Serializable {
 
 	public void setIdmaschine(int idmaschine) {
 		this.idmaschine = idmaschine;
+	}
+
+	public String getName() {
+		return this.name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	public String getStandort() {
@@ -89,6 +103,28 @@ public class Maschine implements Serializable {
 		useraccess.setMaschineBean(null);
 
 		return useraccess;
+	}
+
+	public List<Subbedmaschine> getSubbedmaschines() {
+		return this.subbedmaschines;
+	}
+
+	public void setSubbedmaschines(List<Subbedmaschine> subbedmaschines) {
+		this.subbedmaschines = subbedmaschines;
+	}
+
+	public Subbedmaschine addSubbedmaschine(Subbedmaschine subbedmaschine) {
+		getSubbedmaschines().add(subbedmaschine);
+		subbedmaschine.setMaschineBean(this);
+
+		return subbedmaschine;
+	}
+
+	public Subbedmaschine removeSubbedmaschine(Subbedmaschine subbedmaschine) {
+		getSubbedmaschines().remove(subbedmaschine);
+		subbedmaschine.setMaschineBean(null);
+
+		return subbedmaschine;
 	}
 
 }

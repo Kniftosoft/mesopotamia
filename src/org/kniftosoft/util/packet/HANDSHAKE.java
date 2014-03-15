@@ -13,7 +13,7 @@ import com.google.gson.JsonObject;
  *
  */
 public class HANDSHAKE extends Packet {
-
+	
 	private String clientVersion;
 	@Override
 	public void executerequest()
@@ -28,7 +28,8 @@ public class HANDSHAKE extends Packet {
 		}
 		else
 		{
-			new ERROR(uid, peer,5,"Connection Refused because of a wrong Client Version").send();
+			ERROR er = new ERROR(uid, peer,5,"Connection Refused because of a wrong Client Version");
+			er.send();
 			ClientUpDater.removepeer(peer);
 		}
 	}

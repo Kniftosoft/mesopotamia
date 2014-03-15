@@ -24,14 +24,14 @@ public class Auftrag implements Serializable {
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date startzeit;
 
-	//bi-directional many-to-one association to Log
-	@OneToMany(mappedBy="auftragBean")
-	private List<Log> logs;
-
 	//bi-directional many-to-one association to Produkt
 	@ManyToOne
 	@JoinColumn(name="produkt")
 	private Produkt produktBean;
+
+	//bi-directional many-to-one association to Log
+	@OneToMany(mappedBy="auftragBean")
+	private List<Log> logs;
 
 	public Auftrag() {
 	}
@@ -60,6 +60,14 @@ public class Auftrag implements Serializable {
 		this.startzeit = startzeit;
 	}
 
+	public Produkt getProduktBean() {
+		return this.produktBean;
+	}
+
+	public void setProduktBean(Produkt produktBean) {
+		this.produktBean = produktBean;
+	}
+
 	public List<Log> getLogs() {
 		return this.logs;
 	}
@@ -80,14 +88,6 @@ public class Auftrag implements Serializable {
 		log.setAuftragBean(null);
 
 		return log;
-	}
-
-	public Produkt getProduktBean() {
-		return this.produktBean;
-	}
-
-	public void setProduktBean(Produkt produktBean) {
-		this.produktBean = produktBean;
 	}
 
 }

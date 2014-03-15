@@ -6,6 +6,10 @@ package org.kniftosoft.application;
 import javax.websocket.DecodeException;
 
 import org.kniftosoft.entity.Subscribe;
+import org.kniftosoft.thread.ClientUpDater;
+import org.kniftosoft.util.packet.DATA;
+
+import com.google.gson.JsonArray;
 
 /**
  * @author julian
@@ -17,7 +21,9 @@ public class Appinstance {
 	Subscribe sub;
 	public void update()
 	{
-		
+		DATA update = new DATA();
+		update.setResult(app.getdata(sub));
+		//update.setPeer(ClientUpDater.);
 	}
 	private void getapp() throws DecodeException
 	{

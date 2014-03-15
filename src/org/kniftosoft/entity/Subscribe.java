@@ -2,6 +2,7 @@ package org.kniftosoft.entity;
 
 import java.io.Serializable;
 import javax.persistence.*;
+import java.util.List;
 
 
 /**
@@ -26,6 +27,10 @@ public class Subscribe implements Serializable {
 	@ManyToOne(cascade={CascadeType.PERSIST})
 	@JoinColumn(name="user")
 	private User userBean;
+
+	//bi-directional many-to-one association to Subbedmaschine
+	@OneToMany(mappedBy="subscribeBean")
+	private List<Subbedmaschine> subbedmaschines;
 
 	public Subscribe() {
 	}
@@ -52,6 +57,28 @@ public class Subscribe implements Serializable {
 
 	public void setUserBean(User userBean) {
 		this.userBean = userBean;
+	}
+
+	public List<Subbedmaschine> getSubbedmaschines() {
+		return this.subbedmaschines;
+	}
+
+	public void setSubbedmaschines(List<Subbedmaschine> subbedmaschines) {
+		this.subbedmaschines = subbedmaschines;
+	}
+
+	public Subbedmaschine addSubbedmaschine(Subbedmaschine subbedmaschine) {
+		getSubbedmaschines().add(subbedmaschine);
+		subbedmaschine.setSubscribeBean(this);
+
+		return subbedmaschine;
+	}
+
+	public Subbedmaschine removeSubbedmaschine(Subbedmaschine subbedmaschine) {
+		getSubbedmaschines().remove(subbedmaschine);
+		subbedmaschine.setSubscribeBean(null);
+
+		return subbedmaschine;
 	}
 
 }

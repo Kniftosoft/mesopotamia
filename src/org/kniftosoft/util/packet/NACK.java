@@ -3,7 +3,7 @@
  */
 package org.kniftosoft.util.packet;
 
-import org.kniftosoft.entity.EuphratisSession;
+import org.kniftosoft.util.EuphratisSession;
 
 import com.google.gson.JsonObject;
 

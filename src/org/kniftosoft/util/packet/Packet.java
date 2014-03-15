@@ -3,7 +3,7 @@
  */
 package org.kniftosoft.util.packet;
 
-import org.kniftosoft.entity.EuphratisSession;
+import org.kniftosoft.util.EuphratisSession;
 import org.kniftosoft.util.UIDGen;
 
 import com.google.gson.JsonObject;
@@ -11,7 +11,7 @@ import com.google.gson.JsonObject;
 
 /**
  * @author julian
- *
+ * 
  */
 public abstract class Packet 
 {
@@ -26,6 +26,7 @@ public abstract class Packet
 	
 	public void send()
 	{
+		System.out.println("try bsend");
 		peer.getSession().getAsyncRemote().sendObject(this);
 	}
 	

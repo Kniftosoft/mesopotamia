@@ -3,7 +3,9 @@
  */
 package org.kniftosoft.application;
 
-import com.google.gson.JsonObject;
+import org.kniftosoft.entity.Subscribe;
+
+import com.google.gson.JsonArray;
 
 /**
  * @author julian
@@ -11,12 +13,12 @@ import com.google.gson.JsonObject;
  */
 public abstract  class Application {
 
-	public abstract JsonObject getdata(List<>);
+	//TODO think about somethin intelligent about user rights
+	public abstract JsonArray getdata(Subscribe sub);
 	/**
 	 * 
 	 */
 	public Application() {
 		// TODO Auto-generated constructor stub
 	}
-
 }

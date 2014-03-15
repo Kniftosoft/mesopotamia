@@ -12,18 +12,32 @@ import com.google.gson.JsonObject;
  */
 public class DATA extends Packet {
 
-	private JsonArray queryResult;
+	private JsonArray result;
+	/**
+	 * @return the result
+	 */
+	public JsonArray getResult() {
+		return result;
+	}
+
+	/**
+	 * @param result the result to set
+	 */
+	public void setResult(JsonArray result) {
+		this.result = result;
+	}
+
 	private int category;
 
 	@Override
 	public void createFromJSON(JsonObject o) {
-		queryResult = o.getAsJsonArray("queryResult");
+		result = o.getAsJsonArray("result");
 	}
 
 	@Override
 	public JsonObject storeData() {
 		JsonObject data = new JsonObject();
-		data.add("queryResult", queryResult);
+		data.add("result", result);
 		return data;
 	}
 

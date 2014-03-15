@@ -44,9 +44,8 @@ public class SubscribeUpDater {
 		 List<Subscribe> subscribes = readSubscribes();
 		 for(Iterator<Subscribe> iterator = subscribes.iterator(); iterator.hasNext();)
 		 {
-			 Appinstance app = new Appinstance(iterator.next());
+			 Appinstance app = new Appinstance(iterator.next());	
 			 app.update();
-			
 		 }
 		
 	}

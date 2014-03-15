@@ -1,28 +1,27 @@
 
 /*--------------------------
- *      Tigris 0.2.2
+ *      Tigris 0.3.1
  * 	Mesopotamia Client v1
  * (C) Niklas Weissner 2014
  *-------------------------- 
  */
 
-//TODO: Implement better error handling all over the script
 //TODO: Sort some code fragments so the source can be easier understood
 //TODO: Comment on stuff
 //TODO: Localization maybe?
-//TODO: Type safety in packets
+//TODO: Maybe check for type specific fields?
 
 //Configure this to your Euphrates installation
 //If your endpoint is absolute, make sure you include the full URI (including protocol etc.)
-var ENDPOINT_IS_RELATIVE = false;
-var MESO_ENDPOINT = "ws://localhost:8080/mesopotamia/TIG_TEST_END"; //Link to Euphrates
+var ENDPOINT_IS_RELATIVE = true;
+var MESO_ENDPOINT = "TIG_TEST_END"; //Link to Euphrates
 
 
 //Constants
-var TIGRIS_VERSION = "0.2.2";
+var TIGRIS_VERSION = "0.3.1";
 var TIGRIS_SESSION_COOKIE = "2324-tigris-session";
 
-var GENERAL_TIMEOUT = 2000; //Default timeout in milliseconds (may be overridden by some packets)
+var GENERAL_TIMEOUT = 5000; //Default timeout in milliseconds (may be overridden by some packets)
 
 var PTYPE =
 {
@@ -38,6 +37,12 @@ var PTYPE =
 	ACK: 		200,
 	NACK: 		201,
 	ERROR: 		242
+};
+
+var DCAT =
+{
+	MACHINE:	1,
+	JOB:		2
 };
 
 var ERRORCODE =
@@ -60,36 +65,34 @@ var LOGOUTREASON =
 	REFUSED:			4
 };
 
-var connectionData = 
-{
-		salt: null,
-		
-		sessionID: null,
-		username: ""
-};
-
 var socket;
 var sentPacketMap = {};
 
 var currentTab = null; //The data screen tab currently displayed TODO: Make this a bit fancier
 
+var dashboard = null;
+
 $(document).ready(
 function()
 {
 	
-	ui_init();
+	UI.init();
 	
-	n_init();
+	Network.init();
 });
 
 
 //-------------UI stuff---------------
 
-function ui_init()
-{
+/**
+ * Namespace for user interface related functions
+ */
+var UI = {};
 
-	ui_showStatus("Connecting to the server..."); //Initially show messeage on connection status
-	
+UI.currentScreen = "status"; //Status message for noscript is displayed by default
+
+UI.init = function()
+{	
 	//Set up events
 	$("#loginform").submit(
 			function(e) 
@@ -108,35 +111,51 @@ function ui_init()
 	$(".sidebar-item").click(
 			function(e)
 			{
-				ui_sidebarItemClicked(e.target);
+				UI.sidebarItemClicked(e.target);
 			});
 	
 	$("#sidebar-handle").mouseover(
 			function(e)
 			{
-				ui_slideOutSidebar();
+				UI.slideOutSidebar();
 			});
 	
 	$("#sidebar").mouseout(function(e)
 			{
 				if(!$(e.relatedTarget).hasClass("sidebar-item") && (e.relatedTarget != document.getElementById("sidebar")))
 				{
-					ui_slideAwaySidebar();
+					UI.slideAwaySidebar();
 				}
 			});
 	
-	/*$(".sidebar-item").mouseover(function(e)
-	{
-		$(e.target).addClass("sidebar-item-hover", 200);
-	});
+	//Create tables
+	//Status values decoded for testing
+	UI.statusTest = {};
+	UI.statusTest[1] = "Running";
+	UI.statusTest[2] = "Error";
+	UI.statusTest[3] = "Repair";
+	UI.statusTest[4] = "Modification";
+	UI.statusTest[5] = "Cleaning";
+	 
+	UI.machineTable = $("#table-machine").dataTable({
+		"aoColumns": [
+		              { "mData": "id" },
+                      { "mData": "name" },
+                      { "mData": "job" },
+                      { "mData": "speed" },
+                      { "mData": function(data, type, val) { return UI.statusTest[data.status]; }}
+                    ]});
 	
-	$(".sidebar-item").mouseleave(function(e)
-	{
-		$(e.target).removeClass("sidebar-item-hover", 200);
-	});*/
+	$("#table-job").dataTable({
+		"aoColumns": [
+		              { "mData": "id" },
+                      { "mData": "target" },
+                      { "mData": "startTime" },
+                      { "mData": "productType" }
+                    ]});
 	
-	ui_setUpDashboard(); //Set up dashboard TODO: Review if this is really needed (currently only for testing)
-}
+	UI.showStatus("Connecting to the server..."); //Initially show message on connection status
+};
 
 
 
@@ -145,29 +164,54 @@ function ui_init()
  * 
  * @param name The name of the screen to be displayed
  */
-function ui_showScreen(name)
+UI.showScreen = function(name)
 {
 	$(".screen").hide(); //Hide all screens...
 	$("#screen-" + name).show(); //and show only disered one
-}
+	
+	UI.currentScreen = name;
+};
 
 /**
- * Display data screen with fading animation. Used for the login->dataview-transition.
+ * Displays login screen and hides any error message in the login dialog.
  */
-function ui_showDataScreen()
+UI.showLogin = function()
 {
-	//Play nice fading animation
-	$("#screen-login").hide("puff", {}, 600, 
-			function()
-			{ 
-				$("#screen-data").fadeIn();
-			});
+	UI.showScreen("login");
 	
-	$("#data-frame > .data-frame-tab").hide(); //Initially hide all data tabs...
-	ui_data_showTab("dashboard"); //and show dashboard
-}
+	$("#loginerror").hide();
+};
 
-function ui_showStatus(msg, error)
+/**
+ * Displays data screen. Plays fading animation when transiting from login to data screen.
+ */
+UI.showData = function()
+{
+	if(UI.currentScreen == "login")
+	{
+		//Play nice fading animation
+		$("#screen-login").hide("puff", {}, 600, 
+				function()
+				{ 
+					$("#screen-data").fadeIn();
+				});
+	}else
+	{
+		UI.showScreen("data");
+	}
+	
+	//Set up user information
+	$("#username").html(Network.connectionData.username);
+	
+	
+	$(".data-frame-tab").hide(); //Initially hide all dashboard tabs...
+	UI.data_showTab("dashboard"); //and show dashboard
+};
+
+/**
+ * Displays status screen with optional error coloring for the error message.
+ */
+UI.showStatus = function(msg, error)
 {
 	$("#statusbox").html(msg);
 	if(error)
@@ -178,61 +222,40 @@ function ui_showStatus(msg, error)
 		$("#statusbox").removeClass("error");
 	}
 	
-	ui_showScreen("status");
-}
+	UI.showScreen("status");
+};
 
-function ui_slideOutSidebar()
+/**
+ * Displays status screen with error message and logs it to console.error for debugging.
+ */
+UI.showError = function(msg)
+{
+	console.error(msg);
+	
+	UI.showStatus(msg, true);
+};
+
+
+UI.slideOutSidebar = function()
 {	
+	//FIXME: Sidebar not dissappearing if user moves cursor out of handle while sliding out
 	$("#sidebar-handle").fadeOut(100,
 			function()
 			{
 				$("#sidebar").show("slide",300);
 			});
-}
+};
 
-function ui_slideAwaySidebar()
+UI.slideAwaySidebar = function()
 {	
 	$("#sidebar").hide("slide", 300,
 			function()
 			{
 				$("#sidebar-handle").fadeIn(100);
 			});
-}
+};
 
-function ui_data_showTab(name)
-{
-	if(currentTab != null)
-	{
-		currentTab.fadeOut(function()
-				{
-					$("#tab-" + name).fadeIn();
-				});
-		
-	}else
-	{
-		$("#tab-" + name).fadeIn();
-	}
-	
-	currentTab = $("#tab-" + name);
-}
-
-function ui_showError(msg)
-{
-	console.error(msg);
-	
-	ui_showStatus(msg, true);
-}
-
-function ui_login_showError(msg)
-{
-	$("#loginerror").html(msg);
-	
-	$("#loginerror").show();
-	
-	$("#loginerror").effect("shake");
-}
-
-function ui_sidebarItemClicked(eventTarget)
+UI.sidebarItemClicked = function(eventTarget)
 {	
 	var item = $(eventTarget);
 	
@@ -248,55 +271,85 @@ function ui_sidebarItemClicked(eventTarget)
 		
 		var target = item.attr("data-target");
 		
-		ui_data_showTab(target);
+		var targetTabTable = $("#tab-" +target + " table");//TODO: Find a fancier way to do this
+		if(targetTabTable)
+		{
+			//Target tab is table view -> Load table
+			
+			UI.data_updateTable(targetTabTable);
+		}
+		
+		UI.data_showTab(target);
 	}
-}
+};
 
-function ui_setUpDashboard()
+
+UI.login_showError = function(msg)
 {
+	$("#loginerror").html(msg);
+	
+	$("#loginerror").show();
+	
+	$("#loginerror").effect("shake");
+};
 
-	$(".dashboard-column").sortable(
-			{
-				connectWith: ".dashboard-column",
-				placeholder: "dashboard-tile-placeholder"
-			});
+
+UI.data_showTab = function(name)
+{
+	if(currentTab != null)
+	{
+		currentTab.fadeOut(function()
+				{
+					$("#tab-" + name).fadeIn();
+				});
+		
+	}else
+	{
+		$("#tab-" + name).fadeIn();
+	}
 	
-	$(".data-frame-sub").hide(); //Hide all tabs
-	ui_data_showTab("dashboard"); //Initially show dashboard
+	currentTab = $("#tab-" + name);
+};
+
+/**
+ * Updates a data view table.
+ * 
+ * @param table A jQuery object of the table to be updated
+ */
+UI.data_updateTable = function(table)
+{	
 	
-	//Let's create some example tiles	
-	var tile0 = new Tile(0);
-	tile0.setTitle("Have some good chip music");
-	tile0.content.html("<audio controls> <source src='http://ftp.df.lth.se/pub/media/soasc/soasc_mp3/MUSICIANS/T/Trident/A_Short_One_T01.sid_CSG8580R5.mp3' type='audio/mpeg'></audio>" +
-			"<br>Adam Dunkels - A Short One");
-	$("#dashboard-col1").append(tile0.base);
+	//Update machine table for testing
+	var tab = UI.machineTable;
 	
-	var tile1 = new Tile(1);
-	tile1.setTitle("These tiles are sortable");
-	tile1.content.html("The dashboard is split into four columns (WordPress-like).<br>" +
-			"You can move the tiles between the columns by dragging it by the header.<br>" +
-			"The columns are stacked top-down (This is the best thing I could do without fucking up the portability).");
-	$("#dashboard-col0").append(tile1.base);
+	var pkq = new Packet_Query(DCAT.MACHINE, "*");
+	pkq.onResponse = function(pk)
+	{
+		tab.fnClearTable();
+		
+		if(pk.typeID == PTYPE.DATA)
+		{
+			tab.fnAddData(pk.data.result);
+		}
+	};
+	Network.sendPacket(pkq);
 	
-	var tile2 = new Tile(2);
-	tile2.setTitle("Content coming soon");
-	tile2.content.html("These tiles are going to conatin statistics and stuff and will be creatable<br>" +
-			"by dragging items of the tableview to the dashboard.");
-	$("#dashboard-col0").append(tile2.base);
-}
+};
+
 
 //-------------Functional stuff------------
 
 function f_tryLogin()
 {
 	var username = $("#loginform_username").val();
+	var remember = $("#loginform_remember").is(":checked");
 	
 	//Encrypt password in accordance with specification of MCP 1.2.1
 	var passwordHashObject = CryptoJS.SHA256($("#loginform_password").val());
 	$("#loginform_password").val("");
-	var saltedPasswordHash = passwordHashObject.toString(CryptoJS.enc.Hex) + connectionData.salt; //TODO: replace hex encoder with self written one. plain ridicolous to use a library for that
+	var saltedPasswordHash = passwordHashObject.toString(CryptoJS.enc.Hex) + Network.connectionData.salt; //TODO: replace hex encoder with self written one. plain ridicolous to use a library for that
 	var finalPasswordHash = CryptoJS.SHA256(saltedPasswordHash).toString(CryptoJS.enc.Hex);
-	delete passwordHashObject; //Delete unneeded vars containing sensible data. For safety. God, I think someone is watching me!
+	delete passwordHashObject; //Delete unneeded vars containing sensible data. For safety :)
 	delete saltedPasswordHash;
 	
 	var packet = new Packet_Login(username, finalPasswordHash);
@@ -306,20 +359,26 @@ function f_tryLogin()
 			if(pk.typeID == PTYPE.AUTH)
 			{
 				//Login successful -> store session data and open data view
-				var sessionID = pk.data.sessionID;
+				Network.connectionData.sessionID = pk.data.sessionID;
 				
-				connectionData.username = username;
-				$("#username").html(connectionData.username); //TODO: Put this somewhere it belongs
+				Network.connectionData.username = username;
 				
-				f_setUpSession(sessionID);
+				//Store remember state for this session
+				Network.connectionData.remember = remember;
+				if(remember) //Store session ID in cookie if session is to be remembered
+				{
+					util_setCookie(TIGRIS_SESSION_COOKIE, Network.connectionData.sessionID);
+				}
+				
+				UI.showData(); //Everything is set up -> Show data screen
 				
 			}else if(pk.typeID == PTYPE.NACK)
 			{
-				ui_login_showError("Your login data is incorrect"); //MSG_LOGIN_BADLOGINDATA
+				UI.login_showError("Your login data is incorrect"); //MSG_LOGIN_BADLOGINDATA
 			}
 		};
 		
-	n_sendPacket(packet);
+	Network.sendPacket(packet);
 }
 
 function f_tryRelog()
@@ -337,53 +396,54 @@ function f_tryRelog()
 				if(pk.typeID == PTYPE.REAUTH)
 				{
 					//The old session ID was still valid -> use echoed (maybe changed) session ID
-					connectionData.sessionID = pk.data.sessionID;
+					Network.connectionData.sessionID = pk.data.sessionID;
 					
 					//Store the new session ID to cookie TODO: maybe integrate this into f_setUpSession()
+					//Since this cookie was created in a session the user wanted to keep, we can assume the user wants still to keep it
 					util_setCookie(TIGRIS_SESSION_COOKIE, pk.data.sessionID);
 					
 					//As there was no login, the server has to tell us who we are
-					connectionData.username = pk.data.username;
-					$("#username").html(connectionData.username); //TODO: Put this somewhere it belongs
+					Network.connectionData.username = pk.data.username;
+					$("#username").html(Network.connectionData.username); //TODO: Put this somewhere it belongs
 					
 					//As the session was still valid, we can directly display the data view
-					ui_showScreen("data");
-					$("#data-frame > .data-frame-tab").hide(); //Initially hide all data tabs...
-					ui_data_showTab("dashboard"); //and show dashboard
+					UI.showData();
 					
 				}else if(pk.typeID == PTYPE.NACK)
 				{
 					//The old session ID has expired -> user has to login again
-					ui_showScreen("login");
+					UI.showLogin();
 				}
 			};
 			
-		n_sendPacket(packet);
+		Network.sendPacket(packet);
 		
 	}else
 	{
 		//No stored session -> user has to login
 		
-		ui_showScreen("login");
+		UI.showLogin();
 	}
 }
 
 function f_tryLogout()
 {
 	
-	var packet = new Packet_Logout(LOGOUTREASON.CLOSED_BY_USER);
+	var packet = new Packet_Logout(LOGOUTREASON.CLOSED_BY_USER, "User requested logout");
 	
 	packet.onResponse = 
 		function(pk)
 		{
 			if(pk.typeID == PTYPE.ACK)
 			{
-				//Server has acknowledged logout -> Remove old session cookie and do another HANDSHAKE before showing login form again
-				util_setCookie(TIGRIS_SESSION_COOKIE, "", -9999); //This cookie expired years ago! Spit it out!
+				//Server has acknowledged logout -> Remove session data and do another HANDSHAKE before showing login form again
+				Network.clearSession();
 				
-				n_handshake();
+				//Handshake takes care of showing login form
+				Network.handshake(false); //Don't try a relog this time. It won't succeed anyway
 			}
 		};
+		
 	packet.onTimeout =
 		function()
 		{
@@ -391,30 +451,88 @@ function f_tryLogout()
 			//And smell the ashes. Don't forget to smell the ashes.
 			
 			//We force the user to reload the page, so if there is really a problem with the server, he will notice on the next handshake
-			ui_showError("The server did not confirm the last logout. You can start another session by reloading Tigris.");
+			UI.showError("The server did not confirm the last logout. You can start another session by reloading Tigris.");
 		};
 	
-	n_sendPacket(packet);
+	Network.sendPacket(packet);
 }
 
-function f_setUpSession(sessionID)
+function f_serverSideLogout(reason)
 {
-	connectionData.sessionID = sessionID;
+	var msgs = {};
+	msgs[LOGOUTREASON.UNKNOWN] = "of an unknown reason.";
+	msgs[LOGOUTREASON.SESSION_EXPIRED] = "your session lost its validity.";
+	msgs[LOGOUTREASON.INTERNAL_ERROR] = "an internal server error occurred.";
+	msgs[LOGOUTREASON.REFUSED] = "you were somehow suddenly refused.";
+	msgs[LOGOUTREASON.CLOSED_BY_USER] = "it says the user did it. Alright, who was it then?";
 	
-	util_setCookie(TIGRIS_SESSION_COOKIE,sessionID);
+	Network.clearSession();
 	
-	ui_showDataScreen();
+	UI.showLogin();
+	UI.login_showError("The server logged you out because " + msgs[reason]);
 }
 
-//-------------Network stuff------------------
 
-function n_init()
+/**
+ * Updates all tiles on the dashboard.
+ * 
+ * @param category String containing the category of data sent
+ * @param data Array of data objects sent by the server
+ */
+function f_updateTiles(category, data)
+{
+	jQuery.each(data, 
+			function(index, item)
+			{
+				var dataUnitIdent = category + "-" + item.id;
+				
+				if(dataUnitIdent in dashboard.tiles)
+				{
+					//There is a tile linked to the current data unit
+					
+					dashboard.tiles[dataUnitIdent].onUpdate(item);
+				}
+				
+			});
+}
+
+/**
+ * Namespace for network related functions
+ */
+var Network = {};
+
+Network.socket = null;
+Network.sentPacketMap = {};
+
+Network.remember = false;
+
+Network.connectionData = 
+{
+	salt: null,
+		
+	sessionID: null,
+	username: ""
+};
+
+/**
+ * Removes any session related data to begin a new session.
+ */
+Network.clearSession = function()
+{
+	Network.connectionData.sessionID = null;
+	Network.connectionData.username = "";
+	
+	util_setCookie(TIGRIS_SESSION_COOKIE, "", -9999);
+};
+
+Network.init = function()
 {
 	//Set up socket
 	var wsURI;
 	
 	if(ENDPOINT_IS_RELATIVE)
 	{
+		//The endpoint path is relative -> we must construct absolute path from our current URL
 		var loc = window.location;
 		
 		if(loc.protocol === "https:")
@@ -422,11 +540,13 @@ function n_init()
 			wsURI = "wss:";
 			
 		}else{
+			
 			wsURI = "ws:";
 		}
 		
 		wsURI += "//" + loc.host;
 		wsURI += loc.pathname + MESO_ENDPOINT;
+		
 	}else
 	{
 		wsURI = MESO_ENDPOINT;
@@ -434,28 +554,26 @@ function n_init()
 	
 	try
 	{
-		socket = new WebSocket(wsURI);
+		Network.socket = new WebSocket(wsURI);
 	}catch(e)
 	{
-		ui_showError("Could not create socket.");
+		UI.showError("Could not create socket. Your browser probably doesn't support WebSockets.");
 		return;
 	}
 	
-	socket.onopen = n_ws_onOpen;
-	
-	socket.onmessage = n_ws_onMessage;
-	
-	socket.onclose = n_ws_onClose;
-	
-	socket.onerror = n_ws_onError;
-}
+	//Redirect the socket's handlers to our script
+	Network.socket.onopen = Network.ws_onOpen;
+	Network.socket.onmessage = Network.ws_onMessage;
+	Network.socket.onclose = Network.ws_onClose;
+	Network.socket.onerror = Network.ws_onError;
+};
 
-function n_ws_onOpen()
+Network.ws_onOpen = function()
 {
-	n_handshake(); //Only start handshaking after connection has been established
-}
+	Network.handshake(); //Only start handshaking after connection has been established
+};
 
-function n_ws_onMessage(msg)
+Network.ws_onMessage = function(msg)
 {
 	console.log("I received this: " + msg.data);
 	
@@ -467,26 +585,22 @@ function n_ws_onMessage(msg)
 		
 	}catch(e)
 	{	
-		console.error("Message was not in JSON format or shit. \n" + e);
-		
-		ui_showError("A fatal communication error occurred: A message could not be parsed into a packet.");
+		UI.showError("A fatal communication error occurred: A message could not be parsed into a packet.");
 		
 		return;
 	}
 	
-	if(packet.uid == "undefined" || packet.typeID == "undefined" || packet.data == "undefined")
+	if(packet.uid === "undefined" || packet.typeID === "undefined" || packet.data === "undefined")
 	{
-		console.error("Packet had missing fields.");
-		
-		ui_showError("A fatal communication error occurred: Bad packet and shit.");
+		UI.showError("A fatal communication error occurred: Bad packet and shit.");
 		
 		return;
 	}
 	
-	if(("uid" + packet.uid) in sentPacketMap) //UID is registered -> Packet is an answer
+	if(("uid" + packet.uid) in Network.sentPacketMap) //UID is registered -> Packet is an answer
 	{
 		
-		var requestingPacket = sentPacketMap["uid" + packet.uid]; //Get the packet that requested this answer
+		var requestingPacket = Network.sentPacketMap["uid" + packet.uid]; //Get the packet that requested this answer
 		
 		//Remove the timeout before it goes off in our hands (if there is any)
 		if(requestingPacket.timeoutID != null)
@@ -494,44 +608,65 @@ function n_ws_onMessage(msg)
 			window.clearTimeout(requestingPacket.timeoutID);
 		}
 		
-		delete sentPacketMap["uid" + packet.uid];
+		delete Network.sentPacketMap["uid" + packet.uid];
 		
+		//Check if the received response is applicable to the requesting packets response handler
 		if($.inArray(packet.typeID , requestingPacket.allowedResponses) == -1)
 		{
-			//This packet type is not allowed as a response to the requesting packet
-			// -> send INVALID_ANSWER ERROR packet
-			
-			//TODO: Send packet
-			console.error("Received invalid response packet: " + packet.typeID + " is not allowed as a response to " + requestingPacket.typeID);
-			
-			ui_showError("Received invalid response packet: " + packet.typeID + " is not allowed as a response to " + requestingPacket.typeID);
+			if(packet.typeID == PTYPE.ERROR)
+			{
+				//ERROR packets can be sent in response to any packet, but are
+				//directed to the general error handler if the requesting packet does not care for it
+				
+				Network.generalError(packet.data.errorCode, packet.data.errorMessage);
+				
+			}else
+			{
+				//The server did something wrong. We should tell him
+				var errorMsg = packet.typeID + " is not allowed as a response to " + requestingPacket.typeID;
+				var errorPacket = new Packet_Error(ERRORCODE.INVALID_RESPONSE, errorMsg);
+				
+				Network.sendPacket(errorPacket);
+				
+				//We should tell the user, too
+				UI.showError("Received invalid response packet: " + errorMsg);
+			}
 			
 		}else
 		{
-		
+			//Direct response to the requesting packet handler
 			requestingPacket.onResponse(packet);
 			
 		}
 			
 	}else // -> Packet is a request
 	{
-		n_request(packet);
+		if(packet.typeID == PTYPE.ERROR)
+		{
+			//ERROR sent as request is considered as a general error
+			
+			Network.generalError(packet.data.errorCode, packet.data.errorMessage);
+			
+		}else
+		{
+			Network.request(packet);
+		}
 	}
-}
+};
 
-function n_ws_onClose()
+Network.ws_onClose = function()
 {
 	console.log("The connection was closed");
-}
-
-function n_ws_onError(e)
-{
-	console.error("Network error");
 	
-	ui_showError("A network error occurred. Please contact the system admin you do not know."); //ERR_COMM_NETWORK
-}
+	UI.showStatus("The connection to the server was closed.");
+};
 
-function n_handshake()
+Network.ws_onError = function(e)
+{
+	UI.showError("A network error occurred. Please contact the system admin you do not know."); //ERR_COMM_NETWORK
+};
+
+Network.handshake = function(tryRelog)
 {
 
 	var packet = new Packet_Handshake();
@@ -542,34 +677,36 @@ function n_handshake()
 		{
 			console.log("Handshake successful");
 			
-			connectionData.salt = pk.data.salt;
+			Network.connectionData.salt = pk.data.salt;
 			
 			//Connection to server is OK -> The user may log in
-			f_tryRelog(); //First look if there is already a session to be restored. TODO: This is confusing. Make it better
+			//First look if there is already a session to be restored.
+			
+			if(tryRelog || true)
+			{
+				f_tryRelog(); //This method also displays login screen if no session is to be restored; No need for us to take care of that
+			}else
+			{
+				UI.showLogin();
+			}
 			
 		}else if(pk.typeID == PTYPE.ERROR)
 		{
-			//TODO: This one can be omitted after error packets are bypassed to general error processing
-			//TODO: Maybe not. Review this later
 			
 			if(pk.data.errorCode == ERRORCODE.WRONG_VERSION)
 			{
-				console.error("Handshake refused: Client version is incompatible with server");
-			
-				ui_showError("Connection refused by server: This version of Tigris is too old/new"); //ERR_COMM_CLIENTINCOMPATIBLE
+				UI.showError("Connection refused by server: This version of Tigris is too old/new"); //ERR_COMM_CLIENTINCOMPATIBLE
 			}else
 			{
-				console.error("Handshake refused: Unknown reason");
-				
-				ui_showError("Connection refused by server for unknown reason");
+				UI.showError("Connection refused by server for unknown reason");
 			}
 		}
 	};
 	
-	n_sendPacket(packet);
-}
+	Network.sendPacket(packet);
+};
 
-function n_generateUID()
+Network.generateUID = function()
 {
 	var uid = 0;
 	var rounds = 0;
@@ -578,78 +715,258 @@ function n_generateUID()
 	{
 		uid += 2; //Generate only even UIDs
 		
-		if(rounds++ > 256) //Don't mess around too long in this unperformant routine
+		if(rounds++ > 256) //Don't mess around too long in this unperformant routine TODO: Make this routine more performant
 		{
-			console.error("Packet queue overloaded!");
+			UI.showError("Packet queue overloaded! This is most likely a bug.");
 			return -1;
 		}
 	}
 	
 	return uid;
-}
+};
 
-function n_sendPacket(packet, uid)
+/**
+ * Sends a packet to the server. Stores it if it awaits any responses so they can
+ * be passed to the response handler in the packet object. This method generates
+ * an UID if it is not specified.
+ * 
+ * @param packet The packet object to be sent
+ * @param uid Optional: The uid the packet should be sent with
+ */
+Network.sendPacket = function(packet, uid)
 {
 	var packetToSend = {};
 	
 	packetToSend.typeID = packet.typeID;
 	packetToSend.data = packet.data;
-	packetToSend.uid = uid || n_generateUID();
+	packetToSend.uid = uid || Network.generateUID();
 	
 	var jsonPacket = JSON.stringify(packetToSend);
 	
-	if(socket.readyState == 1)
+	if(Network.socket.readyState == 1)
 	{
-		socket.send(jsonPacket);
+		Network.socket.send(jsonPacket);
 		
-		//Set a timeout for each packet that is removed upon response in the n_ws_onMessage methode (only if timeout is > 0)
-		if(packet.timeout > 0)
+		//Check if packet expects any responses
+		if(packet.allowedResponses.length > 0)
 		{
-			packet.timeoutID = window.setTimeout(packet.onTimeout, packet.timeout);
+			//Store packet so a response can be passed to its response handler
+			Network.sentPacketMap["uid" + packetToSend.uid] = packet;
+			
+			//Set a timeout for each packet that is removed upon response in the n_ws_onMessage methode (only if timeout is > 0)
+			if(packet.timeout > 0)
+			{
+				packet.timeoutID = window.setTimeout(packet.onTimeout, packet.timeout);
+			}
 		}
-		
-		sentPacketMap["uid" + packetToSend.uid] = packet;
-		
+			
 		console.log("I sent this: " + jsonPacket);
 		
-	}else if(socket.readyState == 2)
+	}else if(Network.socket.readyState == 2)
 	{
-		console.error("Tried to send after the connection was lost");
 		
-		ui_showError("Tried to send packet after the connection was lost. This is most likely the programmers fault.");
-	}else if(socket.readyState == 0)
+		UI.showError("Tried to send packet after the connection was lost. This is most likely a bug.");
+		
+	}else if(Network.socket.readyState == 0)
 	{
-		console.error("Tried to send while the socket was still connecting");
 		
-		ui_showError("Tried to send packet while the socket was still connecting. This is most likely the programmers fault.");
+		UI.showError("Tried to send packet while the socket was still connecting. This is most likely a bug.");
+		
 	}
-}
+};
 
-function n_request()
+/**
+ * Called when an ERROR packet is sent as a request
+ * or as a response to a packet that does not listen for ERROR packets.
+ * 
+ * @param id The error code
+ * @param msg A human readable message which might be supplied by the server
+ */
+Network.generalError = function(id, msg)
+{
+	//TODO: Add more detailed error descriptions
+	switch(id)
+	{
+	case ERRORCODE.INTERNAL_EXCEPTION:
+		UI.showError("The server reported an internal exception.");
+		break;
+		
+	case ERRORCODE.SESSION_EXPIRED:
+		UI.showError("Your session has expired. Reload the page for relog.");
+		break;
+		
+	default:
+		UI.showError("The server reported an error: " + msg);
+	
+	}
+};
+
+/**
+ * Processes a packet that was not sent in response to another packet. 
+ * ERROR-packets are handled by Network.generalError.
+ * 
+ * @param pk The packet object
+ */
+Network.request = function(pk)
 {
 	
-}
+	if(pk.typeID == PTYPE.DATA)
+	{
+		f_updateTiles(pk.data.category, pk.data.result);
+		
+	}else if(pk.typeID == PTYPE.LOGOUT)
+	{
+		f_serverSideLogout(pk.data.reasonCode);
+		
+		//We should tell the server we acknowledge the logout
+		var resp = new Packet_Ack();
+		Network.sendPacket(resp, pk.uid);
+		
+	}else
+	{
+		//This packet type was not recognized. Tell the server we did not understand his message
+		
+		var errorPacket = new Packet_Error(ERRORCODE.INVALID_PACKET, "The request was not recognized. You packet may be C->S only.");
+		Network.sendPacket(errorPacket);
+	}
+	
+};
 
+//------screen constructors----------
+
+function Dashboard()
+{
+	this.tiles = {}; //Map of tiles on the dashboard indexed with data unit identifier (category-ident)
+	
+	this.root = $("#tab-dashboard");
+	
+	//The jQuery width method seems not to work with a hidden object that defines only percentage dimensions.
+	//As the dashboard has the width of the document with absolute margins, we can calculate the tile sizes using the documents width
+	this.width = $(document).width() - 10;
+	this.height = $(document).height() - 47;
+	
+	this.columnCount = 4; //Work with a fixed column count for now TODO: Select this value dynamically
+	this.columns = new Array();
+	this.columnWidth = this.width / this.columnCount;
+	
+	this.tileWidth = (this.columnWidth - 10) / 2; //Width of a half tile (including the 5px margin on each side)
+	
+	//Create columns
+	for(var i = 0; i < this.columnCount ; i++)
+	{
+		var col = $("<div>");
+		col.attr("id","dash-col-" + i);
+		col.addClass("dashboard-column");
+		col.css("width",this.columnWidth);
+		
+		this.root.append(col);
+		
+		this.columns[i] = col;
+	}
+	
+	
+	this.addTile = 
+		function(tile)
+		{
+			var dataUnitIdent = tile.dataUnitCategory + "-" + tile.dataUnitID;
+		
+			if(dataUnitIdent in this.tiles)
+			{
+				//Tile linking to the same data source is already on the dashboard -> refuse adding
+				return;
+			}
+			
+			this.tiles[dataUnitIdent] = tile;
+		
+			this.columns[0].append(tile.base); //For testing: append tile 0 to dashboard TODO: Add parameter for desired column
+		};
+	
+	//Everything is created -> now we can add jQuery UI stuff
+	$(".dashboard-column").sortable(
+			{
+				connectWith: ".dashboard-column",
+				placeholder: "tile-placeholder",
+				
+				start: function(event, ui)
+				{
+					//As jQuery UIs sortable does not support dynamic sized placeholders,
+					//we must change them manually
+					if(ui.item.hasClass("tile"))
+					{
+						//Only change the placeholder for actual tiles beeing dragged
+						
+						$(".tile-placeholder").css("height",dashboard.tileWidth); //Height is always the same
+						$(".tile-placeholder").css("width", ui.item.hasClass("tile-half") ? dashboard.tileWidth : dashboard.tileWidth*2);
+						
+					}
+					
+				}
+			});
+}
 
 //-------tile constructors------------
 
-function Tile(id)
+/**
+ * @constructor
+ */
+function TileMachine(full, machine)
 {
+	//Create the basic tile stuff every tile gets
+	this.dataUnitCategory = "machine";
+	this.dataUnitID = machine.id;
+	this.dataUnitIdent = this.dataUnitCategory + "-" + this.dataUnitID;
 	
-	this.base = $("<div>").addClass("dashboard-tile");
-	this.base.attr("id","tile"+id);
+	this.base = $("<div>");
+	this.base.attr("id","tile_" + this.dataUnitIdent);
+	this.base.addClass("tile");
+	this.base.addClass(full ? "tile-full" : "tile-half");
+	this.base.css("height", dashboard.tileWidth); //TODO: Maybe do this without global access
+	this.base.css("width", full ? dashboard.tileWidth*2 : dashboard.tileWidth);
 	
-	this.header = $("<div>").addClass("dashboard-tile-header");
-	this.base.append(this.header);
 	
-	this.content = $("<div>").addClass("dashboard-tile-content");
-	this.base.append(this.content);
+	this.title = $("<h2>");
+	this.base.append(this.title);
 	
-	this.setTitle = 
-		function(title)
+	//create gauge for production speed
+	this.speedGaugeCanvas = $("<canvas>");
+	this.speedGaugeCanvas.css("width", dashboard.tileWidth);
+	this.speedGaugeCanvas.css("height", dashboard.tileWidth * 0.88);
+	
+	this.speedGauge = this.speedGaugeCanvas.gauge(
 		{
-			this.header.html(title);
+			lines: 12, // The number of lines to draw
+			angle: 0.15, // The length of each line
+			lineWidth: 0.44, // The line thickness
+			pointer: 
+			{
+				length: 0.85, // The radius of the inner circle
+				strokeWidth: 0.02, // The rotation offset
+				color: '#000000' // Fill color
+			},
+			limitMax: 'false',   // If true, the pointer will not go past the end of the gauge
+			colorStart: '#DA0404',   // Colors
+			colorStop: '#DA0404',    // just experiment with them
+			strokeColor: '#DA0404',   // to see which ones work best for you
+			generateGradient: false
+		}).data().gauge;
+	
+	this.base.append(this.speedGaugeCanvas);
+	
+	this.onUpdate = 
+		function(machine)
+		{
+			this.title.html("Machine '" + machine.name + "'");
+			
+			this.speedGauge.maxValue = 1000; //TODO: Get max speed from somewhere
+			this.speedGauge.set(machine.speed);
 		};
+		
+		
+	//When finished creating tile, update its information (when there is some)
+	if(machine)
+	{
+		this.onUpdate(machine);
+	}
 }
 
 
@@ -670,7 +987,7 @@ function Packet_Handshake()
 	this.allowedResponses = [PTYPE.ACCEPT, PTYPE.ERROR];
 	
 	this.onResponse = function(){};
-	this.onTimeout = function(){ui_showError("The server took to long to respond.");};
+	this.onTimeout = function(){UI.showError("The server took to long to respond to handshake.");};
 }
 
 /**
@@ -690,7 +1007,7 @@ function Packet_Login(usr,pwrdHash)
 	this.allowedResponses = [PTYPE.AUTH, PTYPE.NACK];
 	
 	this.onResponse = function(){};
-	this.onTimeout = function(){ui_showError("The server took to long to respond.");};
+	this.onTimeout = function(){UI.showError("The server took to long to respond to login.");};
 }
 
 /**
@@ -709,26 +1026,47 @@ function Packet_Relog(sessionID)
 	this.allowedResponses = [PTYPE.REAUTH, PTYPE.NACK];
 	
 	this.onResponse = function(){};
-	this.onTimeout = function(){ui_showError("The server took to long to respond.");};
+	this.onTimeout = function(){UI.showError("The server took to long to respond to relog.");};
 }
 
 /**
  * 
  * @constructor
  */
-function Packet_Logout(reason)
+function Packet_Query(category, ident)
+{
+	this.typeID = PTYPE.QUERY;
+
+	this.data = {};
+	this.data.category = category;
+	this.data.ident = ident;
+	
+	this.timeout = GENERAL_TIMEOUT;
+	this.timeoutID = null;
+	this.allowedResponses = [PTYPE.DATA]; //Even though the protocol asks us to put ERROR here, there is no need to process it separately
+	
+	this.onResponse = function(){};
+	this.onTimeout = function(){UI.showError("The server took to long to respond to query.");};
+}
+
+/**
+ * 
+ * @constructor
+ */
+function Packet_Logout(reason, msg)
 {
 	this.typeID = PTYPE.LOGOUT;
 	
 	this.data = {};
 	this.data.reasonCode = reason || LOGOUTREASON.UNKNOWN;
+	this.data.reasonMessage = msg || "No message specified";
 	
 	this.timeout = GENERAL_TIMEOUT;
 	this.timeoutID = null;
 	this.allowedResponses = [PTYPE.ACK];
 	
 	this.onResponse = function(){};
-	this.onTimeout = function(){ui_showError("The server took to long to respond.");};
+	this.onTimeout = function(){UI.showError("The server took to long to respond to logout.");};
 }
 
 /**

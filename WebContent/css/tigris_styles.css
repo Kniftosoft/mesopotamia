@@ -13,7 +13,7 @@ body
 	color: #000;
 	
 	
-	background-color: #fff;
+	background-color: #fefefe;
 }
 
 
@@ -23,11 +23,11 @@ body
 	font-weight: 300;
 	color: #fff;
 	
-	background-color: #0072c3;
+	background-color: #822edb;/*#0072c3;*/
 	
 	padding: 0px 10px 2px;
 	
-	border-bottom: 1px solid #b3cfe5;
+	border-bottom: 1px solid #a156f0;
 	
 	width: 100%;
 	height: 47px;
@@ -38,13 +38,13 @@ body
 	top: 0px;
 	left: 0px;
 	
-	z-index: 42;
+	z-index: 2;
 }
 
 #user-controls
 {
 	
-	margin-right: 20px;
+	margin-right: 30px;
 	
 	float: right;
 	
@@ -82,6 +82,8 @@ body
 	
 	background-color: #efeff1;
 	
+	box-shadow: 0px 1px 2px 2px #c4c4c4;
+	
 	padding: 25px 0px;
 	
 	margin-top: 49px;
@@ -90,6 +92,10 @@ body
 	width: 180px;
 	
 	float: left;
+	
+	position: fixed;
+	
+	z-index: 2;
 }
 
 #sidebar-handle
@@ -101,19 +107,12 @@ body
 	
 	float: left;
 	
+	position: fixed;
 }
 
-#data-frame
+#tab-dashboard
 {
-	height: 100%;
 	
-	
-	margin-left: 195px;
-	margin-top: 50px;
-}
-
-#sub-dashboard
-{
 }
 
 #sidebar_dashboard_link
@@ -146,7 +145,7 @@ body
 	font-size: 1.2em;
 	color: #fff;
 	
-	background-color: #0072c3;
+	background-color: #822edb;
 	
 	padding: 0px 13px;
 	
@@ -173,12 +172,28 @@ body
 	cursor: text;
 }
 
+.checkbox
+{
+	background-color: #fff;
+	
+	border: 1px solid #c4c4c4;
+}
+
+.select,select
+{
+	boder: 1px solid #c4c4c4;
+	border-radius: 0px;
+	
+	background-color: #fff;
+	
+}
+
 .login-frame
 {
 	background-color: #efeff1;
 	
 	padding-bottom: 25px;
-	
+
 	width: 25%;
 	min-height: 35%;
 	
@@ -191,9 +206,9 @@ body
 {
 	color: #fff;
 	
-	background-color: #0072c3;
+	background-color: #822edb;
 	
-	border-bottom: 1px solid #b3cfe5;
+	border-bottom: 1px solid #a156f0;
 	
 	width: 100%;
 	min-height: 15%;
@@ -209,14 +224,12 @@ body
 {
 	color: #707070;
 	
-	
 	background-color: #efeff1;
 	
-	padding-top: 30px;
+	padding: 28px 20px 5px 0px;
 	
 	
 	height: auto;
-	width: 100%;
 }
 
 .login-content .error
@@ -230,13 +243,24 @@ body
 	left: 2.5%;
 }
 
-.login-content .button
+.login-content #loginbutton
 {
 	float: right;
 	
 	position: relative;
 	top: 15px;
 	right: 2.5%;
+}
+
+.login-content #rememberBox
+{
+	float: left;
+	
+	margin-right: 3px;
+	
+	position: relative;
+	top: 15px;
+	left: 2.5%;
 }
 
 .login-content label
@@ -287,62 +311,53 @@ body
 
 .data-frame-tab
 {
-	padding-top: 5px;
+	padding: 5px 0px 0px 5px;
+	
+	margin-top: 47px; /* Height of header */
+	margin-left: 10px; /* Width of sidebar handle */
+	
+	width: 100%;
 	
 	overflow: visible;
 }
 
 .dashboard-column
 {
-	width: 25%;
 	min-height: 100px;
 	
 	float: left;
 }
 
-.dashboard-tile
+
+.tile-placeholder
 {
-
-	background-color: #efeff1;
+	background-color: #999;
 	
-	border: 1px solid #e1e1e1;
-	
-	margin: 4px;
-	
-	width: auto;
-	height: auto;
-	
-	float: left;
-}
-
-.dashboard-tile-header
-{
-	font-size: 1.2em;
-	color: #091009;
-	
-	padding: 3px 5px;
-	
-	border-bottom: 1px solid #e1e1e1;
-
-}
-
-.dashboard-tile-content
-{
-
-	padding: 5px;
-
-}
-
-.dashboard-tile-placeholder
-{
-	background-color: #fefefe;
-	
-	border: 1px dashed #000;
+	box-shadow: 0px 0px 1px 1px #999;
 	
 	margin: 0 1em 1em 0;
 	
 	height: 50px;
-	
-	position: relative;
-	z-index: 50;
 }
+
+.tile
+{
+	color: #222;
+	
+	background-color: #62C1F5;
+	
+	margin: 5px;
+		
+}
+
+.tile h2
+{
+	font-size: 1em;
+}
+
+/* These are currently used only for identification and my get style information later */
+.tile-half{}
+
+.tile-full{}
+
+

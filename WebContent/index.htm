@@ -9,14 +9,17 @@
 		<title>Shining new Tigris GUI</title>
 		
 		<link rel="stylesheet" href="./css/tigris_styles.css">
+		<link rel="stylesheet" href="./css/jquery.dataTables.css">
 		
-		<script src="./lib/jquery-1.11.0.js"></script>
-		<script src="./lib/jquery-ui.js"></script>
-		<script src="./lib/CryptoJS/core-min.js"></script>
-		<script src="./lib/CryptoJS/format-hex.js"></script>
-		<script src="./lib/CryptoJS/sha256.js"></script>
+		<script src="lib/jquery-1.11.0.js"></script>
+		<script src="lib/jquery-ui.js"></script>
+		<script src="lib/CryptoJS/core-min.js"></script>
+		<script src="lib/CryptoJS/format-hex.js"></script>
+		<script src="lib/CryptoJS/sha256.js"></script>
+		<script src="lib/gauge.js"></script><!-- Lovely canvas gauge lib from http://bernii.github.io/gauge.js/ -->
+		<script src="lib/jquery.dataTables.min.js"></script>
 		
-		<script src="./tigris_script.js"></script>
+		<script src="tigris_script.js"></script>
 	
 	</head>
 	
@@ -32,7 +35,7 @@
 				</div>
 				
 				<div class="login-content">
-					<p id="statusbox">If you can read this, your browser does not support JavaScript. In that case, Tigris will not work.</p>
+					<span id="statusbox">If you can read this, your browser does not support JavaScript. In that case, Tigris will not work.</span>
 				</div>
 			</div>
 		
@@ -52,7 +55,9 @@
 					<p><label for="username">User</label><br><input type="text" name="username" id="loginform_username" class="input"></p>
 					<p><label for="password">Pass</label><br><input type="password" name="password" id="loginform_password" class="input"></p>
 					
-					<p class="loginbutton"><input type="submit" name="login" class="button" value="Login"></p>
+					<p id="rememberBox"><input type="checkbox" id="loginform_remember" class="checkbox">Remember me</p>
+					
+					<p id="loginbutton"><input type="submit" name="login" class="button" value="Login"></p>
 					
 				</form>
 			</div>
@@ -77,112 +82,65 @@
 				<!-- Long vertical bar  -->
 			</div>
 			
-			<div id="data-frame">
+			<div id="data-header">
+				Tigris 0.3.1
 				
-				<div id="data-header">
-					Tigris 0.2.2
-					
-					<div id="user-controls">
+				<div id="user-controls">
 
-						<span id="username"></span>
-					
-						<a id="logout"><img src="css/images/exit.png"></a>
-					
-					</div>
-					
-				</div>
+					<span id="username"></span>
 				
-				<div id="tab-dashboard" class="data-frame-tab">
-					
-					<div id="left-dropper"></div>
-					
-					<div id="dashboard-col0" class="dashboard-column"></div>
-					<div id="dashboard-col1" class="dashboard-column"></div>
-					<div id="dashboard-col2" class="dashboard-column"></div>
-					<div id="dashboard-col3" class="dashboard-column"></div>
-					
-				</div>
-					
-				<div id="tab-machines" class="data-frame-tab">
-					The following spam is used to test the scrollbars in the table view.<br>
-					As you can see, they are currently not working.<br><br> 
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-					This is the sub for machines<br>
-				</div>
+					<a id="logout"><img src="css/images/exit.png"></a>
 				
-				<div id="tab-jobs" class="data-frame-tab">
-					This is the sub for jobs
 				</div>
+			</div>
+			
+			
+			<!-- List of dashboard tabs -->
+			<div id="tab-dashboard" class="data-frame-tab">
 				
-				<div id="tab-warnings" class="data-frame-tab">
-					This is the sub for warnings
-				</div>
+			</div>
 				
-				<div id="tab-info" class="data-frame-tab">
-					This is the sub for info
-				</div>
+			<div id="tab-machines" class="data-frame-tab">
+			
+				<table id="table-machine" class="data-view-table">
 				
+					<thead>
+						<tr>
+							<th>Machine ID</th>
+							<th>Name</th>
+							<th>Job ID</th>
+							<th>Production speed</th>
+							<th>Status</th>
+						</tr>
+					</thead>
+					
+				</table>
+				
+			</div>
+			
+			<div id="tab-jobs" class="data-frame-tab">
+			
+				<table id="table-jobs" class="data-view-table">
+				
+					<thead>
+						<tr>
+							<th>Job ID</th>
+							<th>Target product count</th>
+							<th>Start time</th>
+							<th>Product type</th>
+						</tr>
+					</thead>
+					
+				</table>
+			
+			</div>
+			
+			<div id="tab-warnings" class="data-frame-tab">
+				This is the tab for warnings
+			</div>
+			
+			<div id="tab-info" class="data-frame-tab">
+				This is the tab for statistics
 			</div>
 			
 		</div>

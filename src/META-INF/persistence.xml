@@ -7,6 +7,7 @@
 		<class>org.kniftosoft.entity.Log</class>
 		<class>org.kniftosoft.entity.Maschine</class>
 		<class>org.kniftosoft.entity.Produkt</class>
+		<class>org.kniftosoft.entity.Subbedmaschine</class>
 		<class>org.kniftosoft.entity.Subscribe</class>
 		<class>org.kniftosoft.entity.User</class>
 		<class>org.kniftosoft.entity.Useraccess</class>
