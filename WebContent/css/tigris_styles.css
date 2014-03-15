@@ -337,6 +337,16 @@ body
 	background-color: #c6c6c6;
 }
 
+.table-container
+{
+	background-color: #efeff1;
+	
+	padding: 25px;
+	
+	margin: 30px auto 0px auto;
+	
+	width: 96%;
+}
 
 .data-frame-tab
 {
@@ -375,7 +385,7 @@ body
 
 .tile
 {
-	color: #222;
+	color: #444;
 	
 	background-color: #62C1F5;
 	
@@ -386,9 +396,13 @@ body
 .tile h2
 {
 	font-size: 1em;
+	
+	padding-left: 2px;
+	
+	cursor: move;
 }
 
-/* These are currently used only for identification and my get style information later */
+/* These are currently used only for identification and may get style information later */
 .tile-half{}
 
 .tile-full{}

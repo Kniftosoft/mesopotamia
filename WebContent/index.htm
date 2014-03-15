@@ -71,8 +71,8 @@
 			
 				<a id="sidebar_dashboard_link" class="sidebar-item sidebar-item-active" data-target="dashboard">Dashboard</a>
 				
-				<a class="sidebar-item" data-target="machines">Machines</a>
-				<a class="sidebar-item" data-target="jobs">Jobs</a>
+				<a class="sidebar-item" data-target="machine">Machines</a>
+				<a class="sidebar-item" data-target="job">Jobs</a>
 				<!-- <a class="sidebar-item" data-target="warnings">Warnings</a>
 				<a class="sidebar-item" data-target="info">Info</a> -->
 				
@@ -101,46 +101,51 @@
 				
 			</div>
 				
-			<div id="tab-machines" class="data-frame-tab">
+			<div id="tab-machine" class="data-frame-tab">
 			
-				<table id="table-machine" class="data-view-table">
-				
-					<thead>
-						<tr>
-							<th>Machine ID</th>
-							<th>Name</th>
-							<th>Job ID</th>
-							<th>Production speed</th>
-							<th>Status</th>
-						</tr>
-					</thead>
+				<div class="table-container">
+					<table id="table-machine" class="data-view-table">
 					
-				</table>
+						<thead>
+							<tr>
+								<th>Machine ID</th>
+								<th>Name</th>
+								<th>Job ID</th>
+								<th>Production speed</th>
+								<th>Status</th>
+							</tr>
+						</thead>
+						
+					</table>
+				</div>
 				
 			</div>
 			
-			<div id="tab-jobs" class="data-frame-tab">
+			<div id="tab-job" class="data-frame-tab">
 			
-				<table id="table-job" class="data-view-table">
-				
-					<thead>
-						<tr>
-							<th>Job ID</th>
-							<th>Target product count</th>
-							<th>Start time</th>
-							<th>Product type</th>
-						</tr>
-					</thead>
+			
+				<div class="table-container">
+					<table id="table-job" class="data-view-table">
 					
-				</table>
+						<thead>
+							<tr>
+								<th>Job ID</th>
+								<th>Target product count</th>
+								<th>Start time</th>
+								<th>Product type</th>
+							</tr>
+						</thead>
+						
+					</table>
+				</div>
 			
 			</div>
 			
-			<div id="tab-warnings" class="data-frame-tab">
+			<div id="tab-warning" class="data-frame-tab">
 				This is the tab for warnings
 			</div>
 			
-			<div id="tab-info" class="data-frame-tab">
+			<div id="tab-stat" class="data-frame-tab">
 				This is the tab for statistics
 			</div>
 			

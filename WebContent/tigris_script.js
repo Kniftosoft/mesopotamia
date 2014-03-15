@@ -10,6 +10,7 @@
 //TODO: Comment on stuff
 //TODO: Localization maybe?
 //TODO: Maybe check if a packet is missing fields it should have according to its type
+//TODO: Add polish to data fetching functions
 
 //Configure this to your Euphrates installation
 //If your endpoint is absolute, make sure you include the full URI (including protocol etc.)
@@ -49,8 +50,23 @@ var DCAT =
 	
 	PRODUCT:	11,
 	
-	CONFIG:		20	
+	CONFIG:		20,
+	
+	nameById: function(id)
+	{
+		var name = null;
+		
+		jQuery.each(DCAT, function(index,element){ if(element == id){ name = index;}});
+		
+		return name;
+	},
+	
+	byName: function(name)
+	{
+		return DCAT[name.toUpperCase()];
+	}
 };
+
 
 var ERRORCODE =
 {
@@ -122,8 +138,7 @@ UI.init = function()
 				UI.sidebarItemClicked(e.target);
 			});
 	
-	$("#sidebar-handle").mouseover(
-			function(e)
+	$("#sidebar-handle").mouseover(function(e)
 			{
 				UI.slideOutSidebar();
 			});
@@ -136,12 +151,7 @@ UI.init = function()
 				}
 			});
 	
-	$("#tilecreator").droppable(
-			{
-				drop: UI.table_createTile,
-				
-				hoverClass: "hover-highlight"
-			});
+	UI.tileCreator = $("#tilecreator");
 	
 	//Create tables
 	//Status values decoded for testing TODO: Localize this
@@ -161,16 +171,19 @@ UI.init = function()
                       { "mData": function(data, type, val) { return UI.statusTest[data.status]; }}
                     ]});
 	
-	$("#table-machine tbody").sortable({
+	$("#table-machine tbody").sortable(
+			{
 		
-		distance: 10,
+				distance: 10,
+				
+				connectWith: "#tilecreator",
+				
+				start: UI.table_dragStart,
+				stop: UI.table_dragStop,
+				
+				helper: "clone"
 		
-		start: UI.table_dragStart,
-		stop: UI.table_dragStop,
-		
-		helper: "clone"
-		
-	});
+			});
 	
 	UI.jobTable = $("#table-job").dataTable(
 			{
@@ -182,16 +195,21 @@ UI.init = function()
                 ]
 			});
 	
-	$("#table-job tbody").sortable({
+	$("#table-job tbody").sortable(
+			{
 		
-		distance: 10,
+				distance: 10,
+				
+				connectWith: "#tilecreator",
+				
+				start: UI.table_dragStart,
+				stop: UI.table_dragStop,
+				
+				helper: "clone"
 		
-		start: UI.table_dragStart,
-		stop: UI.table_dragStop,
-		
-		helper: "clone"
-		
-	});
+			});
+	
+	UI.dashboard = new Dashboard();
 	
 	UI.showStatus("Connecting to the server..."); //Initially show message on connection status
 };
@@ -328,13 +346,19 @@ UI.login_showError = function(msg)
 };
 
 
-UI.data_showTab = function(name)
+UI.data_showTab = function(name, callback)
 {
 	if(UI.currentTab != null)
 	{
 		$("#tab-" + UI.currentTab).fadeOut(function()
 				{
 					$("#tab-" + name).fadeIn();
+					
+					if(callback)
+					{
+						callback();
+					}
+					
 				});
 		
 	}else
@@ -345,9 +369,13 @@ UI.data_showTab = function(name)
 	UI.currentTab = name;
 };
 
+UI.data_switchTab = function(name, callback)
+{
+	
+};
 
 /**
- * Updates the whole data view.
+ * Updates the currently displayed data tab.
  */
 UI.dataUpdate = function()
 {
@@ -367,11 +395,11 @@ UI.data_updateTab = function(target)
 	var table = null;
 	var category = 0;
 	
-	if(target == "machines")
+	if(target == "machine")
 	{
 		table = UI.machineTable;
 		category = DCAT.MACHINE;
-	}else if(target == "jobs")
+	}else if(target == "job")
 	{
 		table = UI.jobTable;
 		category = DCAT.JOB;
@@ -389,6 +417,7 @@ UI.data_updateTab = function(target)
 		if(pk.typeID == PTYPE.DATA)
 		{
 			table.fnAddData(pk.data.result);
+			DataPool.updateByData(target, pk.data.result);
 		}
 	};
 	Network.sendPacket(pkq);
@@ -408,11 +437,26 @@ UI.table_dragStop = function(event, ui)
 	
 	UI.sidebarEnabled = true;
 	
-};
-
-UI.table_createTile = function(event, ui)
-{
+	//The user might have reordered the table and thus messed up the coloring, so better reload data
+	//(This would not be neccesary if we could use something different than sortable for draggable table rows;
+	//thanks to you, jQuery UI)
+	UI.dataUpdate();
 	
+	//Since hover detection does not work with a sortable on the cursor, we have to check manually by position
+	if(util_containsPoint(UI.tileCreator,event.pageX,event.pageY))
+	{
+		//The user dropped the row in the tile creator
+		
+		//Get the id from the dropped element (It must be the first column in order for this to work)
+		var id = ui.item.children("td").first().text();
+		
+		var dataUnit = DataPool.getSingle(UI.currentTab,id);
+		
+		var tile = createTile(UI.currentTab,dataUnit);
+		
+		UI.dashboard.addTile(tile);
+		
+	}
 };
 
 /*UI.table_createColHelper = function()
@@ -647,6 +691,131 @@ Session.clear = function()
 	Session.username = "";
 	
 	util_setCookie(TIGRIS_SESSION_COOKIE, "", -9999);
+};
+
+
+/**
+ * Namespace for storing, receiving and managing data.
+ */
+var DataPool = {};
+
+DataPool.pools = {};
+
+/**
+ * Returns single data unit of one category, identified by id.
+ */
+DataPool.getSingle = function(category, id)
+{
+	if(DataPool.isPoolDirty(category))
+	{
+		DataPool.refreshPool(category);
+	}
+	
+	//If there is no pool yet, we can not return anything until the refresh is done
+	if(!(category in DataPool.pools))
+	{
+		return null;
+	}
+	
+	var pool = DataPool.pools[category];
+	
+	return pool[id];
+};
+
+/**
+ * Returns all stored data units of one category.
+ * 
+ * @returns {Array}
+ */
+DataPool.getWhole = function(category)
+{
+	//Is data pool outdated or non-existent yet? Refresh it! (For later, as this happens asynchronous)
+	if(DataPool.isPoolDirty(category))
+	{
+		DataPool.refreshPool(category);
+	}
+	
+	//If there is no pool yet, we can not return anything until the refresh is done (which will be later, so return null)
+	if(!(category in DataPool.pools))
+	{
+		return null;
+	}
+	
+	var pool = DataPool.pools[category];
+
+	//The pool is indexed with ids, we want an int-indexed array
+	var dataUnitArray = new Array();
+	var i = 0;
+	jQuery.each(pool,function(index, element)
+			{
+				dataUnitArray[i] = element;
+			});
+	
+	return dataUnitArray;
+	
+};
+
+/**
+ * Reports if a data pool is outdated or non-existent.
+ * 
+ * @param category The data pool category
+ * @return {boolean}
+ */
+DataPool.isPoolDirty = function(category)
+{
+	
+	if(category in DataPool.pools)
+	{
+		return true;
+	}
+	
+	return true; //Update always for now TODO: Change
+};
+
+/**
+ * Queries the whole data pool and stores it upon receipt.
+ */
+DataPool.refreshPool = function(category)
+{
+	var query = new Packet_Query(DCAT.byName(category), "*");
+	query.onResponse = function(pk)
+	{
+		
+		if(pk.typeID == PTYPE.DATA)
+		{
+			var pool = {};
+			
+			//Create an id-indexed array
+			jQuery.each(pk.data.result, function(index, element)
+					{
+						pool[element.id] = element;
+					});
+			
+			DataPool.pools[category] = pool;
+		}
+		
+	};
+	
+	Network.sendPacket(query);
+};
+
+/**
+ * Stores group of data units to the pool.
+ */
+DataPool.updateByData = function(category,data)
+{
+	//Create pool if it does not exist yet
+	if(!(category in DataPool.pools))
+	{
+		DataPool.pools[category] = {};
+	}
+	
+	var pool = DataPool.pools[category];
+	
+	jQuery.each(data, function(index, element)
+			{
+				pool[element.id] = element;
+			});
 };
 
 
@@ -967,6 +1136,9 @@ Network.request = function(pk)
 
 //------screen constructors----------
 
+/**
+ * @constructor
+ */
 function Dashboard()
 {
 	this.tiles = {}; //Map of tiles on the dashboard indexed with data unit identifier (category-ident)
@@ -1008,10 +1180,15 @@ function Dashboard()
 				//Tile linking to the same data source is already on the dashboard -> refuse adding
 				return;
 			}
-			
-			this.tiles[dataUnitIdent] = tile;
 		
-			this.columns[0].append(tile.base); //For testing: append tile 0 to dashboard TODO: Add parameter for desired column
+			//Switch over to dashboard, when finished -> add tile
+			UI.data_showTab("dashboard",function()
+					{
+						//Unfortunetaly, 'this' does not work here
+						UI.dashboard.tiles[dataUnitIdent] = tile;
+					
+						UI.dashboard.columns[0].append(tile.base); //For testing: append tile 0 to dashboard TODO: Add parameter for desired column
+					});
 		};
 	
 	//Everything is created -> now we can add jQuery UI stuff
@@ -1028,24 +1205,49 @@ function Dashboard()
 					{
 						//Only change the placeholder for actual tiles beeing dragged
 						
-						$(".tile-placeholder").css("height",dashboard.tileWidth); //Height is always the same
-						$(".tile-placeholder").css("width", ui.item.hasClass("tile-half") ? dashboard.tileWidth : dashboard.tileWidth*2);
+						$(".tile-placeholder").css("height", UI.dashboard.tileWidth); //Height is always the same
+						$(".tile-placeholder").css("width", ui.item.hasClass("tile-half") ? UI.dashboard.tileWidth : UI.dashboard.tileWidth*2);
 						
 					}
 					
 				},
 			
-				revert: true
+				handle: "h2",
+				
+				revert: 200
 			});
 }
 
 //-------tile constructors------------
 
 /**
+ * Selects tile constructor from category name to create a tile.
+ * 
+ * @param category The category of data unit
+ * @param dataUnit The data unit object
+ * @returns {any}
+ */
+function createTile(category, dataUnit)
+{
+	
+	if(category == "machine")
+	{
+		return new TileMachine(dataUnit);
+		
+	}else if(category == "job")
+	{
+		return new TileJob(dataUnit);
+	}
+	
+}
+
+/**
  * @constructor
  */
-function TileMachine(full, machine)
+function TileMachine(machine)
 {
+	var full = false; //TODO: Full and half size should be changeable by user at runtime
+	
 	//Create the basic tile stuff every tile gets
 	this.dataUnitCategory = "machine";
 	this.dataUnitID = machine.id;
@@ -1055,8 +1257,8 @@ function TileMachine(full, machine)
 	this.base.attr("id","tile_" + this.dataUnitIdent);
 	this.base.addClass("tile");
 	this.base.addClass(full ? "tile-full" : "tile-half");
-	this.base.css("height", dashboard.tileWidth); //TODO: Maybe do this without global access
-	this.base.css("width", full ? dashboard.tileWidth*2 : dashboard.tileWidth);
+	this.base.css("height", UI.dashboard.tileWidth); //TODO: Maybe do this without global access
+	this.base.css("width", full ? UI.dashboard.tileWidth*2 : UI.dashboard.tileWidth);
 	
 	
 	this.title = $("<h2>");
@@ -1064,8 +1266,8 @@ function TileMachine(full, machine)
 	
 	//create gauge for production speed
 	this.speedGaugeCanvas = $("<canvas>");
-	this.speedGaugeCanvas.css("width", dashboard.tileWidth);
-	this.speedGaugeCanvas.css("height", dashboard.tileWidth * 0.88);
+	this.speedGaugeCanvas.css("width", UI.dashboard.tileWidth);
+	this.speedGaugeCanvas.css("height", UI.dashboard.tileWidth * 0.79);
 	
 	this.speedGauge = this.speedGaugeCanvas.gauge(
 		{
@@ -1087,6 +1289,7 @@ function TileMachine(full, machine)
 	
 	this.base.append(this.speedGaugeCanvas);
 	
+	//onUpdate takes a data unit as parameter
 	this.onUpdate = 
 		function(machine)
 		{
@@ -1168,13 +1371,13 @@ function Packet_Relog(sessionID)
  * 
  * @constructor
  */
-function Packet_Query(category, ident)
+function Packet_Query(category, id)
 {
 	this.typeID = PTYPE.QUERY;
 
 	this.data = {};
 	this.data.category = category;
-	this.data.ident = ident;
+	this.data.id= id;
 	
 	this.timeout = GENERAL_TIMEOUT;
 	this.timeoutID = null;
@@ -1279,4 +1482,22 @@ function util_formatDate(d)
 	
 	return d.getDate() + "." + (d.getMonth() + 1) + "." + d.getFullYear() + " " + d.getHours() + ":" + d.getMinutes();
 	
+}
+
+/**
+ * Checks if a given point lies in the bounds of a jQuery element.
+ * 
+ * @param element The jquery element
+ * @param x X-coordinate of the point
+ * @param y Y-coordinate of the point
+ * @returns {Boolean}
+ */
+function util_containsPoint(element, x, y)
+{
+	var startX = element.offset().left;
+	var startY = element.offset().top;
+	var endX =  startX + element.width();
+	var endY = startY + element.height();
+	
+	return (x > startX && y > startY && x < endX && y < endY);
 }

@@ -10,7 +10,7 @@ public class PacketQuery extends Packet
 	{
 		category = o.get("category").getAsInt();
 		
-		queryString = o.get("ident").getAsString();
+		queryString = o.get("id").getAsString();
 	}
 
 	@Override

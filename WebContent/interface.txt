@@ -301,8 +301,8 @@ Contents
 	!! NOTE: This packet is experimental. If it proves being usable, remove this note. !!
 	
 	Sent by the server spontaneously or as a response to a QUERY-packet. This packet contains
-	data of one data unit which is displayed by the client upon receipt. One DATA packet can only carry
-	data object of a single category at a time. For multiple categories, multiple DATA packets have to be transfered.
+	data of one or more data units which is displayed by the client upon receipt. One DATA packet can only carry
+	data objects of a single category at a time. For multiple categories, multiple DATA packets have to be transfered.
 	
 	-Packet ID:		21
 	
