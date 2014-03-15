@@ -26,6 +26,8 @@ public class PacketEncoder implements Encoder.Text<Packet>
 	@Override
 	public String encode(Packet packet) throws EncodeException 
 	{
+		try
+		{
 		JsonObject jo = packet.storeData();
 		
 		if(jo == null)
@@ -44,6 +46,12 @@ public class PacketEncoder implements Encoder.Text<Packet>
 		fullPacket.add("data", jo);
 		System.out.println("I have send this" + fullPacket.toString());
 		return fullPacket.toString();
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			return null;
+		}
 	}
 	
 }

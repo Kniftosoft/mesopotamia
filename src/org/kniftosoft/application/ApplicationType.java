@@ -5,7 +5,10 @@ package org.kniftosoft.application;
 public enum ApplicationType 
 {
 	
-	Maschineapp(1, Maschineapp.class);
+	Maschineapp(1, Maschineapp.class),
+	jobapp(2,JobApp.class),
+	produktapp(11,Produktapp.class),
+	Configapp(20, Config.class);
 
 	
 	private int typeID;

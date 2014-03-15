@@ -110,6 +110,30 @@ body
 	position: fixed;
 }
 
+#tilecreator
+{
+	font-size: 13px;
+	
+	color: #707070;
+	
+	background-color: #efeff1;
+	
+	box-shadow: 0px 1px 2px 2px #c4c4c4;
+	
+	padding: 25px 0px;
+	
+	margin-top: 49px;
+	
+	height: 100%;
+	width: 200px;
+	
+	float: left;
+	
+	position: fixed;
+	
+	z-index: 2;
+}
+
 #tab-dashboard
 {
 	
@@ -130,6 +154,11 @@ body
 .heading-minor
 {
 	font-size: 1em;
+}
+
+.hover-highlight
+{
+	background-color: #bb96e3;
 }
 
 .screen
@@ -328,6 +357,10 @@ body
 	float: left;
 }
 
+.tile-creator-helper
+{
+	background-color: #b0b5f5;
+}
 
 .tile-placeholder
 {

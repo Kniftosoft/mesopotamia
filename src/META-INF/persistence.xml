@@ -4,6 +4,7 @@
 		<jta-data-source>java:app/Euphratis</jta-data-source>
 		<class>org.kniftosoft.entity.App</class>
 		<class>org.kniftosoft.entity.Auftrag</class>
+		<class>org.kniftosoft.entity.Configtype</class>
 		<class>org.kniftosoft.entity.Log</class>
 		<class>org.kniftosoft.entity.Maschine</class>
 		<class>org.kniftosoft.entity.Produkt</class>
@@ -12,6 +13,7 @@
 		<class>org.kniftosoft.entity.Subscribe</class>
 		<class>org.kniftosoft.entity.User</class>
 		<class>org.kniftosoft.entity.Useraccess</class>
+		<class>org.kniftosoft.entity.Userconfig</class>
 		<class>org.kniftosoft.entity.Zustand</class>
 		<properties>
 			<property name="eclipselink.target-database" value="MySQL"/>

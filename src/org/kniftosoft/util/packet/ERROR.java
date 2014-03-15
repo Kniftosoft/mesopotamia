@@ -41,7 +41,7 @@ public class ERROR extends Packet {
 		JsonObject data = new JsonObject();
 		data.addProperty("errorCode", errorCode);
 		data.addProperty("errorMessage", errorMessage);
-		return null;
+		return data;
 	}
 	@Override
 	public PacketType getType() {

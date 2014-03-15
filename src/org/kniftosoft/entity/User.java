@@ -1,13 +1,8 @@
 package org.kniftosoft.entity;
 
 import java.io.Serializable;
+import javax.persistence.*;
 import java.util.List;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
 
 
 /**
@@ -54,6 +49,10 @@ public class User implements Serializable {
 	//bi-directional many-to-one association to Useraccess
 	@OneToMany(mappedBy="userBean")
 	private List<Useraccess> useraccesses;
+
+	//bi-directional many-to-one association to Userconfig
+	@OneToMany(mappedBy="userBean")
+	private List<Userconfig> userconfigs;
 
 	public User() {
 	}
@@ -202,6 +201,28 @@ public class User implements Serializable {
 		useraccess.setUserBean(null);
 
 		return useraccess;
+	}
+
+	public List<Userconfig> getUserconfigs() {
+		return this.userconfigs;
+	}
+
+	public void setUserconfigs(List<Userconfig> userconfigs) {
+		this.userconfigs = userconfigs;
+	}
+
+	public Userconfig addUserconfig(Userconfig userconfig) {
+		getUserconfigs().add(userconfig);
+		userconfig.setUserBean(this);
+
+		return userconfig;
+	}
+
+	public Userconfig removeUserconfig(Userconfig userconfig) {
+		getUserconfigs().remove(userconfig);
+		userconfig.setUserBean(null);
+
+		return userconfig;
 	}
 
 }

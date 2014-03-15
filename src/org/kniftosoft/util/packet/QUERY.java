@@ -3,21 +3,10 @@
  */
 package org.kniftosoft.util.packet;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.persistence.TypedQuery;
 import javax.websocket.DecodeException;
 
 import org.kniftosoft.application.Application;
 import org.kniftosoft.application.ApplicationType;
-import org.kniftosoft.entity.Maschine;
-import org.kniftosoft.entity.Useraccess;
-import org.kniftosoft.util.Constants;
 
 import com.google.gson.JsonObject;
 
@@ -29,8 +18,8 @@ public class QUERY extends Packet {
 	private int category;
 	private String ident;
 	private Application app;
-	private List<Maschine> maschines = new ArrayList<Maschine>();
-	private List<Useraccess> access;
+	
+	
 
 	/* (non-Javadoc)
 	 * @see org.kniftosoft.util.packet.Packet#executerequest()
@@ -40,15 +29,7 @@ public class QUERY extends Packet {
 		// TODO execute query
 		try
 		{
-			EntityManagerFactory factory;
-			factory = Persistence.createEntityManagerFactory(Constants.PERSISTENCE_UNIT_NAME);
-		    EntityManager em = factory.createEntityManager();
-		    em.getTransaction().begin();
-		    TypedQuery<Useraccess> acc = em.createQuery("Select u FROM Useraccess u WHERE u.userBean=:user", Useraccess.class).setParameter("user", peer.getUser());
-		    em.getTransaction().commit();
-		    access = acc.getResultList();
-		    em.close();
-			getids();
+			
 			ApplicationType apptype = ApplicationType.byID(category);
 			try 
 			{	
@@ -59,7 +40,7 @@ public class QUERY extends Packet {
 					DATA response = new DATA();
 					response.setPeer(peer);
 					response.setUID(uid);
-					response.setResult(app.getdata(maschines));
+					response.setResult(app.getdata(peer.getUser(),""));
 					response.send();
 				}catch (InstantiationException e) 
 				{
@@ -78,15 +59,6 @@ public class QUERY extends Packet {
 			System.err.println("query"+e.toString());
 			ERROR response = new ERROR(uid, peer,3, " internal problems");
 			response.send();
-		}
-		
-	}
-	private void getids(){
-		for(Iterator<Useraccess> iterator = access.iterator(); iterator.hasNext();)
-		{		
-			//TODO add itent check
-			maschines.add(iterator.next().getMaschineBean());
-
 		}
 		
 	}
