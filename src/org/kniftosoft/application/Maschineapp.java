@@ -96,6 +96,7 @@ public class Maschineapp extends Application {
 		data.addProperty("speed", (double)Math.round((double)logs.get(0).getProduziert()/(logs.get(0).getTimestamp().getTime()-logs.get(1).getTimestamp().getTime())*3600000*100)/100);
 		data.addProperty("name", logs.get(0).getMaschineBean().getName());
 		data.addProperty("job", logs.get(0).getAuftragBean().getIdauftrag());
+		data.addProperty("status", logs.get(0).getZustandBean().getIdzustand());
 		return data;
 	}
 
