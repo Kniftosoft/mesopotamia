@@ -83,6 +83,7 @@ public class LOGIN extends Packet {
 				factory = Persistence.createEntityManagerFactory(Constants.PERSISTENCE_UNIT_NAME);
 			    EntityManager em = factory.createEntityManager();
 			    TypedQuery<User> userquery=em.createQuery("Select u FROM User u WHERE u.email = '"+email+"'", User.class).setMaxResults(1);
+			    //TODO find classcast bug fix
 			    User user= userquery.getSingleResult();
 			    String password = user.getPassword()+ClientUpDater.getpeer(peer).getSalt();
 			    if(email.toLowerCase().equals(user.getEmail().toLowerCase())&&pass.equals(SHA256Generator.StringTOSHA256(password))){

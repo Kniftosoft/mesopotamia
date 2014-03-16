@@ -69,8 +69,7 @@ public class QUERY extends Packet {
 	@Override
 	public void createFromJSON(JsonObject o) {
 		category = o.get("category").getAsInt();
-		ident = o.get("ident").getAsString();
-
+		ident = o.get("id").getAsString();
 	}
 
 	/* (non-Javadoc)

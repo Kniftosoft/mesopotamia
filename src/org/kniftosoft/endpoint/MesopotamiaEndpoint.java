@@ -6,9 +6,9 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
-
-import org.kniftosoft.util.EuphratisSession;
 import org.kniftosoft.thread.ClientUpDater;
+import org.kniftosoft.util.EuphratisSession;
+import org.kniftosoft.util.packet.ERROR;
 import org.kniftosoft.util.packet.Packet;
 
 @ServerEndpoint(value = "/TIG_TEST_END",
@@ -29,10 +29,19 @@ public class MesopotamiaEndpoint {
 	@OnMessage
 	public void onMessage(Packet packet,Session peer)
 	{
-		packet.setPeer(ClientUpDater.getpeer(peer));
-		//TODO remove before publishing
-		System.out.println("recived Packet:"+packet.toString());
-		packet.executerequest();
+		try
+		{
+			packet.setPeer(ClientUpDater.getpeer(peer));
+			//TODO remove before publishing
+			System.out.println("recived Packet:"+packet.toString());
+			packet.executerequest();
+		}
+		catch(Exception e)
+		{
+			ERROR er = new ERROR(packet.getUID(), packet.getPeer(), 0, "Unhandled Error");
+			er.send();
+			e.printStackTrace();
+		}
 			
 	}
 	/**
