@@ -681,7 +681,7 @@ function f_loadServerSideConfig()
 function f_createTile(category, dataUnit)
 {
 	
-	var subPacket = new Packet_Subscribe(category,dataUnit.id);
+	var subPacket = new Packet_Subscribe(DCAT.byName(category),dataUnit.id);
 	subPacket.onResponse = function(pk)
 	{
 		if(pk.typeID == PTYPE.ACK)
