@@ -1,5 +1,5 @@
 +==========================================+
-| Mesopotamia Communication Protocol 1.3.3 |
+| Mesopotamia Communication Protocol 1.3.4 |
 |        (C) Niklas Weissner 2014          |
 +==========================================+
 
@@ -42,6 +42,8 @@ Contents
 
 14.03.2014	1.3.3	Added UNSUBSCRIBE and CONFIG- packet, defined new data units, renamed 'ident'-fields of QUERY and SUBSCRIBE to 'id',
 					added BAD_QUERY error type, changed NACK-response of SUBSCRIBE to ERROR, added chapter "Configuration"
+					
+16.03.2014	1.3.4	Added BAD_PACKET errorcode
 
 
 
@@ -109,6 +111,7 @@ Contents
 
 	Packet ID	|	Direction	|	Packet type	|
 	------------+---------------+---------------+---
+			0	|	Both		|	NULL		|
 			1	|	C->S		|	HANDSHAKE	|
 			2	|	S->C		|	ACCEPT		|	
 			10	|	C->S		|	LOGIN		|
@@ -124,6 +127,27 @@ Contents
 			201	|	Both		|	NACK		|
 			242	|	Both		|	ERROR		|
 	
+		
+			
+	NULL
+	----
+	This packet carries no information at all and should not cause any actions on both sides.
+	Its only purpose is to provide a defined packet type for not properly initialized Packet 
+	objects client-side. It shall neither cause errors nor other responses. It MUST not
+	be sent as a response to other packets, as it is not a proper packet for communication.
+	
+	-Packet ID:		0
+	
+	-Direction:		Both
+	
+	-Data fields:
+		none
+		
+	-Possible responses:
+		none
+			
+			
+			
 			
 	HANDSHAKE
 	---------
@@ -140,6 +164,7 @@ Contents
 	-Possible responses:
 		ACCEPT:		If connection is accepted (client is listed as peer by server, server transmits salt for secure login)
 		ERROR:		If connection is refused (incompatible client version/ blocked IP etc. Error codes WRONG_VERSION and NOT_ALLOWED are put to use here)
+		
 		
 		
 		
@@ -449,6 +474,7 @@ Contents
 		5 = WRONG_VERSION (The client's version did not match the server's - used when handshaking)
 		6 = NOT_ALLOWED (The client issued something he is not allowed to)
 		7 = BAD_QUERY (A QUERY packet with a bad query string was sent)
+		8 = BAD_PACKET (An unusable packet was received (missing fields, not in JSON format etc.))
 	
 	
 	

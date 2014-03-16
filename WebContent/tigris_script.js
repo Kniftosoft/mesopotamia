@@ -1,6 +1,6 @@
 
 /*--------------------------
- *      Tigris 0.3.2
+ *      Tigris 0.3.3
  * 	Mesopotamia Client v1
  * (C) Niklas Weissner 2014
  *-------------------------- 
@@ -19,13 +19,14 @@ var MESO_ENDPOINT = "TIG_TEST_END"; //Link to Euphrates
 
 
 //Constants
-var TIGRIS_VERSION = "0.3.2";
+var TIGRIS_VERSION = "0.3.3";
 var TIGRIS_SESSION_COOKIE = "2324-tigris-session";
 
 var GENERAL_TIMEOUT = 2000; //Default timeout in milliseconds (may be overridden by some packets)
 
 var PTYPE =
 {
+	NULL:		0,
 	HANDSHAKE: 	1,
 	ACCEPT:		2,
 	LOGIN: 		10,
@@ -76,7 +77,9 @@ var ERRORCODE =
 	INTERNAL_EXCEPTION:	3,
 	INVALID_RESPONSE:	4,
 	WRONG_VERSION:		5,
-	NOT_ALLOWED:		6
+	NOT_ALLOWED:		6,
+	BAD_QUERY:			7,
+	BAD_PACKET:			8
 };
 
 var LOGOUTREASON =
@@ -369,9 +372,29 @@ UI.data_showTab = function(name, callback)
 	UI.currentTab = name;
 };
 
+/**
+ * Displays tab and activates correct sidebar button.
+ */
 UI.data_switchTab = function(name, callback)
 {
+	//Deactivate all sidebar buttons
+	$(".sidebar-item-active").each(function(index)
+			{
+				$(this).removeClass("sidebar-item-active");
+			});
 	
+	//Activate right item (do it using $.each, an attribute selector takes forever to parse) 
+	$(".sidebar-item").each(function(index)
+			{
+				var $this = $(this);
+				
+				if($this.attr("data-target") == name)
+				{
+					$this.addClass("sidebar-item-active");
+				}
+			});
+	
+	UI.data_showTab(name, callback);
 };
 
 /**
@@ -452,9 +475,8 @@ UI.table_dragStop = function(event, ui)
 		
 		var dataUnit = DataPool.getSingle(UI.currentTab,id);
 		
-		var tile = createTile(UI.currentTab,dataUnit);
+		f_createTile(UI.currentTab,dataUnit);
 		
-		UI.dashboard.addTile(tile);
 		
 	}
 };
@@ -649,6 +671,44 @@ function f_loadServerSideConfig()
 }
 
 /**
+ * Subscribes the data unit and creates a linked tile on the dashboard
+ * when the subscriptions succeeds. 
+ * 
+ * @param category The category of data unit
+ * @param dataUnit The data unit object
+ * @returns {any}
+ */
+function f_createTile(category, dataUnit)
+{
+	
+	var subPacket = new Packet_Subscribe(category,dataUnit.id);
+	subPacket.onResponse = function(pk)
+	{
+		if(pk.typeID == PTYPE.ACK)
+		{
+			var tile = null;
+			
+			if(category == "machine")
+			{
+				tile = new Tile_Machine(dataUnit);
+				
+			}else if(category == "job")
+			{
+				tile = new Tile_Job(dataUnit);
+			}
+			
+			UI.dashboard.addTile(tile);
+			
+		}else if(pk.typeID == PTYPE.ERROR)
+		{
+			UI.showError("Subscribing a data unit has failed.");
+		}
+	};
+	
+	Network.sendPacket(subPacket);
+}
+
+/**
  * Updates all tiles on the dashboard.
  * 
  * @param category String containing the category of data sent
@@ -665,7 +725,7 @@ function f_updateTiles(category, data)
 				{
 					//There is a tile linked to the current data unit
 					
-					dashboard.tiles[dataUnitIdent].onUpdate(item);
+					dashboard.tiles[dataUnitIdent].update(item);
 				}
 				
 			});
@@ -887,6 +947,9 @@ Network.ws_onMessage = function(msg)
 		
 	}catch(e)
 	{	
+		//Although this error could mean something is wrong with the server, we should send an ERROR packet
+		Network.serverError(ERRORCODE.BAD_PACKET, "Could not parse packet: An exception occured while parsing JSON.");
+		
 		UI.showError("A fatal communication error occurred: A message could not be parsed into a packet.");
 		
 		return;
@@ -894,6 +957,8 @@ Network.ws_onMessage = function(msg)
 	
 	if(packet.uid === "undefined" || packet.typeID === "undefined" || packet.data === "undefined")
 	{
+		Network.serverError(ERRORCODE.BAD_PACKET, "Packet did not contain one or more of the fields: typeID, uid, data");
+		
 		UI.showError("A fatal communication error occurred: Bad packet and shit.");
 		
 		return;
@@ -926,7 +991,7 @@ Network.ws_onMessage = function(msg)
 			{
 				//The server did something wrong. We should tell him
 				var errorMsg = packet.typeID + " is not allowed as a response to " + requestingPacket.typeID;
-				var errorPacket = new Packet_Error(ERRORCODE.INVALID_RESPONSE, errorMsg);
+				Network.serverError(ERRORCODE.INVALID_RESPONSE, errorMsg);
 				
 				Network.sendPacket(errorPacket);
 				
@@ -966,6 +1031,18 @@ Network.ws_onClose = function()
 Network.ws_onError = function(e)
 {
 	UI.showError("A network error occurred. Please contact the system admin you do not know."); //ERR_COMM_NETWORK
+};
+
+/**
+ * Reports an error to the server using an ERROR packet.
+ * 
+ * @param code The error code as specified by MCP 1.1
+ * @param msg An optional error message
+ */
+Network.serverError = function(code, msg)
+{
+	var pk = new Packet_Error(code, msg);
+	Network.sendPacket(pk);
 };
 
 Network.handshake = function(tryRelog)
@@ -1111,8 +1188,11 @@ Network.generalError = function(id, msg)
  */
 Network.request = function(pk)
 {
-	
-	if(pk.typeID == PTYPE.DATA)
+	if(pk.typeID == PTYPE.NULL)
+	{
+		//We acknowledge the NULL packet but don't do anything with it as asked by MCP 1.3.4
+		
+	}else if(pk.typeID == PTYPE.DATA)
 	{
 		f_updateTiles(pk.data.category, pk.data.result);
 		
@@ -1128,8 +1208,7 @@ Network.request = function(pk)
 	{
 		//This packet type was not recognized. Tell the server we did not understand his message
 		
-		var errorPacket = new Packet_Error(ERRORCODE.INVALID_PACKET, "The request was not recognized. You packet may be C->S only.");
-		Network.sendPacket(errorPacket);
+		Network.serverError(ERRORCODE.INVALID_PACKET, "The request was not recognized. You packet may be C->S only.");
 	}
 	
 };
@@ -1177,17 +1256,19 @@ function Dashboard()
 		
 			if(dataUnitIdent in this.tiles)
 			{
-				//Tile linking to the same data source is already on the dashboard -> refuse adding
+				//Tile linking to the same data source is already on the dashboard -> refuse adding TODO: Display message
 				return;
 			}
 		
 			//Switch over to dashboard, when finished -> add tile
-			UI.data_showTab("dashboard",function()
+			UI.data_switchTab("dashboard",function()
 					{
 						//Unfortunetaly, 'this' does not work here
 						UI.dashboard.tiles[dataUnitIdent] = tile;
 					
 						UI.dashboard.columns[0].append(tile.base); //For testing: append tile 0 to dashboard TODO: Add parameter for desired column
+						
+						tile.onCreate();
 					});
 		};
 	
@@ -1221,94 +1302,228 @@ function Dashboard()
 //-------tile constructors------------
 
 /**
- * Selects tile constructor from category name to create a tile.
- * 
- * @param category The category of data unit
- * @param dataUnit The data unit object
- * @returns {any}
+ * @constructor
  */
-function createTile(category, dataUnit)
+function Tile_Machine(dataUnit)
 {
+	var instance = this; //We need to store this object, as 'this' is not usable in callbacks
+	var initialDataUnit = dataUnit;
 	
-	if(category == "machine")
+	this.ident = "machine-" + dataUnit.id;
+	this.dataUnitCategory = "machine";
+	this.dataUnitID = dataUnit.id;
+	
+	
+	//Retrieve and set up HTML structure of tile from a hidden definition area in the document
+	this.base = $("#tiledef_machine").clone();
+	this.base.attr("id","tile_" + this.ident);
+	this.base.css("width",UI.dashboard.tileWidth);
+	this.base.css("height",UI.dashboard.tileWidth);
+	
+	this.title = this.base.children("h2").first();
+	this.sizeButton = this.base.children(".size-button").first();
+	
+	
+	this.leftContent = this.base.children(".left-content").first();
+	this.leftContent.css("width",UI.dashboard.tileWidth);
+	this.leftContent.css("height",UI.dashboard.tileWidth - 13); //Minus 13 pixel header height
+	this.leftContent.css("left",UI.dashboard.tileWidth);
+	
+	this.rightContent = this.base.children(".right-content").first();
+	this.rightContent.css("width",UI.dashboard.tileWidth);
+	this.rightContent.css("height",UI.dashboard.tileWidth - 13); //Minus 13 pixel header height
+	this.rightContent.css("left",UI.dashboard.tileWidth);
+	
+	this.repairIcon = this.leftContent.children(".repair-icon").first();
+	this.repairIcon.css("width",UI.dashboard.tileWidth * 0.8);
+	this.repairIcon.css("height",UI.dashboard.tileWidth * 0.8);
+	this.repairIcon.hide();
+	
+	this.cleaningIcon = this.leftContent.children(".cleaning-icon").first();
+	this.cleaningIcon.css("width",UI.dashboard.tileWidth * 0.8);
+	this.cleaningIcon.css("height",UI.dashboard.tileWidth * 0.8);
+	this.cleaningIcon.hide();
+	
+	this.gaugeBase = this.leftContent.children(".machine-speed-gauge").first();
+	this.gaugeBase.css("width",UI.dashboard.tileWidth * 0.8);
+	this.gaugeBase.css("height",UI.dashboard.tileWidth * 0.8);
+	this.gaugeBase.attr("id","tile_" + this.ident + "_gauge");
+	
+	this.gauge = null;
+	
+	//Called immediately after tile was appended to dashboard
+	this.onCreate = function()
 	{
-		return new TileMachine(dataUnit);
+		//Create gauge
+		instance.gauge = new GaugeSVG(
+		{
+			
+			id: "tile_" + this.ident + "_gauge",
+			
+			title: "Production speed",
+			label: "screws/hour",
+			
+			min: 0,
+			max: 1000,
+			
+			labelColor: "#444",
+			valueColor: "#444",
+			titleColor: "#444",
+			
+			upperWarningLimit: 1000,
+			upperActionLimit: 1000,
+			
+			showMinMax: true,
+			canvasBackColor: "transparent",
+			showGaugeShadow: false
+			
+		});
 		
-	}else if(category == "job")
-	{
-		return new TileJob(dataUnit);
-	}
+		//Update new tile once
+		instance.update(initialDataUnit);
+	};
 	
+	this.update = function(newDataUnit)
+	{
+		instance.title.text("Machine '" + newDataUnit.name + "'");
+		
+		instance.rightContent.html("Status: " + UI.statusTest[newDataUnit.status] + "<br>Job: " + newDataUnit.job);
+		
+		if(newDataUnit.status == 1) //Running TODO: Store those in constants
+		{
+			instance.gaugeBase.show();
+			instance.repairIcon.hide();
+			instance.cleaningIcon.hide();
+			
+		}else if(newDataUnit.status == 2 || newDataUnit.status == 3 || newDataUnit.status == 4) //TODO: Error displayed as repair, change!
+		{
+			instance.repairIcon.show();
+			instance.gaugeBase.hide();
+			instance.cleaningIcon.hide();
+			
+		}else if(newDataUnit.status == 5)
+		{
+			instance.repairIcon.hide();
+			instance.gaugeBase.hide();
+			instance.cleaningIcon.show();
+		}
+		
+		instance.gauge.refresh(Math.round(newDataUnit.speed));
+	};
+	
+	this.toggleSize = function()
+	{
+		if(instance.base.hasClass("tile-half"))
+		{
+			instance.base.removeClass("tile-half");
+			instance.base.addClass("tile-full");
+			
+			//Slide tile to full size
+			instance.base.animate({width: UI.dashboard.tileWidth * 2}, 350, "easeInOutElastic");
+
+			
+		}else if(instance.base.hasClass("tile-full"))
+		{
+			instance.base.removeClass("tile-full");
+			instance.base.addClass("tile-half");
+			
+			instance.base.animate({width: UI.dashboard.tileWidth}, 350, "easeInOutElastic");
+		}
+	
+	};
+	//Link this function to the size button
+	this.sizeButton.click(this.toggleSize);
 }
 
 /**
  * @constructor
  */
-function TileMachine(machine)
+function Tile_Job(dataUnit)
 {
-	var full = false; //TODO: Full and half size should be changeable by user at runtime
+	var instance = this; //We need to store this object, as 'this' is not usable in callbacks
+	var initialDataUnit = dataUnit;
 	
-	//Create the basic tile stuff every tile gets
-	this.dataUnitCategory = "machine";
-	this.dataUnitID = machine.id;
-	this.dataUnitIdent = this.dataUnitCategory + "-" + this.dataUnitID;
-	
-	this.base = $("<div>");
-	this.base.attr("id","tile_" + this.dataUnitIdent);
-	this.base.addClass("tile");
-	this.base.addClass(full ? "tile-full" : "tile-half");
-	this.base.css("height", UI.dashboard.tileWidth); //TODO: Maybe do this without global access
-	this.base.css("width", full ? UI.dashboard.tileWidth*2 : UI.dashboard.tileWidth);
+	this.ident = "job-" + dataUnit.id;
+	this.dataUnitCategory = "job";
+	this.dataUnitID = dataUnit.id;
 	
 	
-	this.title = $("<h2>");
-	this.base.append(this.title);
+	//Retrieve and set up HTML structure of tile from a hidden definition area in the document
+	this.base = $("#tiledef_job").clone();
+	this.base.attr("id","tile_" + this.ident);
+	this.base.css("width",UI.dashboard.tileWidth);
+	this.base.css("height",UI.dashboard.tileWidth);
 	
-	//create gauge for production speed
-	this.speedGaugeCanvas = $("<canvas>");
-	this.speedGaugeCanvas.css("width", UI.dashboard.tileWidth);
-	this.speedGaugeCanvas.css("height", UI.dashboard.tileWidth * 0.79);
+	this.title = this.base.children("h2").first();
+	this.sizeButton = this.base.children(".size-button").first();
 	
-	this.speedGauge = this.speedGaugeCanvas.gauge(
-		{
-			lines: 12, // The number of lines to draw
-			angle: 0.15, // The length of each line
-			lineWidth: 0.44, // The line thickness
-			pointer: 
-			{
-				length: 0.85, // The radius of the inner circle
-				strokeWidth: 0.02, // The rotation offset
-				color: '#000000' // Fill color
-			},
-			limitMax: 'false',   // If true, the pointer will not go past the end of the gauge
-			colorStart: '#DA0404',   // Colors
-			colorStop: '#DA0404',    // just experiment with them
-			strokeColor: '#DA0404',   // to see which ones work best for you
-			generateGradient: false
-		}).data().gauge;
 	
-	this.base.append(this.speedGaugeCanvas);
+	this.leftContent = this.base.children(".left-content").first();
+	this.leftContent.css("width",UI.dashboard.tileWidth);
+	this.leftContent.css("height",UI.dashboard.tileWidth - 13); //Minus 13 pixel header height
+	this.leftContent.css("left",UI.dashboard.tileWidth);
 	
-	//onUpdate takes a data unit as parameter
-	this.onUpdate = 
-		function(machine)
-		{
-			this.title.html("Machine '" + machine.name + "'");
-			
-			this.speedGauge.maxValue = 1000; //TODO: Get max speed from somewhere
-			this.speedGauge.set(machine.speed);
-		};
-		
-		
-	//When finished creating tile, update its information (when there is some)
-	if(machine)
+	this.rightContent = this.base.children(".right-content").first();
+	this.rightContent.css("width",UI.dashboard.tileWidth);
+	this.rightContent.css("height",UI.dashboard.tileWidth - 13); //Minus 13 pixel header height
+	this.rightContent.css("left",UI.dashboard.tileWidth);
+	
+	
+	//Called immediately after tile was appended to dashboard
+	this.onCreate = function()
 	{
-		this.onUpdate(machine);
-	}
+		
+		
+		//Update new tile once
+		instance.update(initialDataUnit);
+	};
+	
+	this.update = function(newDataUnit)
+	{
+		instance.title.text("Job '" + newDataUnit.id + "'");
+	
+		
+	};
+	
+	this.toggleSize = function()
+	{
+		if(instance.base.hasClass("tile-half"))
+		{
+			instance.base.removeClass("tile-half");
+			instance.base.addClass("tile-full");
+			
+			//Slide tile to full size
+			instance.base.animate({width: UI.dashboard.tileWidth * 2}, 350, "easeInOutElastic");
+
+			
+		}else if(instance.base.hasClass("tile-full"))
+		{
+			instance.base.removeClass("tile-full");
+			instance.base.addClass("tile-half");
+			
+			instance.base.animate({width: UI.dashboard.tileWidth}, 350, "easeInOutElastic");
+		}
+	
+	};
+	//Link this function to the size button
+	this.sizeButton.click(this.toggleSize);
 }
 
 
 //--------packet contructors-----------
+
+/**
+ * Prototype for all packets.
+ */
+var Packet = {};
+
+Packet.typeID = PTYPE.NULL; //MUST be initialized
+Packet.timeout = GENERAL_TIMEOUT;
+Packet.timeoutID = null;
+Packet.allowedResponses = [];
+Packet.onResponse = function(){};
+Packet.onTimeout = function(){UI.showError("THe server took to long to respond to packet.");};
+
 /**
  *
  * @constructor
@@ -1320,13 +1535,11 @@ function Packet_Handshake()
 	this.data = {};
 	this.data.clientVersion = TIGRIS_VERSION;
 	
-	this.timeout = GENERAL_TIMEOUT; //TODO: Find something like superconstructor to init the stuff every packet has
-	this.timeoutID = null;
 	this.allowedResponses = [PTYPE.ACCEPT, PTYPE.ERROR];
 	
-	this.onResponse = function(){};
 	this.onTimeout = function(){UI.showError("The server took to long to respond to handshake.");};
 }
+Packet_Handshake.prototype = Packet;
 
 /**
  *
@@ -1334,19 +1547,20 @@ function Packet_Handshake()
  */
 function Packet_Login(usr,pwrdHash)
 {
+	this.prototype = Packet;
+	
+	
 	this.typeID = PTYPE.LOGIN;
 	
 	this.data = {};
 	this.data.username = usr;
 	this.data.passwordHash = pwrdHash;
 	
-	this.timeout = GENERAL_TIMEOUT;
-	this.timeoutID = null;
 	this.allowedResponses = [PTYPE.AUTH, PTYPE.NACK];
 	
-	this.onResponse = function(){};
 	this.onTimeout = function(){UI.showError("The server took to long to respond to login.");};
 }
+Packet_Login.prototype = Packet;
 
 /**
  * 
@@ -1354,18 +1568,19 @@ function Packet_Login(usr,pwrdHash)
  */
 function Packet_Relog(sessionID)
 {
+	this.prototype = Packet;
+	
+	
 	this.typeID = PTYPE.RELOG;
 
 	this.data = {};
 	this.data.sessionID = sessionID;
 	
-	this.timeout = GENERAL_TIMEOUT;
-	this.timeoutID = null;
 	this.allowedResponses = [PTYPE.REAUTH, PTYPE.NACK];
 	
-	this.onResponse = function(){};
 	this.onTimeout = function(){UI.showError("The server took to long to respond to relog.");};
 }
+Packet_Relog.prototype = Packet;
 
 /**
  * 
@@ -1373,19 +1588,40 @@ function Packet_Relog(sessionID)
  */
 function Packet_Query(category, id)
 {
+	this.prototype = Packet;
+	
+	
 	this.typeID = PTYPE.QUERY;
 
 	this.data = {};
 	this.data.category = category;
-	this.data.id= id;
+	this.data.id = id;
 	
-	this.timeout = GENERAL_TIMEOUT;
-	this.timeoutID = null;
 	this.allowedResponses = [PTYPE.DATA]; //Even though the protocol asks us to put ERROR here, there is no need to process it separately
 	
-	this.onResponse = function(){};
 	this.onTimeout = function(){UI.showError("The server took to long to respond to query.");};
 }
+Packet_Query.prototype = Packet;
+
+/**
+ * @constructor
+ */
+function Packet_Subscribe(category, id)
+{
+	this.prototype = Packet;
+	
+	
+	this.typeID = PTYPE.SUBSCRIBE;
+	
+	this.data = {};
+	this.data.category = category;
+	this.data.id = id;
+	
+	this.allowedResponses = [PTYPE.ACK, PTYPE.ERROR];
+	
+	this.onTimeout = function(){UI.showError("The server took to long to respond to subscribe.");};
+}
+Packet_Subscribe.prototype = Packet;
 
 /**
  * 
@@ -1393,19 +1629,20 @@ function Packet_Query(category, id)
  */
 function Packet_Logout(reason, msg)
 {
+	this.prototype = Packet;
+	
+	
 	this.typeID = PTYPE.LOGOUT;
 	
 	this.data = {};
 	this.data.reasonCode = reason || LOGOUTREASON.UNKNOWN;
 	this.data.reasonMessage = msg || "No message specified";
 	
-	this.timeout = GENERAL_TIMEOUT;
-	this.timeoutID = null;
 	this.allowedResponses = [PTYPE.ACK];
 	
-	this.onResponse = function(){};
 	this.onTimeout = function(){UI.showError("The server took to long to respond to logout.");};
 }
+Packet_Logout.prototype = Packet;
 
 /**
  * 
@@ -1413,19 +1650,19 @@ function Packet_Logout(reason, msg)
  */
 function Packet_Error(code, message)
 {
+	this.prototype = Packet;
+	
+	
 	this.typeID = PTYPE.ERROR;
 	
 	this.data = {};
 	this.data.errorCode = code;
 	this.data.errorMessage = message;
 	
+	//No timeout or responses allowed
 	this.timeout = 0;
-	this.timeoutID = null;
-	this.allowedResponses = [];
-	
-	this.onResponse = function(){};
-	this.onTimeout = function(){};
 }
+Packet_Error.prototype = Packet;
 
 //---------------utility stuff----------------
 

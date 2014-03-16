@@ -6,7 +6,7 @@
 	
 		<meta charset="ISO-8859-1">
 	
-		<title>Shining new Tigris GUI</title>
+		<title>Mesopotamia Tigris</title>
 		
 		<link rel="stylesheet" href="./css/tigris_styles.css">
 		<link rel="stylesheet" href="./css/jquery.dataTables.css">
@@ -16,7 +16,7 @@
 		<script src="lib/CryptoJS/core-min.js"></script>
 		<script src="lib/CryptoJS/format-hex.js"></script>
 		<script src="lib/CryptoJS/sha256.js"></script>
-		<script src="lib/gauge.js"></script><!-- Lovely canvas gauge lib from http://bernii.github.io/gauge.js/ -->
+		<script src="lib/gaugeSVG.js"></script><!-- Gauge lib from http://www.codeproject.com/Articles/604502/A-universal-gauge-for-your-web-dashboard -->
 		<script src="lib/jquery.dataTables.min.js"></script>
 		
 		<script src="tigris_script.js"></script>
@@ -95,7 +95,6 @@
 				</div>
 			</div>
 			
-			
 			<!-- List of dashboard tabs -->
 			<div id="tab-dashboard" class="data-frame-tab">
 				
@@ -149,6 +148,51 @@
 				This is the tab for statistics
 			</div>
 			
+		</div>
+	
+	
+		<!-- Container for tile definitions. Should never be visible at any time! -->
+		<div style="display:none;">
+		
+			<div id="tiledef_machine" class="tile tile-half tile-machine">
+				<h2>Title goes here</h2>
+				<a class="size-button"><img src="images/forward_enabled.png"></img></a><br>
+				
+				<div class="left-content">
+				
+					<div class="machine-speed-gauge"></div>
+					
+					<img class="icon repair-icon" src="images/wrench.png" style="display:none;"></img>
+					<img class="icon cleaning-icon" src="images/broom.png" style="display:none;"></img>
+				</div>
+				
+				<div class="right-content">
+					
+					
+					
+				</div>
+				
+			</div>
+			
+			<div id="tiledef_job" class="tile tile-half tile-job">
+				<h2>Title goes here</h2>
+				<a class="size-button"><img src="images/forward_enabled.png"></img></a><br>
+				
+				<div class="left-content">
+					
+					
+					
+				</div>
+				
+				<div class="right-content">
+					
+					
+					
+				</div>
+				
+			</div>
+			
+		
 		</div>
 	
 	</body>

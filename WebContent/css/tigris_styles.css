@@ -365,6 +365,8 @@ body
 	min-height: 100px;
 	
 	float: left;
+	
+	/* width, height set by script */
 }
 
 .tile-creator-helper
@@ -380,26 +382,78 @@ body
 	
 	margin: 0 1em 1em 0;
 	
-	height: 50px;
+	/* width, height set by script */
 }
 
 .tile
 {
 	color: #444;
 	
-	background-color: #62C1F5;
+	background-color: #d3d6ff;
 	
 	margin: 5px;
 		
+	overflow: hidden;
+	
+	/* width, height set by script */
 }
 
 .tile h2
 {
-	font-size: 1em;
+	font-size: 13px;
 	
 	padding-left: 2px;
 	
 	cursor: move;
+	
+	float: left;
+	
+	white-space: nowrap;
+}
+
+.tile .size-button
+{
+	
+	width: 14px;
+	height: 14px;
+	
+	float: right;
+	
+	cursor: pointer;
+}
+
+.tile .machine-speed-gauge
+{
+	color: #444;
+	font-size: 14px;
+	
+	margin: 0px auto 0px auto;
+	
+	overflow: visible;
+	
+	/* width, height set by script */
+}
+
+.tile .icon
+{
+	margin: 5px auto 0px auto;
+	
+	/* width, height set by script */
+}
+
+.tile .left-content
+{
+	float: left;
+	
+	/* width, height set by script */
+}
+
+.tile .right-content
+{
+	
+	float: right;
+	
+	/* width, height set by script */
 }
 
 /* These are currently used only for identification and may get style information later */

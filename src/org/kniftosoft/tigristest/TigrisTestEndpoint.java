@@ -230,6 +230,20 @@ public class TigrisTestEndpoint
 			resp.setResult(result);
 			resp.setCategory(pk.getCategory());
 			peer.getAsyncRemote().sendObject(resp);
+		}else if(packet.getType() == PacketType.SUBSCRIBE)
+		{
+			PacketAck resp = new PacketAck();
+			resp.setUID(packet.getUID());
+			
+			peer.getAsyncRemote().sendObject(resp);
+		}else
+		{
+			PacketError resp = new PacketError();
+			resp.setUID(packet.getUID());
+			resp.setErrorType(ErrorType.INVALID_PACKET);
+			resp.setErrorMessage("The sent packet (" + packet.getType().name() + ") was not recognized.");
+			
+			peer.getAsyncRemote().sendObject(resp);
 		}
 	}
 	
@@ -247,7 +261,7 @@ public class TigrisTestEndpoint
 	    return new String(hexChars);
 	}
 	
-	public static final String EUPHRATES_VERSION = "0.3.2";
+	public static final String EUPHRATES_VERSION = "0.3.3";
 	
 	public static final String EXAMPLE_USER = "otto";
 	public static final String EXAMPLE_PASSWORD_HASH = "c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2"; //hash of "foobar"

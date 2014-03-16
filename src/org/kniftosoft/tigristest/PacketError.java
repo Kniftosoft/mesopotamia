@@ -17,6 +17,7 @@ public class PacketError extends Packet
 		JsonObject jo = new JsonObject();
 		
 		jo.addProperty("errorCode",errorType.getID());
+		jo.addProperty("errorMessage", errorMessage);
 		
 		return jo;
 	}
@@ -38,6 +39,11 @@ public class PacketError extends Packet
 		return errorType;
 	}
 	
-	private ErrorType errorType;
+	public void setErrorMessage(String msg)
+	{
+		this.errorMessage = msg;
+	}
 	
+	private ErrorType errorType;
+	private String errorMessage;
 }
