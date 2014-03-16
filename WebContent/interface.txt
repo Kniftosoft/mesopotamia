@@ -1,6 +1,6 @@
 +==========================================+
-| Mesopotamia Communication Protocol 1.3.4 |
-|        (C) Niklas Weissner 2014          |
+| Mesopotamia Communication Protocol 1.3.5 |
+| (C) Niklas Weissner 2014 |
 +==========================================+
 
 
@@ -9,41 +9,43 @@
 Contents
 ========
 
-	1	-	Changelog
-	2	-	Foreword
-	3	-	Basic communication
-	4	-	Basic packet structure
-	5	-	Packet types
-	6	-	Security
-	7	-	Data access
-	8	-	Configuration
-	
-	
-	
-	
+1 - Changelog
+2 - Foreword
+3 - Basic communication
+4 - Basic packet structure
+5 - Packet types
+6 - Security
+7 - Data access
+8 - Configuration
+
+
+
+
 1 - Changelog
 =============
 
-04.02.2014	1.0		Initial creation of protocol
+04.02.2014 1.0 Initial creation of protocol
 
-05.02.2014	1.1		Added LOGOUT-,QUERY-,DATA- and ERROR-packets and NACK-response to LOGIN, Basic communication chapter
+05.02.2014 1.1 Added LOGOUT-,QUERY-,DATA- and ERROR-packets and NACK-response to LOGIN, Basic communication chapter
 
-24.02.2014	1.2		Removed QUIT-packet, added ACCEPT-packet and defined a basic salting procedure (chapter "Security")
+24.02.2014 1.2 Removed QUIT-packet, added ACCEPT-packet and defined a basic salting procedure (chapter "Security")
 
-25.02.2014	1.2.1	Changed salting procedure to append salt to hashed password instead of unencrypted password
+25.02.2014 1.2.1 Changed salting procedure to append salt to hashed password instead of unencrypted password
 
-28.02.2014	1.2.2	Replaced NACK-response of HANDSHAKE with ERROR-response, defined new WRONG_VERSION and NOT_ALLOWED error code
+28.02.2014 1.2.2 Replaced NACK-response of HANDSHAKE with ERROR-response, defined new WRONG_VERSION and NOT_ALLOWED error code
 
-03.03.2014	1.3		Reworked QUERY- and DATA-packet, added SUBSCRIBE-packet, added chapter "Data access"
+03.03.2014 1.3 Reworked QUERY- and DATA-packet, added SUBSCRIBE-packet, added chapter "Data access"
 
-06.03.2014	1.3.1	Added username field to REAUTH packet
+06.03.2014 1.3.1 Added username field to REAUTH packet
 
-12.03.2014	1.3.2	Changed category in data access to int, defined new data unit structure
+12.03.2014 1.3.2 Changed category in data access to int, defined new data unit structure
 
-14.03.2014	1.3.3	Added UNSUBSCRIBE and CONFIG- packet, defined new data units, renamed 'ident'-fields of QUERY and SUBSCRIBE to 'id',
-					added BAD_QUERY error type, changed NACK-response of SUBSCRIBE to ERROR, added chapter "Configuration"
-					
-16.03.2014	1.3.4	Added BAD_PACKET errorcode
+14.03.2014 1.3.3 Added UNSUBSCRIBE and CONFIG- packet, defined new data units, renamed 'ident'-fields of QUERY and SUBSCRIBE to 'id',
+added BAD_QUERY error type, changed NACK-response of SUBSCRIBE to ERROR, added chapter "Configuration"
+
+16.03.2014 1.3.4 Added BAD_PACKET errorcode
+
+16.03.2014 1.3.5 Changed CONFIG-id-field from string to int, defined id's for every config attribute
 
 
 
@@ -51,57 +53,57 @@ Contents
 2 - Foreword
 ============
 
-	This is the specification for the Mesopotamia Communication Protocol (MCP) used by the
-	Mesopotamia producation-surveillance-system consisting of the client (codename "Tigris") and
-	the Glassfish-based server (codename "Euphrates"). 
-	This protocol is build around Websocket technology and uses the JavaScript Object Notation (JSON) 
-	for packet wrapping. 
-	The JSON specification is provided under the license viewable at [http://www.json.org/license.html].
-	
-	
-	
-	
+This is the specification for the Mesopotamia Communication Protocol (MCP) used by the
+Mesopotamia producation-surveillance-system consisting of the client (codename "Tigris") and
+the Glassfish-based server (codename "Euphrates").
+This protocol is build around Websocket technology and uses the JavaScript Object Notation (JSON)
+for packet wrapping.
+The JSON specification is provided under the license viewable at [http://www.json.org/license.html].
+
+
+
+
 3 - Basic communication
 =======================
 
-	A connection is opened with a client sending a HANDSHAKE. The server may abandon a connection that
-	isn't HANDSHAKE'd after a given timeout. 
-	When a HANDSHAKE is answered by the server using an ACCEPT packet, the client may continue with a LOGIN process.
+A connection is opened with a client sending a HANDSHAKE. The server may abandon a connection that
+isn't HANDSHAKE'd after a given timeout.
+When a HANDSHAKE is answered by the server using an ACCEPT packet, the client may continue with a LOGIN process.
 
-	After the LOGIN process, the client receives a session ID which is used for reconnection after connection loss.
-	
+After the LOGIN process, the client receives a session ID which is used for reconnection after connection loss.
+
 
 
 
 4 - Basic packet structure
 ==========================
 
-	Packets are in JSON-format and must at least contain the following fields:
+Packets are in JSON-format and must at least contain the following fields:
 
-		int: typeID
-		
-		int: uid
-		
-		struct: data //Packet-specific	
-		
-	
-	-typeID:
-		The type of the packet. For a detailed description of possible values see "Packet types"
-		
-	-uid:
-		An unique ID that is echoed on responses to packets in order to clearly identify responses to sent packets.
-		An UID is generated when the client/server sends a packet. To avoid collisions in UID generation,
-		the client generates only even UIDs while the server generates only the odd ones.
-		When a response to a given UID was received, the sender may re-use the UID of the packets.
-		As an exception, the ERROR-packet needs no UID, as it is allowed as a response to any packet. (Although
-		the UID field is ignored on ERROR-packets, it still has to be included in order to form a valid packet)
-	
-	-data:
-		The contents of the data struct are packet specific and are explained in chapter "Packet types"
+int: typeID
 
-	
-	If the server/client receives a message that is not a valid packet (not in JSON-format / required fields
-	not defined) it should ignore the message, print out an error notification and abandon the connection.
+int: uid
+
+struct: data //Packet-specific
+
+
+-typeID:
+The type of the packet. For a detailed description of possible values see "Packet types"
+
+-uid:
+An unique ID that is echoed on responses to packets in order to clearly identify responses to sent packets.
+An UID is generated when the client/server sends a packet. To avoid collisions in UID generation,
+the client generates only even UIDs while the server generates only the odd ones.
+When a response to a given UID was received, the sender may re-use the UID of the packets.
+As an exception, the ERROR-packet needs no UID, as it is allowed as a response to any packet. (Although
+the UID field is ignored on ERROR-packets, it still has to be included in order to form a valid packet)
+
+-data:
+The contents of the data struct are packet specific and are explained in chapter "Packet types"
+
+
+If the server/client receives a message that is not a valid packet (not in JSON-format / required fields
+not defined) it should ignore the message, print out an error notification and abandon the connection.
 
 
 
@@ -109,538 +111,536 @@ Contents
 5 - Packet types
 ================
 
-	Packet ID	|	Direction	|	Packet type	|
-	------------+---------------+---------------+---
-			0	|	Both		|	NULL		|
-			1	|	C->S		|	HANDSHAKE	|
-			2	|	S->C		|	ACCEPT		|	
-			10	|	C->S		|	LOGIN		|
-			11	|	S->C		|	AUTH		|
-			12	|	C->S		|	RELOG		|
-			13	|	S->C		|	REAUTH		|
-			14	|	Both		|	LOGOUT		|
-			20	|	C->S		|	QUERY		|
-			21	|	S->C		|	DATA		|
-			22	|	C->S		|	SUBSCRIBE	|
-			50	|	C->S		|	CONFIG		|
-			200	|	Both		|	ACK			|
-			201	|	Both		|	NACK		|
-			242	|	Both		|	ERROR		|
-	
-		
-			
-	NULL
-	----
-	This packet carries no information at all and should not cause any actions on both sides.
-	Its only purpose is to provide a defined packet type for not properly initialized Packet 
-	objects client-side. It shall neither cause errors nor other responses. It MUST not
-	be sent as a response to other packets, as it is not a proper packet for communication.
-	
-	-Packet ID:		0
-	
-	-Direction:		Both
-	
-	-Data fields:
-		none
-		
-	-Possible responses:
-		none
-			
-			
-			
-			
-	HANDSHAKE
-	---------
-	Sent by client to initiate a connection; should be sent right after the client has
-	been loaded up so incompatible versions / a not reachable server can be identified.
-	
-	-Packet ID:		1
-	
-	-Direction:		C->S
-	
-	-Data fields:
-		string: 	clientVersion
-		
-	-Possible responses:
-		ACCEPT:		If connection is accepted (client is listed as peer by server, server transmits salt for secure login)
-		ERROR:		If connection is refused (incompatible client version/ blocked IP etc. Error codes WRONG_VERSION and NOT_ALLOWED are put to use here)
-		
-		
-		
-		
-	ACCEPT
-	------
-	Sent by the server for accepting the HANDSHAKE of a client. This packet contains a random salt string that is
-	used for safely transmitting sensitive data like passwords on non-secure connections(http/ws). For more information
-	see chapter "6 - Security".
-	A client that receives an ACCEPT as an answer to it's HANDSHAKE is able to continue with the login procedure.
-	
-	-Packet ID:		2
-	
-	-Direction:		S->C
-	
-	-Data fields:
-		string:		salt (Random salt string, for more information see chapter "6 - Security")
-		
-	-Possible responses:
-		none (packet is response-only)
-		
-		
-		
-		
-	LOGIN
-	-----
-	Sent by client to login on the server and to receive session information for
-	querying data.
-	
-	-Packet ID:		10
-	
-	-Direction:		C->S
-	
-	-Data fields:
-		string: 	username
-		string: 	passwordHash (SHA-256-Hash of password + salt, for more information see chapter "6 - Security")
-		
-	-Possible responses:
-		AUTH:		If login succeeds (AUTH-packet contains session information)
-		NACK:		If login fails
-		
-		
-		
-		
-	AUTH
-	----
-	Sent by server as a response to successful login. Session information and 
-	user-specific configuration is included in packet.
-	
-	-Packet ID:		11
-	
-	-Direction:		S->C
-	
-	-Data fields:
-		string:		sessionID
-		struct:		userConfig (Fields of this structure are documented in a later version of the protocol)
-		
-	-Possible responses:
-		none (packet is response-only)
-		
-		
-		
-		
-	RELOG
-	------
-	Sent by client when it already has a session key(from a cookie etc.) and needs to check
-	if it is still usable. If the server responds with a REAUTH the client is still allowed to
-	query data without a new login.
-	
-	-Packet ID:		12
-	
-	-Direction:		C->S
-	
-	-Data fields:
-		string:		sessionID (the session ID that needs to be checked and re-registered)
-		
-	-Possible responses:
-		REAUTH:		If session is still active
-		NACK:		If session has expired (client needs a new login)
-		
-		
-		
-		
-	REAUTH
-	------
-	Sent by server as a response to a RELOG packet if the sent session key is still valid. The server
-	is able to replace the old session key by a new one for safety reasons.
-	
-	-Packet ID:		13
-	
-	-Direction:		S->C
-	
-	-Data fields:
-		string:		newSessionID (is used for further connections by client)
-		string:		username (The name of the user who started the restored session)
-		struct:		userConfig (Fields of this structure are documented in a later version of the protocol)
-		
-	-Possible results:
-		none (packet is response-only)
-		
-		
-	
-	
-	LOGOUT
-	------
-	Sent by server/client to close a session without terminating the connection. A reason can be included
-	in the form of a numerical code and a human-readable message string.
-	
-	-Packet ID:		14
-	
-	-Direction:		Both
-	
-	-Data fields:
-		string:		sessionID (is ignored if sent by the server)
-		int:		reasonCode(a technical ID for identifying the logout reason. List of possible values: see "Notes")
-		string:		reasonMessage(a human-readable message that might be displayed in a message dialog/server log)
-		
-	-Possible results:
-		none (logout needs no confirmation)
-	
-	-Notes:
-		Possible values for the reasonCode-field are:
-		0 = UNKNOWN
-		1 = CLOSED_BY_USER
-		2 = SESSION_EXPIRED
-		3 = INTERNAL_ERROR
-		4 = REFUSED
-		
-		
-	
-	
-	QUERY
-	-----
-	!! NOTE: This packet is experimental. If it proves being usable, remove this note. !!
-	
-	Sent by the client to query data. The server answers the query by sending a DATA-packet.
-	The field ident is the identifier of the desired object. 
-	If all objects of a category are desired, the identifier may be '*'. 
-	Other wildcards (like 'a*' for all objects beginning with 'a') are currently not allowed.
-	This may be changed depending on what is possible server-side.
-	For further information, see chapter "7 - Data access".
-	
-	-Packet ID:		20
-	
-	-Direction:		C->S
-	
-	-Data fields:
-		int:		category (For more information on these fields, see chapter "7 - Data access")
-		string:		id
-		
-	-Possible responses:
-		DATA:		If the query succeeds and data is transferred
-		ERROR:		If there were any problems with the query (error code BAD_QUERY should be used)
- 	
-	
-	
-	
-	DATA
-	----
-	!! NOTE: This packet is experimental. If it proves being usable, remove this note. !!
-	
-	Sent by the server spontaneously or as a response to a QUERY-packet. This packet contains
-	data of one or more data units which is displayed by the client upon receipt. One DATA packet can only carry
-	data objects of a single category at a time. For multiple categories, multiple DATA packets have to be transfered.
-	
-	-Packet ID:		21
-	
-	-Direction:		S->C
-	
-	-Data fields:
-		int:		category (The category ID of the transferred objects, see chapter "7 - Data access")
-		struct[]:	result (Array of resulting data objects. May be empty. The structure of the returned objects depends on their
-							category and is futher documented in chapter "7 - Data access")
-		
-	-Possible responses:
-		none (packet is response-only)
-	
-	
-	
-	
-	SUBSCRIBE
-	---------
-	!! NOTE: This packet is experimental. If it proves being usable, remove this note. !!
-	
-	Sent by the client to instruct the server to inform it on any changes of the specified data unit.
-	Changes are reported using a DATA packet (sent by the server without request). If the subscription
-	succeeds the server responds with an ACK, otherwise a NACK is sent (bad data unit etc.).
-	
-	-Packet ID:		22
-	
-	-Direction:		C->S
-	
-	-Data fields:
-		int:		category (For more information on these fields, see chapter "7 - Data access")
-		string:		id
-		
-	-Possible responses:
-		ACK:		If the subscription succeeds
-		ERROR:		If the subscription fails (error code BAD_QUERY should be used)
-	
-	
-	
-	
-	UNSUBSCRIBE
-	-----------
-	!! NOTE: This packet is experimental. If it proves being usable, remove this note. !!
-	
-	Sent by the client to cancel a subscription on one or all data units of one category
-	(for example if a tile is removed).
-	
-	-Packet ID:		23
-	
-	-Direction:		C->S
-	
-	-Data fields:
-		int:		category (For more information on these fields, see chapter "7 - Data access")
-		string:		id
-		
-	-Possible responses:
-		ACK:		If the unsubscription succeeds
-		ERROR:		If the unsubscription fails (error code BAD_QUERY should be used)
-	
-	
-	
-	
-	CONFIG
-	------
-	Sent by the client to update/create one value in the server-side configuration. This confiugration
-	can be read by the client by using a QUERY packet with the right category.
-	For more information on configuration, see chapter "8 - Configuration".
-	
-	-Packet ID:		50
-	
-	-Direction:		C->S
-	
-	-Data fields:
-		string:		id
-		string:		value
-		
-	-Possible responses:
-		ACK:		If the configuration was successfully stored
-		NACK:		If the configuration could not be stored
-		
-	
-	
-	
-	ACK
-	---
-	Sent by client/server as a response to packets with no specific return data. An ACK represents a
-	successful request while a NACK reports a failure. This packet should never be sent as a request
-	as that would make no sense at all.
-	
-	-Packet ID:		200
-	
-	-Direction:		Both
-	
-	-Data fields:
-		none
-		
-	-Possible responses
-		none (packet is response-only)
-		
-		
-		
-		
-	NACK
-	----
-	Sent by client/server as a response to packets with no specific return data. An ACK represents a
-	successful request while a NACK reports a failure. This packet should never be sent as a request
-	as that would make no sense at all.
-	
-	-Packet ID:		201
-	
-	-Direction		Both
-	
-	-Data fields:
-		none
-		
-	-Possible responses
-		none (packet is response-only)
-		
-	
-	
-	
-	ERROR
-	-----
-	Sent by client/server to report an error. This special packet can be sent as a response to any
-	packet to report an error.
-	
-	-Packet ID:		242
-	
-	-Direction:		Both
-	
-	-Data fields:
-		int:		errorCode (a technical ID for identifying the error. List of possible values: see "Notes")
-		string:		errorMessage (a human-readable message that might be displayed in a message dialog/server log)
-		
-	-Possible responses:
-		none (Packet is one-way. It MUST not be answered)
-		
-	-Notes:
-		Possible values for the errorCode-field are:
-		0 = UNKNOWN
-		1 = INVALID_PACKET (An unexpected packet occurred; e.g.: response-only-packet was sent as a request packet)
-		2 = SESSION_EXPIRED (A query was made with an invalid session key)
-		3 = INTERNAL_EXCEPTION  (An internal exception has occurred)
-		4 = INVALID_RESPONSE (A packet was answered with an incompatible packet type)
-		5 = WRONG_VERSION (The client's version did not match the server's - used when handshaking)
-		6 = NOT_ALLOWED (The client issued something he is not allowed to)
-		7 = BAD_QUERY (A QUERY packet with a bad query string was sent)
-		8 = BAD_PACKET (An unusable packet was received (missing fields, not in JSON format etc.))
-	
-	
-	
+Packet ID | Direction | Packet type |
+------------+---------------+---------------+---
+0 | Both | NULL |
+1 | C->S | HANDSHAKE |
+2 | S->C | ACCEPT |
+10 | C->S | LOGIN |
+11 | S->C | AUTH |
+12 | C->S | RELOG |
+13 | S->C | REAUTH |
+14 | Both | LOGOUT |
+20 | C->S | QUERY |
+21 | S->C | DATA |
+22 | C->S | SUBSCRIBE |
+50 | C->S | CONFIG |
+200 | Both | ACK |
+201 | Both | NACK |
+242 | Both | ERROR |
+
+
+
+NULL
+----
+This packet carries no information at all and should not cause any actions on both sides.
+Its only purpose is to provide a defined packet type for not properly initialized Packet
+objects client-side. It shall neither cause errors nor other responses. It MUST not
+be sent as a response to other packets, as it is not a proper packet for communication.
+
+-Packet ID: 0
+
+-Direction: Both
+
+-Data fields:
+none
+
+-Possible responses:
+none
+
+
+
+
+HANDSHAKE
+---------
+Sent by client to initiate a connection; should be sent right after the client has
+been loaded up so incompatible versions / a not reachable server can be identified.
+
+-Packet ID: 1
+
+-Direction: C->S
+
+-Data fields:
+string: clientVersion
+
+-Possible responses:
+ACCEPT: If connection is accepted (client is listed as peer by server, server transmits salt for secure login)
+ERROR: If connection is refused (incompatible client version/ blocked IP etc. Error codes WRONG_VERSION and NOT_ALLOWED are put to use here)
+
+
+
+
+ACCEPT
+------
+Sent by the server for accepting the HANDSHAKE of a client. This packet contains a random salt string that is
+used for safely transmitting sensitive data like passwords on non-secure connections(http/ws). For more information
+see chapter "6 - Security".
+A client that receives an ACCEPT as an answer to it's HANDSHAKE is able to continue with the login procedure.
+
+-Packet ID: 2
+
+-Direction: S->C
+
+-Data fields:
+string: salt (Random salt string, for more information see chapter "6 - Security")
+
+-Possible responses:
+none (packet is response-only)
+
+
+
+
+LOGIN
+-----
+Sent by client to login on the server and to receive session information for
+querying data.
+
+-Packet ID: 10
+
+-Direction: C->S
+
+-Data fields:
+string: username
+string: passwordHash (SHA-256-Hash of password + salt, for more information see chapter "6 - Security")
+
+-Possible responses:
+AUTH: If login succeeds (AUTH-packet contains session information)
+NACK: If login fails
+
+
+
+
+AUTH
+----
+Sent by server as a response to successful login. Session information and
+user-specific configuration is included in packet.
+
+-Packet ID: 11
+
+-Direction: S->C
+
+-Data fields:
+string: sessionID
+struct: userConfig (Fields of this structure are documented in a later version of the protocol)
+
+-Possible responses:
+none (packet is response-only)
+
+
+
+
+RELOG
+------
+Sent by client when it already has a session key(from a cookie etc.) and needs to check
+if it is still usable. If the server responds with a REAUTH the client is still allowed to
+query data without a new login.
+
+-Packet ID: 12
+
+-Direction: C->S
+
+-Data fields:
+string: sessionID (the session ID that needs to be checked and re-registered)
+
+-Possible responses:
+REAUTH: If session is still active
+NACK: If session has expired (client needs a new login)
+
+
+
+
+REAUTH
+------
+Sent by server as a response to a RELOG packet if the sent session key is still valid. The server
+is able to replace the old session key by a new one for safety reasons.
+
+-Packet ID: 13
+
+-Direction: S->C
+
+-Data fields:
+string: newSessionID (is used for further connections by client)
+string: username (The name of the user who started the restored session)
+struct: userConfig (Fields of this structure are documented in a later version of the protocol)
+
+-Possible results:
+none (packet is response-only)
+
+
+
+
+LOGOUT
+------
+Sent by server/client to close a session without terminating the connection. A reason can be included
+in the form of a numerical code and a human-readable message string.
+
+-Packet ID: 14
+
+-Direction: Both
+
+-Data fields:
+string: sessionID (is ignored if sent by the server)
+int: reasonCode(a technical ID for identifying the logout reason. List of possible values: see "Notes")
+string: reasonMessage(a human-readable message that might be displayed in a message dialog/server log)
+
+-Possible results:
+none (logout needs no confirmation)
+
+-Notes:
+Possible values for the reasonCode-field are:
+0 = UNKNOWN
+1 = CLOSED_BY_USER
+2 = SESSION_EXPIRED
+3 = INTERNAL_ERROR
+4 = REFUSED
+
+
+
+
+QUERY
+-----
+!! NOTE: This packet is experimental. If it proves being usable, remove this note. !!
+
+Sent by the client to query data. The server answers the query by sending a DATA-packet.
+The field ident is the identifier of the desired object.
+If all objects of a category are desired, the identifier may be '*'.
+Other wildcards (like 'a*' for all objects beginning with 'a') are currently not allowed.
+This may be changed depending on what is possible server-side.
+For further information, see chapter "7 - Data access".
+
+-Packet ID: 20
+
+-Direction: C->S
+
+-Data fields:
+int: category (For more information on these fields, see chapter "7 - Data access")
+string: id
+
+-Possible responses:
+DATA: If the query succeeds and data is transferred
+ERROR: If there were any problems with the query (error code BAD_QUERY should be used)
+ 
+
+
+
+DATA
+----
+!! NOTE: This packet is experimental. If it proves being usable, remove this note. !!
+
+Sent by the server spontaneously or as a response to a QUERY-packet. This packet contains
+data of one or more data units which is displayed by the client upon receipt. One DATA packet can only carry
+data objects of a single category at a time. For multiple categories, multiple DATA packets have to be transfered.
+
+-Packet ID: 21
+
+-Direction: S->C
+
+-Data fields:
+int: category (The category ID of the transferred objects, see chapter "7 - Data access")
+struct[]: result (Array of resulting data objects. May be empty. The structure of the returned objects depends on their
+category and is futher documented in chapter "7 - Data access")
+
+-Possible responses:
+none (packet is response-only)
+
+
+
+
+SUBSCRIBE
+---------
+!! NOTE: This packet is experimental. If it proves being usable, remove this note. !!
+
+Sent by the client to instruct the server to inform it on any changes of the specified data unit.
+Changes are reported using a DATA packet (sent by the server without request). If the subscription
+succeeds the server responds with an ACK, otherwise a NACK is sent (bad data unit etc.).
+
+-Packet ID: 22
+
+-Direction: C->S
+
+-Data fields:
+int: category (For more information on these fields, see chapter "7 - Data access")
+string: id
+
+-Possible responses:
+ACK: If the subscription succeeds
+ERROR: If the subscription fails (error code BAD_QUERY should be used)
+
+
+
+
+UNSUBSCRIBE
+-----------
+!! NOTE: This packet is experimental. If it proves being usable, remove this note. !!
+
+Sent by the client to cancel a subscription on one or all data units of one category
+(for example if a tile is removed).
+
+-Packet ID: 23
+
+-Direction: C->S
+
+-Data fields:
+int: category (For more information on these fields, see chapter "7 - Data access")
+string: id
+
+-Possible responses:
+ACK: If the unsubscription succeeds
+ERROR: If the unsubscription fails (error code BAD_QUERY should be used)
+
+
+
+
+CONFIG
+------
+Sent by the client to update/create one value in the server-side configuration. This confiugration
+can be read by the client by using a QUERY packet with the right category.
+For more information on configuration, see chapter "8 - Configuration".
+
+-Packet ID: 50
+
+-Direction: C->S
+
+-Data fields:
+string: id
+string: value
+
+-Possible responses:
+ACK: If the configuration was successfully stored
+NACK: If the configuration could not be stored
+
+
+
+
+ACK
+---
+Sent by client/server as a response to packets with no specific return data. An ACK represents a
+successful request while a NACK reports a failure. This packet should never be sent as a request
+as that would make no sense at all.
+
+-Packet ID: 200
+
+-Direction: Both
+
+-Data fields:
+none
+
+-Possible responses
+none (packet is response-only)
+
+
+
+
+NACK
+----
+Sent by client/server as a response to packets with no specific return data. An ACK represents a
+successful request while a NACK reports a failure. This packet should never be sent as a request
+as that would make no sense at all.
+
+-Packet ID: 201
+
+-Direction: Both
+
+-Data fields:
+none
+
+-Possible responses
+none (packet is response-only)
+
+
+
+
+ERROR
+-----
+Sent by client/server to report an error. This special packet can be sent as a response to any
+packet to report an error.
+
+-Packet ID: 242
+
+-Direction: Both
+
+-Data fields:
+int: errorCode (a technical ID for identifying the error. List of possible values: see "Notes")
+string: errorMessage (a human-readable message that might be displayed in a message dialog/server log)
+
+-Possible responses:
+none (Packet is one-way. It MUST not be answered)
+
+-Notes:
+Possible values for the errorCode-field are:
+0 = UNKNOWN
+1 = INVALID_PACKET (An unexpected packet occurred; e.g.: response-only-packet was sent as a request packet)
+2 = SESSION_EXPIRED (A query was made with an invalid session key)
+3 = INTERNAL_EXCEPTION (An internal exception has occurred)
+4 = INVALID_RESPONSE (A packet was answered with an incompatible packet type)
+5 = WRONG_VERSION (The client's version did not match the server's - used when handshaking)
+6 = NOT_ALLOWED (The client issued something he is not allowed to)
+7 = BAD_QUERY (A QUERY packet with a bad query string was sent)
+8 = BAD_PACKET (An unusable packet was received (missing fields, not in JSON format etc.))
+
+
+
 6 - Security
 ============
 
-	To prevent user login credentials to be stolen, the MCP uses a simple but effective salting procedure.
-	
-	When a connection is opened, the server generates a random string of arbitrary length ( > 0) which is
-	sent to the client (included in the response to HANDSHAKE). This string is stored by both the client and the
-	server in relation to the connection.
-	
-	When the client wishes to login, it takes the unencrypted password, hashes it using the SHA-256 algorithm and appends
-	the random salt string as received by the server to the has value encoded in hexadecmial format with lowercase letters. 
-	The resulting string is again hashed using SHA-256. The resulting hash value can in turn be transmitted as password 
-	in the LOGIN packet.
-	
-	The double hashing provides additional security, as it makes storage of unencrypted passwords in the server database
-	unnecessary. Using this method, the only person who can know the password associated with a username is the user himself, even
-	when hackers intrude the database.
-	
-	In order to check the correctness of the password, the server has to load the password associated with the transmitted username 
-	from the database and encrypt the password in exactly the same way as the client did using the same random salt string.
-	When only the password hashes are stored in the database like suggested in the paragraph above, the server may skip the
-	first hashing, as the hashed password (without salt) is already obtained from the database. 
-	If the resulting string matches with the one received by the client in the LOGIN packet, the password is correct.
-	
-	It is important that the salt string is different for any connection, so when a hacker intercepts a login packet and reads out
-	the password hash, he is not able to use this hash on an other connection.
-	
-	It is necessary that both the client and the server use the same coding for string representations of hash values.
-	As of MCP 1.2.1 the default coding is hexadecimal with lowercase letters (0123456789abcdef). Leading zeroes must NOT be omitted.
-	
-	For illustration (and stupid people), here is an example login procedure:
-	
-		|	A user opens the Tigris client webapp. After HANDSHAKING, the server transmits the salt string "1234randomSaltString".
-		|
-		|	The user logs in using the username "otto" and the password "foobar".
-		|	
-		|	The client takes the password entered and calculates the SHA-256 hash value, which is:
-		|		c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2
-		|
-		|	It now appends the salt received by the server, yielding the string
-		|		"c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f21234randomSaltString"
-		|
-		|	This string is now hashed again using SHA-256 which results in the hash value:
-		|		8e8f8789710978ca5ac74cf6abecfaffc4d8c6b2a696b27b215df538ea6581a8
-		|
-		|	This value is now transmitted to the server together with the username "otto".
-	
-	
+To prevent user login credentials to be stolen, the MCP uses a simple but effective salting procedure.
 
-	
+When a connection is opened, the server generates a random string of arbitrary length ( > 0) which is
+sent to the client (included in the response to HANDSHAKE). This string is stored by both the client and the
+server in relation to the connection.
+
+When the client wishes to login, it takes the unencrypted password, hashes it using the SHA-256 algorithm and appends
+the random salt string as received by the server to the has value encoded in hexadecmial format with lowercase letters.
+The resulting string is again hashed using SHA-256. The resulting hash value can in turn be transmitted as password
+in the LOGIN packet.
+
+The double hashing provides additional security, as it makes storage of unencrypted passwords in the server database
+unnecessary. Using this method, the only person who can know the password associated with a username is the user himself, even
+when hackers intrude the database.
+
+In order to check the correctness of the password, the server has to load the password associated with the transmitted username
+from the database and encrypt the password in exactly the same way as the client did using the same random salt string.
+When only the password hashes are stored in the database like suggested in the paragraph above, the server may skip the
+first hashing, as the hashed password (without salt) is already obtained from the database.
+If the resulting string matches with the one received by the client in the LOGIN packet, the password is correct.
+
+It is important that the salt string is different for any connection, so when a hacker intercepts a login packet and reads out
+the password hash, he is not able to use this hash on an other connection.
+
+It is necessary that both the client and the server use the same coding for string representations of hash values.
+As of MCP 1.2.1 the default coding is hexadecimal with lowercase letters (0123456789abcdef). Leading zeroes must NOT be omitted.
+
+For illustration (and stupid people), here is an example login procedure:
+
+| A user opens the Tigris client webapp. After HANDSHAKING, the server transmits the salt string "1234randomSaltString".
+|
+| The user logs in using the username "otto" and the password "foobar".
+|
+| The client takes the password entered and calculates the SHA-256 hash value, which is:
+| c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2
+|
+| It now appends the salt received by the server, yielding the string
+| "c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f21234randomSaltString"
+|
+| This string is now hashed again using SHA-256 which results in the hash value:
+| 8e8f8789710978ca5ac74cf6abecfaffc4d8c6b2a696b27b215df538ea6581a8
+|
+| This value is now transmitted to the server together with the username "otto".
+
+
+
+
 7 - Data access
 ===============
-	
-	!! NOTE: This information is part of an experimental feature. If it proves beeing usable, remove this note. !!
-	
-	Data being displayed by Euphrates is split up into data units. 
-	Each data unit is identified by a category (machines, jobs, errors etc.) and an unique identifier (name of machine, number of job etc.).
-	Queries are category-orientated, so transfer of these data units may only happen with one category per group of data objects.
-	Same goes for queries using wildcards.
 
-	Data units may overlap in the database. The definition of data units is rather a thing of presentation than of storage. Machine and job data
-	may actually be stored in the same table of the database. The thing that matters is that the client can query and receive them as they each
-	were entities of their own.
-	
-	As stated above, data unit identifiers may use wildcards, so the (example) query
-	
-		"category":1,
-		"ident":"*"
-		
-	will result in all machines the server is able(and allows) to deliver.
-	Note that supporting more complex wildcards like 'a*' is currently NOT part of this protocol. It may, however, be added in a later version.
-	
-	As different data categories contain different information, the structure of returned entities when querying depends on the selected category.
-	
-	Below you find a list of categories with their specific information.
-	
-	
-	MACHINE
-	-------
-	Represents a machine.
-	
-	-Category ID:	1
-	
-	-Data fields:
-		int:		id
-		string:		name
-		int:		job (The id of the machines job)
-		double:		speed (The machines production speed given in units per hour)
-		int:		status (For a list of possible values, see "Notes")
-	
-	-Notes:
-		Possible values for the status field:
-			
-		Status code	|	Machine state
-		------------+----------------
-			1		|	Running
-			2		|	Error
-			3		|	Repair
-			4		|	Modification for new type of screws
-			5		|	Cleaning
-			
-			
-			
-	JOB
-	---
-	Represents a running job.
-	
-	-Category ID:	2
-	
-	-Data fields:
-		int:		id
-		int:		target (The target amount of units that are to be produced)
-		long:		startTime (The start time of the job given in milliseconds after 1970/1/1)
-		int:		productType (The type ID of the product the job is about) 
-	
-	
-	
-	PRODUCT
-	-------
-	Referenced by the productType-field in JOB-objects.
-	
-	-Category ID:	11
-	
-	-Data fields:
-		int:		id
-		string:		name (The name of the product)
-		
-		
-	
-	CONFIG
-	------
-	Data units of this type are used for storage of user specifig configuration.
-	For more information on configuration, see chapter "8 - Configuration".
-	
-	-Category ID:	20
-	
-	-Data fields:
-		string:		id (The name of the config field. Note this is a string, not an int!)
-		string:		value (The value associated with the given id)
-		
-		
-		
+!! NOTE: This information is part of an experimental feature. If it proves beeing usable, remove this note. !!
+
+Data being displayed by Euphrates is split up into data units.
+Each data unit is identified by a category (machines, jobs, errors etc.) and an unique identifier (name of machine, number of job etc.).
+Queries are category-orientated, so transfer of these data units may only happen with one category per group of data objects.
+Same goes for queries using wildcards.
+
+Data units may overlap in the database. The definition of data units is rather a thing of presentation than of storage. Machine and job data
+may actually be stored in the same table of the database. The thing that matters is that the client can query and receive them as they each
+were entities of their own.
+
+As stated above, data unit identifiers may use wildcards, so the (example) query
+
+"category":1,
+"ident":"*"
+
+will result in all machines the server is able(and allows) to deliver.
+Note that supporting more complex wildcards like 'a*' is currently NOT part of this protocol. It may, however, be added in a later version.
+
+As different data categories contain different information, the structure of returned entities when querying depends on the selected category.
+
+Below you find a list of categories with their specific information.
+
+
+MACHINE
+-------
+Represents a machine.
+
+-Category ID: 1
+
+-Data fields:
+int: id
+string: name
+int: job (The id of the machines job)
+double: speed (The machines production speed given in units per hour)
+int: status (For a list of possible values, see "Notes")
+
+-Notes:
+Possible values for the status field:
+
+Status code | Machine state
+------------+----------------
+1 | Running
+2 | Error
+3 | Repair
+4 | Modification for new type of screws
+5 | Cleaning
+
+
+
+JOB
+---
+Represents a running job.
+
+-Category ID: 2
+
+-Data fields:
+int: id
+int: target (The target amount of units that are to be produced)
+long: startTime (The start time of the job given in milliseconds after 1970/1/1)
+int: productType (The type ID of the product the job is about)
+
+
+
+PRODUCT
+-------
+Referenced by the productType-field in JOB-objects.
+
+-Category ID: 11
+
+-Data fields:
+int: id
+string: name (The name of the product)
+
+
+
+CONFIG
+------
+Data units of this type are used for storage of user specifig configuration.
+For more information on configuration, see chapter "8 - Configuration".
+
+-Category ID: 20
+
+-Data fields:
+int: id (The id of the config field)
+string: value (The value associated with the given id)
+
+
+
 8 - Configuration
 =================
 
-	The client has the ability to store id-value-pairs for configuration on the server.
-	Those are written using CONFIG- and read using QUERY-packets.
-	Below you'll find a table of currently used configuration values.
-	
-	
-		Config name	|									Description
-	----------------+---------------------------------------------------------------------------------------
-	configVersion	|	The version of the Tigris client that last accessed the config file. Stored
-					|	so future versions of the client may update outdated configuration
-					+
-	introFinished	|	Used to give new users an introduction. Set to true after first login. (This feature might be added later)
-					+
-	locale			|	A string identifying the language the user has selected for his GUI
-				 	+
-	tiles			|	A JSON string containing information on the tiles the user created on his dashbord.
-					|	The exact layout of this JSON object is not part of MCP but the GUI specification.
-					|	Therefore, it is not documented here.
-	
-	
-	
-	
+The client has the ability to store id-value-pairs for configuration on the server.
+Those are written using CONFIG- and read using QUERY-packets.
+Below you'll find a table of currently used configuration values.
+
+
+Config name     | ID 	| Description
+----------------+---------------------------------------------------------------------------------------
+configVersion   | 1     | The version of the Tigris client that last accessed the config file. Stored
+			    |	    | so future versions of the client may update outdated configuration
+----------------+-------+-------------------------------------------------------------------------------
+introFinished   | 2     | Used to give new users an introduction. Set to true after first login. (This feature might be added later)
+----------------+-------+-------------------------------------------------------------------------------
+locale 		    | 3 	| A string identifying the language the user has selected for his GUI
+----------------+-------+-------------------------------------------------------------------------------
+tiles 		    | 4 	| A JSON string containing information on the tiles the user created on his dashbord.
+	  		    |   	| The exact layout of this JSON object is not part of MCP but the GUI specification.
+	  		    |   	| Therefore, it is not documented here.
+
+
