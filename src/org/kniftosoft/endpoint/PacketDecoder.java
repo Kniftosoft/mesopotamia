@@ -17,15 +17,13 @@ public class PacketDecoder implements Decoder.Text<Packet>
 	@Override
 	public void destroy() 
 	{
-		System.out.println("destroy decode");
+		
 	}
 
 	@Override
 	public void init(EndpointConfig ec) 
 	{
-		
-		System.out.println("init decode");
-		
+
 	}
 	
 	@Override
@@ -34,7 +32,6 @@ public class PacketDecoder implements Decoder.Text<Packet>
 		try{
 		parser = new JsonParser();
 		JsonObject jsonPacket = (JsonObject)parser.parse(msg);
-		System.out.flush();
 		
 		int packetTypeID = jsonPacket.get("typeID").getAsInt();
 		
@@ -72,9 +69,15 @@ public class PacketDecoder implements Decoder.Text<Packet>
 	@Override
 	public boolean willDecode(String msg) 
 	{
-		System.out.println("will decode"+msg);
-		return true;
-	}
-
-	
+		parser = new JsonParser();
+		JsonObject jsonPacket = (JsonObject)parser.parse(msg);
+		if(jsonPacket.has("typeID")&&jsonPacket.has("uid")&&jsonPacket.has("data"))
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}	
 }

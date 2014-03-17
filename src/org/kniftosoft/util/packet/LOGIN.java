@@ -25,6 +25,7 @@ public class LOGIN extends Packet {
 
 	private String username;
 	private String passwordHash;
+	private boolean persistsession;
 	
 	@Override
 	public void executerequest(){
@@ -33,8 +34,17 @@ public class LOGIN extends Packet {
 
 	@Override
 	public void createFromJSON(JsonObject o) {
-		username = o.get("username").getAsString();
-		passwordHash = o.get("passwordHash").getAsString();
+		if(o.has("username")&&o.has("passwordHash")/*&&o.has("persist")*/)
+		{
+			username = o.get("username").getAsString();
+			passwordHash = o.get("passwordHash").getAsString();
+			//TODO enable if persist flag is addet
+			//persistsession = o.get("persist").getAsBoolean();
+		}
+		else
+		{
+			ERROR er = new ERROR(uid, peer, 8, "missing data fields");
+		}
 		
 	}
 	@Override
@@ -93,10 +103,13 @@ public class LOGIN extends Packet {
 			    	ClientUpDater.updatepeer(peer);
 			    	Session session=new Session();
 			    	session.setUserBean(user);
-			    	//em.getTransaction().begin();
-			    	//em.persist(session);
-			    	//em.getTransaction().commit();
-			    	//em.refresh(session);
+			    	//if(persistsession == true)
+			    	{
+				    	em.getTransaction().begin();
+				    	em.persist(session);
+				    	System.out.println("storing session= "+session.getIdSessions());
+				    	em.getTransaction().commit();
+			    	}
 			    	//TODO add userconfig
 			    	AUTH ap = new AUTH();
 			    	ap.setSessionID(session.getIdSessions());
@@ -107,19 +120,23 @@ public class LOGIN extends Packet {
 			    }
 			    else
 			    {
+			    	System.out.println("logini fail");
 			    	new NACK(uid, peer).send();
 			    }
 			    
 			    em.close();
+			    factory.close();
 			
 		        
 			}catch(NoResultException e)
 			{
+				e.printStackTrace();
 				new NACK(uid,peer).send();
 				return;
 			}
 			catch(ClassCastException e)
 			{
+				e.printStackTrace();
 				new NACK(uid,peer).send();
 				return;
 			}

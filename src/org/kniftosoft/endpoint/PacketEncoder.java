@@ -36,13 +36,8 @@ public class PacketEncoder implements Encoder.Text<Packet>
 		}
 		
 		JsonObject fullPacket = new JsonObject();
-		
-		
-		
-		fullPacket.addProperty("typeID", packet.getType().getTypeID());
-		
-		fullPacket.addProperty("uid", packet.getUID()); //TODO: Implement UID generator
-		
+		fullPacket.addProperty("typeID", packet.getType().getTypeID());		
+		fullPacket.addProperty("uid", packet.getUID()); //TODO: Implement UID generator	
 		fullPacket.add("data", jo);
 		System.out.println("I have send this" + fullPacket.toString());
 		return fullPacket.toString();

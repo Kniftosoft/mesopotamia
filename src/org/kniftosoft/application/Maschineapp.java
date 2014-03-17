@@ -86,7 +86,6 @@ public class Maschineapp extends Application {
 		List<Log> logs;
 		JsonObject data = new JsonObject();
 	    System.out.println("found"+maschine.toString());
-	    System.out.println("found"+maschine.toString());
 		EntityManagerFactory factory;
 		factory = Persistence.createEntityManagerFactory(Constants.PERSISTENCE_UNIT_NAME);
 	    EntityManager em = factory.createEntityManager();

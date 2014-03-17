@@ -9,6 +9,7 @@ import javax.persistence.NoResultException;
 import javax.persistence.Persistence;
 
 import org.kniftosoft.entity.Session;
+import org.kniftosoft.thread.ClientUpDater;
 import org.kniftosoft.util.Constants;
 
 import com.google.gson.JsonObject;
@@ -30,14 +31,19 @@ public class RELOG extends Packet{
 			    EntityManager em = factory.createEntityManager();
 			    Session session = em.find(Session.class, sessionID);
 			    em.close();
-			    //TODO add user to relog for security reasons if(session.getUserBean().equals(rp.getuser()))
+			    //TODO add user and a crytic key to relog for security reasons if(session.getUserBean().equals(rp.getuser()))
 			    if(session != null)
 			    {
 			    	System.out.println("relog");
+			    	peer.setUser(session.getUserBean());
+			    	peer.setLoginverified(true);
+			    	ClientUpDater.updatepeer(peer);
+			    	//TODO delete config
 			    	new REAUTH(uid, peer,session.getIdSessions(),null).send();
 			    }
 			    else
 			    {
+			    	System.out.println("no session");
 			    	new NACK(uid, peer).send();
 			    }
 			} catch (NoResultException nr) {
@@ -59,8 +65,7 @@ public class RELOG extends Packet{
 	@Override
 	public void createFromJSON(JsonObject o) {
 		try{
-			//sessionID = o.get("sessionID").getAsInt();
-			sessionID =0;
+			sessionID = o.get("sessionID").getAsInt();
 		}
 		catch(NumberFormatException e)
 		{
