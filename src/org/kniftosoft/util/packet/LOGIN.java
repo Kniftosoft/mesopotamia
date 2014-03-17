@@ -118,6 +118,11 @@ public class LOGIN extends Packet {
 				new NACK(uid,peer).send();
 				return;
 			}
+			catch(ClassCastException e)
+			{
+				new NACK(uid,peer).send();
+				return;
+			}
 			catch(Exception e)
 			{
 				e.printStackTrace();

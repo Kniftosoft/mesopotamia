@@ -15,12 +15,13 @@ public class Produkt implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO)
 	private int idprodukt;
 
 	private String beschreibung;
 
 	//bi-directional many-to-one association to Auftrag
-	@OneToMany(mappedBy="produktBean")
+	@OneToMany(mappedBy="produktBean", fetch=FetchType.EAGER)
 	private List<Auftrag> auftrags;
 
 	public Produkt() {

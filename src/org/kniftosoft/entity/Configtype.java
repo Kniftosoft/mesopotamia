@@ -16,6 +16,7 @@ public class Configtype implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO)
 	private int idConfigtypes;
 
 	private String description;
@@ -23,7 +24,7 @@ public class Configtype implements Serializable {
 	private String name;
 
 	//bi-directional many-to-one association to Userconfig
-	@OneToMany(mappedBy="configtype")
+	@OneToMany(mappedBy="configtype", fetch=FetchType.EAGER)
 	private List<Userconfig> userconfigs;
 
 	public Configtype() {

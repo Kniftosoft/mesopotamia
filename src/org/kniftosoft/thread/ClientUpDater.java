@@ -8,8 +8,8 @@ import java.util.Map;
 
 import javax.websocket.Session;
 
-import org.kniftosoft.util.EuphratisSession;
 import org.kniftosoft.thread.updater.SubscribeUpDater;
+import org.kniftosoft.util.EuphratisSession;
 
 /**
  * Thread Stores Connected peers and updates them 
@@ -26,6 +26,15 @@ public class ClientUpDater extends Thread {
 	
 	/**
 	 * 
+	 * @param peerID
+	 * @return Stored Session with this ID
+	 */
+	public static Map<String, EuphratisSession> getpeers()
+	{
+		return peers;
+	}
+
+	/** 
 	 * @param peerID
 	 * @return Stored Session with this ID
 	 */
@@ -78,7 +87,7 @@ public class ClientUpDater extends Thread {
 			while(true) {
 				//TODO remove
 	        	//System.out.println("update" +Thread.currentThread().getName()+peers.toString());
-	        	//SubscribeUpDater.updateSubscriptions();
+	        	SubscribeUpDater.updateSubscriptions();
 				Thread.currentThread();
 				Thread.sleep(sleepTime);
 

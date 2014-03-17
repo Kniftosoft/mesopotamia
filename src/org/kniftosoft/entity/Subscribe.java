@@ -12,13 +12,28 @@ import java.util.List;
 @Entity
 @NamedQuery(name="Subscribe.findAll", query="SELECT s FROM Subscribe s")
 public class Subscribe implements Serializable {
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "Subscribe [idSubscribe="
+				+ idSubscribe
+				+ ", "
+				+ (subbedmaschines != null ? "subbedmaschines="
+						+ subbedmaschines + ", " : "")
+				+ (appBean != null ? "appBean=" + appBean + ", " : "")
+				+ (userBean != null ? "userBean=" + userBean : "") + "]";
+	}
+
 	private static final long serialVersionUID = 1L;
 
 	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO)
 	private int idSubscribe;
 
 	//bi-directional many-to-one association to Subbedmaschine
-	@OneToMany(mappedBy="subscribeBean")
+	@OneToMany(mappedBy="subscribeBean", fetch=FetchType.EAGER)
 	private List<Subbedmaschine> subbedmaschines;
 
 	//bi-directional many-to-one association to App

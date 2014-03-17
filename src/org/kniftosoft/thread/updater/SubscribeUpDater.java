@@ -5,15 +5,12 @@ package org.kniftosoft.thread.updater;
 
 import java.util.Iterator;
 import java.util.List;
-
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.persistence.TypedQuery;
+import java.util.Map;
 
 import org.kniftosoft.application.Appinstance;
 import org.kniftosoft.entity.Subscribe;
-import org.kniftosoft.util.Constants;
+import org.kniftosoft.thread.ClientUpDater;
+import org.kniftosoft.util.EuphratisSession;
 
 
 /**
@@ -22,17 +19,16 @@ import org.kniftosoft.util.Constants;
  */
 public class SubscribeUpDater {
 
-	private static List<Subscribe> readSubscribes()
+	private static Map<String, EuphratisSession> peers;
+	
+	private static void update(List<Subscribe> subscribes, EuphratisSession peer)
 	{
-		EntityManagerFactory factory;
-		factory = Persistence.createEntityManagerFactory(Constants.PERSISTENCE_UNIT_NAME);
-	    EntityManager em = factory.createEntityManager();
-	    em.getTransaction().begin();
-	    TypedQuery<Subscribe> userquery=em.createQuery("SELECT s FROM Subscribe s",Subscribe.class);
-	    em.getTransaction().commit();
-	    List<Subscribe> subscribes= userquery.getResultList();
-	    em.close();
-	    return subscribes;
+		System.out.println("found subs: "+subscribes.toString());
+		 for(Iterator<Subscribe> iterator = subscribes.iterator(); iterator.hasNext();)
+		 {
+			 Appinstance app = new Appinstance(iterator.next(),peer);	
+			 app.update();
+		 }
 	}
 	/**
 	 * @return 
@@ -40,14 +36,21 @@ public class SubscribeUpDater {
 	 */
 	
 	public static void updateSubscriptions() {
-		// TODO Auto-generated constructor stub
-		 List<Subscribe> subscribes = readSubscribes();
-		 for(Iterator<Subscribe> iterator = subscribes.iterator(); iterator.hasNext();)
-		 {
-			 Appinstance app = new Appinstance(iterator.next());	
-			 app.update();
-		 }
-		
+		peers = ClientUpDater.getpeers();
+		for(Iterator<EuphratisSession> iterator = peers.values().iterator();iterator.hasNext();)
+		{
+			try
+			{
+				EuphratisSession peer = iterator.next();
+				update(peer.getUser().getSubscribes(), peer);
+				
+			}
+			catch(NullPointerException e)
+			{
+				
+			}
+		    
+		}
 	}
 
 }

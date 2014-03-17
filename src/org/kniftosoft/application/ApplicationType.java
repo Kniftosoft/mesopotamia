@@ -33,7 +33,7 @@ public enum ApplicationType
 	
 	public static ApplicationType byID(int id)
 	{
-		System.out.println("made application by id");
+		System.out.println("made application by id: "+id);
 		for(ApplicationType a : ApplicationType.values())
 		{
 			if(a.getTypeID() == id)

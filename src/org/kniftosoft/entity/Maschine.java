@@ -12,9 +12,27 @@ import java.util.List;
 @Entity
 @NamedQuery(name="Maschine.findAll", query="SELECT m FROM Maschine m")
 public class Maschine implements Serializable {
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "Maschine [idmaschine="
+				+ idmaschine
+				+ ", "
+				+ (name != null ? "name=" + name + ", " : "")
+				+ (standort != null ? "standort=" + standort + ", " : "")
+				+ (logs != null ? "logs=" + logs + ", " : "")
+				+ (subbedmaschines != null ? "subbedmaschines="
+						+ subbedmaschines + ", " : "")
+				+ (useraccesses != null ? "useraccesses=" + useraccesses : "")
+				+ "]";
+	}
+
 	private static final long serialVersionUID = 1L;
 
 	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO)
 	private int idmaschine;
 
 	private String name;
@@ -22,15 +40,15 @@ public class Maschine implements Serializable {
 	private String standort;
 
 	//bi-directional many-to-one association to Log
-	@OneToMany(mappedBy="maschineBean")
+	@OneToMany(mappedBy="maschineBean", fetch=FetchType.EAGER)
 	private List<Log> logs;
 
 	//bi-directional many-to-one association to Subbedmaschine
-	@OneToMany(mappedBy="maschineBean")
+	@OneToMany(mappedBy="maschineBean", fetch=FetchType.EAGER)
 	private List<Subbedmaschine> subbedmaschines;
 
 	//bi-directional many-to-one association to Useraccess
-	@OneToMany(mappedBy="maschineBean")
+	@OneToMany(mappedBy="maschineBean", fetch=FetchType.EAGER)
 	private List<Useraccess> useraccesses;
 
 	public Maschine() {

@@ -15,6 +15,7 @@ public class Session implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO)
 	private int idSessions;
 
 	//bi-directional many-to-one association to User

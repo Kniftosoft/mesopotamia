@@ -38,6 +38,9 @@ public class Maschineapp extends Application {
 	@Override
 	public JsonArray getdata(Subscribe sub) {
 		// TODO Auto-generated method stub
+		this.user = sub.getUserBean();
+		getids();
+	    System.out.println("found"+sub.toString());
 		for(Iterator<Subbedmaschine> iterator = sub.getSubbedmaschines().iterator(); iterator.hasNext();)
 		 {
 			datas.add(getsingledataset(iterator.next().getMaschineBean()));
@@ -76,14 +79,14 @@ public class Maschineapp extends Application {
 		{		
 			//TODO add itent check
 			maschines.add(iterator.next().getMaschineBean());
-
 		}
 	}
 	private JsonObject getsingledataset(Maschine maschine)
 	{
 		List<Log> logs;
 		JsonObject data = new JsonObject();
-		
+	    System.out.println("found"+maschine.toString());
+	    System.out.println("found"+maschine.toString());
 		EntityManagerFactory factory;
 		factory = Persistence.createEntityManagerFactory(Constants.PERSISTENCE_UNIT_NAME);
 	    EntityManager em = factory.createEntityManager();
@@ -91,12 +94,25 @@ public class Maschineapp extends Application {
 	    logs = em.createQuery("Select l FROM Log l WHERE l.maschineBean =:maschine ORDER BY l.timestamp DESC ", Log.class).setParameter("maschine", maschine).setMaxResults(2).getResultList();
 	    em.getTransaction().commit();
 	    em.close();
+	    //TODO Array index out of range
 	  	data.addProperty("id", maschine.getIdmaschine());
-		//Differenz zwischen timestamps in ms /(1000*60*60) (3600000) für die stunden
-		data.addProperty("speed", (double)Math.round((double)logs.get(0).getProduziert()/(logs.get(0).getTimestamp().getTime()-logs.get(1).getTimestamp().getTime())*3600000*100)/100);
-		data.addProperty("name", logs.get(0).getMaschineBean().getName());
-		data.addProperty("job", logs.get(0).getAuftragBean().getIdauftrag());
-		data.addProperty("status", logs.get(0).getZustandBean().getIdzustand());
+	  	try
+	  	{
+	  		//Differenz zwischen timestamps in ms /(1000*60*60) (3600000) für die stunden
+			data.addProperty("speed", (double)Math.round((double)logs.get(0).getProduziert()/(logs.get(0).getTimestamp().getTime()-logs.get(1).getTimestamp().getTime())*3600000*100)/100);
+			data.addProperty("name", maschine.getName());
+			data.addProperty("job", logs.get(0).getAuftragBean().getIdauftrag());
+			data.addProperty("status", logs.get(0).getZustandBean().getIdzustand());
+	  	}
+	  	catch(ArrayIndexOutOfBoundsException e)
+	  	{
+	  		//TODO optimize
+	  		data.addProperty("speed", 0);
+			data.addProperty("name", maschine.getName());
+			data.addProperty("job", 0);
+			data.addProperty("status", 2);
+	  	}
+		
 		return data;
 	}
 

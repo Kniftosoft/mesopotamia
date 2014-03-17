@@ -15,10 +15,14 @@ public class Log implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO)
+	@Column(updatable=false)
 	private int idlog;
 
+	@Column(updatable=false)
 	private int produziert;
 
+	@Column(updatable=false)
 	private Timestamp timestamp;
 
 	//bi-directional many-to-one association to Auftrag

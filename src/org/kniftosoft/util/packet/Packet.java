@@ -27,7 +27,7 @@ public abstract class Packet
 	public void send()
 	{
 		//TODO remove
-		System.out.println("try bsend");
+		System.out.println("try send:"+this.toString());
 		peer.getSession().getAsyncRemote().sendObject(this);
 	}
 	

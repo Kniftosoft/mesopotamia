@@ -16,6 +16,7 @@ public class Auftrag implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO)
 	private int idauftrag;
 
 	private int groesse;
@@ -29,7 +30,7 @@ public class Auftrag implements Serializable {
 	private Produkt produktBean;
 
 	//bi-directional many-to-one association to Log
-	@OneToMany(mappedBy="auftragBean")
+	@OneToMany(mappedBy="auftragBean", fetch=FetchType.EAGER)
 	private List<Log> logs;
 
 	public Auftrag() {

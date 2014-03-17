@@ -10,15 +10,10 @@ import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
-import javax.persistence.TypedQuery;
 
 import org.kniftosoft.entity.Auftrag;
-import org.kniftosoft.entity.Log;
-import org.kniftosoft.entity.Maschine;
-import org.kniftosoft.entity.Subbedmaschine;
 import org.kniftosoft.entity.Subscribe;
 import org.kniftosoft.entity.User;
-import org.kniftosoft.entity.Useraccess;
 import org.kniftosoft.util.Constants;
 
 import com.google.gson.JsonArray;

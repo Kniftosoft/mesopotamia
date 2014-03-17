@@ -6,6 +6,7 @@ package org.kniftosoft.application;
 import javax.websocket.DecodeException;
 
 import org.kniftosoft.entity.Subscribe;
+import org.kniftosoft.util.EuphratisSession;
 import org.kniftosoft.util.packet.DATA;
 
 /**
@@ -16,11 +17,14 @@ public class Appinstance {
 	
 	Application app;
 	Subscribe sub;
+	EuphratisSession peer;
 	public void update()
 	{
 		DATA update = new DATA();
 		update.setResult(app.getdata(sub));
-		//update.setPeer(ClientUpDater.);
+		update.setPeer(peer);
+		update.setUID(0);
+		update.send();
 	}
 	private void getapp() throws DecodeException
 	{
@@ -40,8 +44,9 @@ public class Appinstance {
 
 	}
 	
-	public Appinstance(Subscribe sub)
+	public Appinstance(Subscribe sub, EuphratisSession peer)
 	{
+		this.peer = peer;
 		this.sub = sub;
 		try
 		{
