@@ -1,5 +1,5 @@
 +==========================================+
-| Mesopotamia Communication Protocol 1.3.5 |
+| Mesopotamia Communication Protocol 1.3.6 |
 |        (C) Niklas Weissner 2014          |
 +==========================================+
 
@@ -46,6 +46,8 @@ Contents
 16.03.2014	1.3.4	Added BAD_PACKET errorcode
 
 16.03.2014	1.3.5	Changed CONFIG-id-field from string to int, defined id's for every config attribute
+
+19.03.2014	1.3.6	Added persist-attribute to LOGIN packet
 
 
 
@@ -155,6 +157,8 @@ Contents
 	---------
 	Sent by client to initiate a connection; should be sent right after the client has
 	been loaded up so incompatible versions / a not reachable server can be identified.
+	As this packet ensures incompatible protocol versions are detected, its specification
+	should NEVER be changed.
 	
 	-Packet ID:		1
 	
@@ -202,6 +206,7 @@ Contents
 	-Data fields:
 		string: 	username
 		string: 	passwordHash (SHA-256-Hash of password + salt, for more information see chapter "6 - Security")
+		bool:		persist (Set to true when user wishes to stay logged in after session is closed)
 		
 	-Possible responses:
 		AUTH:		If login succeeds (AUTH-packet contains session information)
