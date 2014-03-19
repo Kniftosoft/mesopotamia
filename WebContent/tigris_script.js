@@ -504,7 +504,7 @@ function f_tryLogin()
 	delete passwordHashObject; //Delete unneeded vars containing sensible data. For safety :)
 	delete saltedPasswordHash;
 	
-	var packet = new Packet_Login(username, finalPasswordHash);
+	var packet = new Packet_Login(username, finalPasswordHash,remember);
 	packet.onResponse = 
 		function(pk)
 		{
@@ -1579,7 +1579,7 @@ Packet_Handshake.prototype = Packet;
  *
  * @constructor
  */
-function Packet_Login(usr,pwrdHash)
+function Packet_Login(usr,pwrdHash,persist)
 {
 	this.prototype = Packet;
 	
@@ -1589,6 +1589,7 @@ function Packet_Login(usr,pwrdHash)
 	this.data = {};
 	this.data.username = usr;
 	this.data.passwordHash = pwrdHash;
+	this.data.persist = persist;
 	
 	this.allowedResponses = [PTYPE.AUTH, PTYPE.NACK];
 	
