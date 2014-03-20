@@ -399,9 +399,13 @@ UI.dataUpdate = function()
 {
 	if(UI.currentScreen == "data")
 	{
-		UI.data_updateTab(UI.currentTab);
-		
-		UI.dashboard.refresh();
+		if(UI.currentTab == "dashboard")
+		{
+			UI.dashboard.refresh();
+		}else
+		{
+			UI.data_updateTab(UI.currentTab);
+		}
 	}
 };
 
@@ -550,7 +554,7 @@ function f_tryRelog()
 					
 					//Store the new session ID to cookie TODO: maybe integrate this into f_setUpSession()
 					//Since this cookie was created in a session the user wanted to keep, we can assume the user wants still to keep it
-					util_setCookie(TIGRIS_SESSION_COOKIE, pk.data.sessionID);
+					util_setCookie(TIGRIS_SESSION_COOKIE, Session.sessionID);
 					
 					//As there was no login, the server has to tell us who we are
 					Session.username = pk.data.username;
