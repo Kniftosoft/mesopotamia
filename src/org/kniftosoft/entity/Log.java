@@ -22,6 +22,7 @@ public class Log implements Serializable {
 	@Column(updatable=false)
 	private int produziert;
 
+	@Version
 	@Column(updatable=false)
 	private Timestamp timestamp;
 

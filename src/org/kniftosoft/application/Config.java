@@ -8,8 +8,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 
 import org.kniftosoft.entity.Subscribe;
 import org.kniftosoft.entity.User;
@@ -66,9 +64,7 @@ public class Config extends Application {
 
 	private void readconfig()
 	{
-		EntityManagerFactory factory;
-		factory = Persistence.createEntityManagerFactory(Constants.PERSISTENCE_UNIT_NAME);
-	    EntityManager em = factory.createEntityManager();
+		EntityManager em = Constants.factory.createEntityManager();
 	    em.getTransaction().begin();
 	    configs = em.createQuery("Select c FROM Userconfig c WHERE c.userBean =:user", Userconfig.class).setParameter("user", user).getResultList();
 	    em.getTransaction().commit();

@@ -39,6 +39,7 @@ public class SubscribeUpDater {
 		peers = ClientUpDater.getpeers();
 		for(Iterator<EuphratisSession> iterator = peers.values().iterator();iterator.hasNext();)
 		{
+			
 			try
 			{
 				EuphratisSession peer = iterator.next();

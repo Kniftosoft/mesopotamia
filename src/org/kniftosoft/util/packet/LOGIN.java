@@ -4,9 +4,7 @@
 package org.kniftosoft.util.packet;
 
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
 import javax.persistence.NoResultException;
-import javax.persistence.Persistence;
 import javax.persistence.TypedQuery;
 
 import org.kniftosoft.entity.Session;
@@ -25,7 +23,7 @@ public class LOGIN extends Packet {
 
 	private String username;
 	private String passwordHash;
-	private boolean persistsession;
+	private boolean persist;
 	
 	@Override
 	public void executerequest(){
@@ -34,16 +32,16 @@ public class LOGIN extends Packet {
 
 	@Override
 	public void createFromJSON(JsonObject o) {
-		if(o.has("username")&&o.has("passwordHash")/*&&o.has("persist")*/)
+		if(o.has("username")&&o.has("passwordHash")&&o.has("persist"))
 		{
 			username = o.get("username").getAsString();
 			passwordHash = o.get("passwordHash").getAsString();
-			//TODO enable if persist flag is addet
-			//persistsession = o.get("persist").getAsBoolean();
+			persist = o.get("persist").getAsBoolean();
 		}
 		else
 		{
 			ERROR er = new ERROR(uid, peer, 8, "missing data fields");
+			er.send();
 		}
 		
 	}
@@ -89,9 +87,7 @@ public class LOGIN extends Packet {
 			String pass = passwordHash;
 			try
 			{
-				EntityManagerFactory factory;
-				factory = Persistence.createEntityManagerFactory(Constants.PERSISTENCE_UNIT_NAME);
-			    EntityManager em = factory.createEntityManager();
+				EntityManager em = Constants.factory.createEntityManager();
 			    TypedQuery<User> userquery=em.createQuery("Select u FROM User u WHERE u.email = '"+email+"'", User.class).setMaxResults(1);
 			    //TODO find classcast bug fix
 			    User user= userquery.getSingleResult();
@@ -103,7 +99,7 @@ public class LOGIN extends Packet {
 			    	ClientUpDater.updatepeer(peer);
 			    	Session session=new Session();
 			    	session.setUserBean(user);
-			    	//if(persistsession == true)
+			    	if(persist == true)
 			    	{
 				    	em.getTransaction().begin();
 				    	em.persist(session);
@@ -125,7 +121,6 @@ public class LOGIN extends Packet {
 			    }
 			    
 			    em.close();
-			    factory.close();
 			
 		        
 			}catch(NoResultException e)

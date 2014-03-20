@@ -8,13 +8,10 @@ import java.util.Iterator;
 import java.util.List;
 
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 import javax.persistence.TypedQuery;
 
 import org.kniftosoft.entity.Log;
 import org.kniftosoft.entity.Maschine;
-import org.kniftosoft.entity.Subbedmaschine;
 import org.kniftosoft.entity.Subscribe;
 import org.kniftosoft.entity.User;
 import org.kniftosoft.entity.Useraccess;
@@ -27,24 +24,18 @@ import com.google.gson.JsonObject;
  * @author julian
  *
  */
-public class Maschineapp extends Application {
-	private User user;
-	private List<Useraccess> access;
-	private List<Maschine> maschines = new ArrayList<Maschine>();
-	JsonArray datas = new JsonArray();
+public class Maschineapp extends Application {	
 	/* (non-Javadoc)
 	 * @see org.kniftosoft.application.Application#getdata()
 	 */
 	@Override
-	public JsonArray getdata(Subscribe sub) {
-		// TODO Auto-generated method stub
-		this.user = sub.getUserBean();
-		getids();
+	public JsonArray getdata(Subscribe sub) 
+	{
+		JsonArray datas = new JsonArray();
 	    System.out.println("found"+sub.toString());
-		for(Iterator<Subbedmaschine> iterator = sub.getSubbedmaschines().iterator(); iterator.hasNext();)
-		 {
-			datas.add(getsingledataset(iterator.next().getMaschineBean()));
-		 }
+	    EntityManager em = Constants.factory.createEntityManager();
+	    datas.add(getsingledataset(em.find(Maschine.class, sub.getObjektID())));
+	    em.close();
 
 		
 		return datas;
@@ -53,11 +44,11 @@ public class Maschineapp extends Application {
 	 * @see org.kniftosoft.application.Application#getdata()
 	 */
 	@Override
-	public JsonArray getdata(User user,String ident) {
-		// TODO Auto-generated method stub
-		this.user = user;
-		getids();
-		for(Iterator<Maschine> iterator = maschines.iterator(); iterator.hasNext();)
+	public JsonArray getdata(User user,String id) 
+	{
+		JsonArray datas = new JsonArray();
+		//TODO don't return all specify by id
+		for(Iterator<Maschine> iterator = getids(user).iterator(); iterator.hasNext();)
 		 {
 			datas.add(getsingledataset(iterator.next()));
 		 }
@@ -65,30 +56,27 @@ public class Maschineapp extends Application {
 		
 		return datas;
 	}
-	private void getids()
+	private List<Maschine> getids(User user)
 	{
-		EntityManagerFactory factory;
-		factory = Persistence.createEntityManagerFactory(Constants.PERSISTENCE_UNIT_NAME);
-	    EntityManager em = factory.createEntityManager();
+		List<Maschine> maschines = new ArrayList<Maschine>();
+		EntityManager em = Constants.factory.createEntityManager();
 	    em.getTransaction().begin();
 	    TypedQuery<Useraccess> acc = em.createQuery("Select u FROM Useraccess u WHERE u.userBean=:user", Useraccess.class).setParameter("user", user);
 	    em.getTransaction().commit();
-	    access = acc.getResultList();
-	    em.close();
-		for(Iterator<Useraccess> iterator = access.iterator(); iterator.hasNext();)
+		for(Iterator<Useraccess> iterator = acc.getResultList().iterator(); iterator.hasNext();)
 		{		
-			//TODO add itent check
+			//TODO add id check
 			maschines.add(iterator.next().getMaschineBean());
 		}
+	    em.close();
+	    return maschines;
 	}
 	private JsonObject getsingledataset(Maschine maschine)
 	{
 		List<Log> logs;
 		JsonObject data = new JsonObject();
 	    System.out.println("found"+maschine.toString());
-		EntityManagerFactory factory;
-		factory = Persistence.createEntityManagerFactory(Constants.PERSISTENCE_UNIT_NAME);
-	    EntityManager em = factory.createEntityManager();
+	    EntityManager em = Constants.factory.createEntityManager();
 	    em.getTransaction().begin();
 	    logs = em.createQuery("Select l FROM Log l WHERE l.maschineBean =:maschine ORDER BY l.timestamp DESC ", Log.class).setParameter("maschine", maschine).setMaxResults(2).getResultList();
 	    em.getTransaction().commit();
@@ -102,6 +90,7 @@ public class Maschineapp extends Application {
 			data.addProperty("name", maschine.getName());
 			data.addProperty("job", logs.get(0).getAuftragBean().getIdauftrag());
 			data.addProperty("status", logs.get(0).getZustandBean().getIdzustand());
+			System.out.println("got data from logid: "+logs.get(0).getIdlog()+" "+logs.get(1).getIdlog());
 	  	}
 	  	catch(ArrayIndexOutOfBoundsException e)
 	  	{

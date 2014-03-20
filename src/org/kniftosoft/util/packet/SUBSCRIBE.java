@@ -4,8 +4,6 @@
 package org.kniftosoft.util.packet;
 
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 
 import org.kniftosoft.entity.App;
 import org.kniftosoft.entity.Subscribe;
@@ -28,13 +26,12 @@ public class SUBSCRIBE extends Packet {
 	@Override
 	public void executerequest() {
 		try{
-			EntityManagerFactory factory;
-			factory = Persistence.createEntityManagerFactory(Constants.PERSISTENCE_UNIT_NAME);
-		    EntityManager em = factory.createEntityManager();
+			EntityManager em = Constants.factory.createEntityManager();
 		    em.getTransaction().begin();
 		    Subscribe sub = new Subscribe();
 			sub.setAppBean(em.find(App.class, category));
 			sub.setUserBean(peer.getUser());
+			sub.setObjektID(id);
 		    em.persist(sub);
 		    em.getTransaction().commit();
 		    em.close();

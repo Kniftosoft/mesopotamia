@@ -12,23 +12,6 @@ import java.util.List;
 @Entity
 @NamedQuery(name="Maschine.findAll", query="SELECT m FROM Maschine m")
 public class Maschine implements Serializable {
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
-		return "Maschine [idmaschine="
-				+ idmaschine
-				+ ", "
-				+ (name != null ? "name=" + name + ", " : "")
-				+ (standort != null ? "standort=" + standort + ", " : "")
-				+ (logs != null ? "logs=" + logs + ", " : "")
-				+ (subbedmaschines != null ? "subbedmaschines="
-						+ subbedmaschines + ", " : "")
-				+ (useraccesses != null ? "useraccesses=" + useraccesses : "")
-				+ "]";
-	}
-
 	private static final long serialVersionUID = 1L;
 
 	@Id
@@ -42,10 +25,6 @@ public class Maschine implements Serializable {
 	//bi-directional many-to-one association to Log
 	@OneToMany(mappedBy="maschineBean", fetch=FetchType.EAGER)
 	private List<Log> logs;
-
-	//bi-directional many-to-one association to Subbedmaschine
-	@OneToMany(mappedBy="maschineBean", fetch=FetchType.EAGER)
-	private List<Subbedmaschine> subbedmaschines;
 
 	//bi-directional many-to-one association to Useraccess
 	@OneToMany(mappedBy="maschineBean", fetch=FetchType.EAGER)
@@ -98,28 +77,6 @@ public class Maschine implements Serializable {
 		log.setMaschineBean(null);
 
 		return log;
-	}
-
-	public List<Subbedmaschine> getSubbedmaschines() {
-		return this.subbedmaschines;
-	}
-
-	public void setSubbedmaschines(List<Subbedmaschine> subbedmaschines) {
-		this.subbedmaschines = subbedmaschines;
-	}
-
-	public Subbedmaschine addSubbedmaschine(Subbedmaschine subbedmaschine) {
-		getSubbedmaschines().add(subbedmaschine);
-		subbedmaschine.setMaschineBean(this);
-
-		return subbedmaschine;
-	}
-
-	public Subbedmaschine removeSubbedmaschine(Subbedmaschine subbedmaschine) {
-		getSubbedmaschines().remove(subbedmaschine);
-		subbedmaschine.setMaschineBean(null);
-
-		return subbedmaschine;
 	}
 
 	public List<Useraccess> getUseraccesses() {

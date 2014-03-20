@@ -1,6 +1,7 @@
-org.kniftosoft.Login
+org.kniftosoft.application
 org.kniftosoft.endpoint
 org.kniftosoft.entity
 org.kniftosoft.thread
+org.kniftosoft.thread.updater
 org.kniftosoft.util
 org.kniftosoft.util.packet

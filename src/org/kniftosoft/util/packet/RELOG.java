@@ -4,9 +4,7 @@
 package org.kniftosoft.util.packet;
 
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
 import javax.persistence.NoResultException;
-import javax.persistence.Persistence;
 
 import org.kniftosoft.entity.Session;
 import org.kniftosoft.thread.ClientUpDater;
@@ -26,9 +24,7 @@ public class RELOG extends Packet{
 		if(sessionID != 0)
 		{
 			try {
-				EntityManagerFactory factory;
-				factory = Persistence.createEntityManagerFactory(Constants.PERSISTENCE_UNIT_NAME);
-			    EntityManager em = factory.createEntityManager();
+				EntityManager em = Constants.factory.createEntityManager();
 			    Session session = em.find(Session.class, sessionID);
 			    em.close();
 			    //TODO add user and a crytic key to relog for security reasons if(session.getUserBean().equals(rp.getuser()))
@@ -38,8 +34,7 @@ public class RELOG extends Packet{
 			    	peer.setUser(session.getUserBean());
 			    	peer.setLoginverified(true);
 			    	ClientUpDater.updatepeer(peer);
-			    	//TODO delete config
-			    	new REAUTH(uid, peer,session.getIdSessions(),null).send();
+			    	new REAUTH(uid, peer,session.getIdSessions(),session.getUserBean()).send();
 			    }
 			    else
 			    {

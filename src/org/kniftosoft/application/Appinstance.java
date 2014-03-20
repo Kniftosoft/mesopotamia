@@ -23,7 +23,7 @@ public class Appinstance {
 		DATA update = new DATA();
 		update.setResult(app.getdata(sub));
 		update.setPeer(peer);
-		update.setUID(0);
+		update.setUID(1000);
 		update.send();
 	}
 	private void getapp() throws DecodeException
@@ -31,7 +31,6 @@ public class Appinstance {
 		 ApplicationType apptype = ApplicationType.byID(sub.getAppBean().getIdapp());
 		 try
 		 {
-
 			 app = (Application) apptype.getAppClass().newInstance();
 		 }catch (InstantiationException e) 
 		 {
@@ -53,7 +52,7 @@ public class Appinstance {
 			getapp();
 		}catch(DecodeException e)
 		{
-			System.out.println(e.toString());
+			System.err.println(e.toString());
 		}	
 	}
 

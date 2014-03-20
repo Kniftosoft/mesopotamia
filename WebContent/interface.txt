@@ -1,5 +1,5 @@
 +==========================================+
-| Mesopotamia Communication Protocol 1.3.5 |
+| Mesopotamia Communication Protocol 1.3.6 |
 | (C) Niklas Weissner 2014 |
 +==========================================+
 
@@ -46,6 +46,8 @@ added BAD_QUERY error type, changed NACK-response of SUBSCRIBE to ERROR, added c
 16.03.2014 1.3.4 Added BAD_PACKET errorcode
 
 16.03.2014 1.3.5 Changed CONFIG-id-field from string to int, defined id's for every config attribute
+
+19.03.2014 1.3.6 Added persist-attribute to LOGIN packet
 
 
 
@@ -155,6 +157,8 @@ HANDSHAKE
 ---------
 Sent by client to initiate a connection; should be sent right after the client has
 been loaded up so incompatible versions / a not reachable server can be identified.
+As this packet ensures incompatible protocol versions are detected, its specification
+should NEVER be changed.
 
 -Packet ID: 1
 
@@ -202,6 +206,7 @@ querying data.
 -Data fields:
 string: username
 string: passwordHash (SHA-256-Hash of password + salt, for more information see chapter "6 - Security")
+bool: persist (Set to true when user wishes to stay logged in after session is closed)
 
 -Possible responses:
 AUTH: If login succeeds (AUTH-packet contains session information)
@@ -630,17 +635,16 @@ Those are written using CONFIG- and read using QUERY-packets.
 Below you'll find a table of currently used configuration values.
 
 
-Config name     | ID 	| Description
-----------------+---------------------------------------------------------------------------------------
-configVersion   | 1     | The version of the Tigris client that last accessed the config file. Stored
-			    |	    | so future versions of the client may update outdated configuration
+Config name 	| ID 	| Description
 ----------------+-------+-------------------------------------------------------------------------------
-introFinished   | 2     | Used to give new users an introduction. Set to true after first login. (This feature might be added later)
+configVersion 	| 1 	| The version of the Tigris client that last accessed the config file. Stored
+				| 		| so future versions of the client may update outdated configuration
 ----------------+-------+-------------------------------------------------------------------------------
-locale 		    | 3 	| A string identifying the language the user has selected for his GUI
+introFinished 	| 2 	| Used to give new users an introduction. Set to true after first login. (This feature might be added later)
 ----------------+-------+-------------------------------------------------------------------------------
-tiles 		    | 4 	| A JSON string containing information on the tiles the user created on his dashbord.
-	  		    |   	| The exact layout of this JSON object is not part of MCP but the GUI specification.
-	  		    |   	| Therefore, it is not documented here.
-
+locale 			| 3 	| A string identifying the language the user has selected for his GUI
+----------------+-------+-------------------------------------------------------------------------------
+tiles 			| 4 	| A JSON string containing information on the tiles the user created on his dashbord.
+				| 		| The exact layout of this JSON object is not part of MCP but the GUI specification.
+				| 		| Therefore, it is not documented here.
 

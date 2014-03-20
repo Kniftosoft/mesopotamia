@@ -8,6 +8,7 @@ import java.util.Map;
 
 import javax.websocket.Session;
 
+import org.kniftosoft.thread.updater.LogGen;
 import org.kniftosoft.thread.updater.SubscribeUpDater;
 import org.kniftosoft.util.EuphratisSession;
 
@@ -74,8 +75,8 @@ public class ClientUpDater extends Thread {
 	 * 
 	 */
 	public ClientUpDater()
-	{
-		System.out.println("Create Thread");
+	{	
+		
 	}
 	
 	/**
@@ -84,16 +85,25 @@ public class ClientUpDater extends Thread {
 	@Override
 	public void run() {
 		try {
-			while(true) {
-				//TODO remove
-	        	//System.out.println("update" +Thread.currentThread().getName()+peers.toString());
+			int loop=0;
+			Thread.currentThread();
+			Thread.sleep(sleepTime);
+			while(true) 
+			{
+				loop++;
+				new LogGen().genlogs();
+				if(loop%5==0)
+				{
+					loop=0;
+					new LogGen().genlogs();
+				}
 	        	SubscribeUpDater.updateSubscriptions();
 				Thread.currentThread();
 				Thread.sleep(sleepTime);
 
 			}
 		} catch (InterruptedException e) {
-			System.out.println("Update Thread stopps by Interrupt");
+		
 		}
 	}
 

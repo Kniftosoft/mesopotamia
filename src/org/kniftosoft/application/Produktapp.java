@@ -8,8 +8,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 
 import org.kniftosoft.entity.Produkt;
 import org.kniftosoft.entity.Subscribe;
@@ -65,9 +63,7 @@ public class Produktapp extends Application {
 	}
 	private void readprodukt()
 	{
-		EntityManagerFactory factory;
-		factory = Persistence.createEntityManagerFactory(Constants.PERSISTENCE_UNIT_NAME);
-	    EntityManager em = factory.createEntityManager();
+		EntityManager em = Constants.factory.createEntityManager();
 	    em.getTransaction().begin();
 	    produkts = em.createNamedQuery("Produkt.findAll",Produkt.class).getResultList();
 	    em.getTransaction().commit();

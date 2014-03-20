@@ -2,7 +2,6 @@ package org.kniftosoft.entity;
 
 import java.io.Serializable;
 import javax.persistence.*;
-import java.util.List;
 
 
 /**
@@ -12,29 +11,13 @@ import java.util.List;
 @Entity
 @NamedQuery(name="Subscribe.findAll", query="SELECT s FROM Subscribe s")
 public class Subscribe implements Serializable {
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
-		return "Subscribe [idSubscribe="
-				+ idSubscribe
-				+ ", "
-				+ (subbedmaschines != null ? "subbedmaschines="
-						+ subbedmaschines + ", " : "")
-				+ (appBean != null ? "appBean=" + appBean + ", " : "")
-				+ (userBean != null ? "userBean=" + userBean : "") + "]";
-	}
-
 	private static final long serialVersionUID = 1L;
 
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	private int idSubscribe;
 
-	//bi-directional many-to-one association to Subbedmaschine
-	@OneToMany(mappedBy="subscribeBean", fetch=FetchType.EAGER)
-	private List<Subbedmaschine> subbedmaschines;
+	private int objektID;
 
 	//bi-directional many-to-one association to App
 	@ManyToOne
@@ -57,26 +40,12 @@ public class Subscribe implements Serializable {
 		this.idSubscribe = idSubscribe;
 	}
 
-	public List<Subbedmaschine> getSubbedmaschines() {
-		return this.subbedmaschines;
+	public int getObjektID() {
+		return this.objektID;
 	}
 
-	public void setSubbedmaschines(List<Subbedmaschine> subbedmaschines) {
-		this.subbedmaschines = subbedmaschines;
-	}
-
-	public Subbedmaschine addSubbedmaschine(Subbedmaschine subbedmaschine) {
-		getSubbedmaschines().add(subbedmaschine);
-		subbedmaschine.setSubscribeBean(this);
-
-		return subbedmaschine;
-	}
-
-	public Subbedmaschine removeSubbedmaschine(Subbedmaschine subbedmaschine) {
-		getSubbedmaschines().remove(subbedmaschine);
-		subbedmaschine.setSubscribeBean(null);
-
-		return subbedmaschine;
+	public void setObjektID(int objektID) {
+		this.objektID = objektID;
 	}
 
 	public App getAppBean() {
