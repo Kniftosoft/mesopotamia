@@ -582,8 +582,8 @@ function f_tryRelog()
 function f_tryLogout()
 {
 	
-	var packet = new Packet_Logout(LOGOUTREASON.CLOSED_BY_USER, "User requested logout");
-	
+	var packet = new Packet_Logout(Session.sessionID,LOGOUTREASON.CLOSED_BY_USER, "User requested logout");
+
 	packet.onResponse = 
 		function(pk)
 		{
@@ -1662,7 +1662,7 @@ Packet_Subscribe.prototype = Packet;
  * 
  * @constructor
  */
-function Packet_Logout(reason, msg)
+function Packet_Logout(session, reason, msg)
 {
 	this.prototype = Packet;
 	
@@ -1670,6 +1670,7 @@ function Packet_Logout(reason, msg)
 	this.typeID = PTYPE.LOGOUT;
 	
 	this.data = {};
+	this.data.sessionID = session;
 	this.data.reasonCode = reason || LOGOUTREASON.UNKNOWN;
 	this.data.reasonMessage = msg || "No message specified";
 	
