@@ -52,7 +52,7 @@ public class LogGen {
 		}
 		log.setIdlog(0);
 		log.setMaschineBean(maschine);
-		log.setProduziert(random(5));
+		log.setProduziert(random(3));
 		log.setTimestamp(new Timestamp(new Date().getTime()));
 		ems.persist(log);
 		ems.getTransaction().commit();

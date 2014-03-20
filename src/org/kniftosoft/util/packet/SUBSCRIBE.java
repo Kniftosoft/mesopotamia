@@ -7,6 +7,8 @@ import javax.persistence.EntityManager;
 
 import org.kniftosoft.entity.App;
 import org.kniftosoft.entity.Subscribe;
+import org.kniftosoft.entity.User;
+import org.kniftosoft.thread.ClientUpDater;
 import org.kniftosoft.util.Constants;
 
 import com.google.gson.JsonObject;
@@ -32,6 +34,9 @@ public class SUBSCRIBE extends Packet {
 			sub.setAppBean(em.find(App.class, category));
 			sub.setUserBean(peer.getUser());
 			sub.setObjektID(id);
+			sub.getUserBean().addSubscribe(sub);
+			peer.setUser(sub.getUserBean());
+			ClientUpDater.updatepeer(peer);
 		    em.persist(sub);
 		    em.getTransaction().commit();
 		    em.close();
