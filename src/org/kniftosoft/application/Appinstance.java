@@ -24,6 +24,7 @@ public class Appinstance {
 		update.setResult(app.getdata(sub));
 		update.setPeer(peer);
 		update.setUID(1000);
+		update.setCategory(app.getid());
 		update.send();
 	}
 	private void getapp() throws DecodeException

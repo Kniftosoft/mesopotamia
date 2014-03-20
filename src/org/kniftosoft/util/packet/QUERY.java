@@ -27,40 +27,48 @@ public class QUERY extends Packet {
 	@Override
 	public void executerequest() {
 		// TODO execute query
-		try
+		if(category != 0)
 		{
-			
-			ApplicationType apptype = ApplicationType.byID(category);
-			try 
-			{	
-				try
-				{
-					
-					app = (Application) apptype.getAppClass().newInstance();
-					DATA response = new DATA();
-					response.setPeer(peer);
-					response.setUID(uid);
-					response.setResult(app.getdata(peer.getUser(),""));
-					response.send();
-				}catch (InstantiationException e) 
-				{
-					throw new DecodeException("Could not instantiate Application class of Application type " , apptype.name());	
-				}catch (IllegalAccessException e) 
-				{
-					throw new DecodeException("Could not instantiate Application class of Application type " , apptype.name());
-				}
-			}catch(DecodeException e)
+			try
 			{
-				System.out.println(e.toString());
-			}
-		}catch(Exception e)
+				
+				ApplicationType apptype = ApplicationType.byID(category);
+				try 
+				{	
+					try
+					{
+						
+						app = (Application) apptype.getAppClass().newInstance();
+						DATA response = new DATA();
+						response.setPeer(peer);
+						response.setUID(uid);
+						response.setResult(app.getdata(peer.getUser(),""));
+						response.setCategory(app.getid());
+						response.send();
+					}catch (InstantiationException e) 
+					{
+						throw new DecodeException("Could not instantiate Application class of Application type " , apptype.name());	
+					}catch (IllegalAccessException e) 
+					{
+						throw new DecodeException("Could not instantiate Application class of Application type " , apptype.name());
+					}
+				}catch(DecodeException e)
+				{
+					System.out.println(e.toString());
+				}
+			}catch(Exception e)
+			{
+				e.printStackTrace();
+				System.err.println("query"+e.toString());
+				ERROR response = new ERROR(uid, peer,3, " internal problems");
+				response.send();
+			}	
+		}
+		else
 		{
-			e.printStackTrace();
-			System.err.println("query"+e.toString());
-			ERROR response = new ERROR(uid, peer,3, " internal problems");
+			ERROR response = new ERROR(uid, peer,6, "Category 0 ist not allowed for QUERY-Packets");
 			response.send();
 		}
-		
 	}
 
 	/* (non-Javadoc)

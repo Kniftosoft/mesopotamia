@@ -15,13 +15,13 @@ public class App implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GeneratedValue(strategy=GenerationType.AUTO)
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int idapp;
 
 	private String beschreibung;
 
 	//bi-directional many-to-one association to Subscribe
-	@OneToMany(mappedBy="appBean", fetch=FetchType.EAGER)
+	@OneToMany(mappedBy="appBean")
 	private List<Subscribe> subscribes;
 
 	public App() {

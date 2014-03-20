@@ -11,9 +11,15 @@ import com.google.gson.JsonObject;
 public class LOGOUT extends Packet {
 	private int reasonCode;
 	private String reasonMessage;
-	int sessionID;
+	private int sessionID;
 	
 	
+	public int getSessionID() {
+		return sessionID;
+	}
+	public void setSessionID(int sessionID) {
+		this.sessionID = sessionID;
+	}
 	public LOGOUT() {
 	}
 	private void Logout()

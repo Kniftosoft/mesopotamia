@@ -9,7 +9,6 @@ import java.util.Map;
 import javax.websocket.Session;
 
 import org.kniftosoft.thread.updater.LogGen;
-import org.kniftosoft.thread.updater.SubscribeUpDater;
 import org.kniftosoft.util.EuphratisSession;
 
 /**
@@ -91,13 +90,13 @@ public class ClientUpDater extends Thread {
 			while(true) 
 			{
 				loop++;
-				new LogGen().genlogs();
-				if(loop%5==0)
+				//if(loop%5==0)
 				{
 					loop=0;
 					new LogGen().genlogs();
 				}
-	        	SubscribeUpDater.updateSubscriptions();
+				//TODO remove later
+	        	//SubscribeUpDater.updateSubscriptions();
 				Thread.currentThread();
 				Thread.sleep(sleepTime);
 

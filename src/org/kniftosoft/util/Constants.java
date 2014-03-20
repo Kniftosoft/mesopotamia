@@ -10,7 +10,7 @@ import javax.persistence.EntityManagerFactory;
  *
  */
 public class Constants {
-	public static final String Clientversion="0.3.4";
+	public static final String Clientversion="0.3.5";
 	public static final String PERSISTENCE_UNIT_NAME = "Euphratis";
 	public static final int incoming=1;
 	public static final int bidirectional=2;

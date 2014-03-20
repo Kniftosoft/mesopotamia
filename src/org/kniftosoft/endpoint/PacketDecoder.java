@@ -53,10 +53,12 @@ public class PacketDecoder implements Decoder.Text<Packet>
 			
 		}catch (InstantiationException e) 
 		{
+			e.printStackTrace();
 			throw new DecodeException(msg,"Could not instantiate packet class of packet type " + type.name());
-			
-		}catch (IllegalAccessException e) 
+		}
+		catch (IllegalAccessException e) 
 		{
+			e.printStackTrace();
 			throw new DecodeException(msg,"Could not instantiate packet class of packet type " + type.name());
 		}
 		}catch(Exception e)

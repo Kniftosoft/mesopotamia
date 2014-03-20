@@ -70,4 +70,10 @@ public class Config extends Application {
 	    em.getTransaction().commit();
 	    em.close();
 	}
+
+	@Override
+	public int getid() {
+		// TODO Auto-generated method stub
+		return ApplicationType.Configapp.getTypeID();
+	}
 }

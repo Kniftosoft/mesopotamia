@@ -18,6 +18,7 @@ public abstract  class Application {
 	public abstract JsonArray getdata(Subscribe sub);
 	
 	public abstract JsonArray getdata(User user, String ident);
+	public abstract int getid();
 	/**
 	 * 
 	 */

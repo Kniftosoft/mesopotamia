@@ -15,7 +15,7 @@ public class User implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GeneratedValue(strategy=GenerationType.AUTO)
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	@Column(name="USER_ID")
 	private int userId;
 
@@ -40,19 +40,19 @@ public class User implements Serializable {
 	private String vorname;
 
 	//bi-directional many-to-one association to Session
-	@OneToMany(mappedBy="userBean", fetch=FetchType.EAGER)
+	@OneToMany(mappedBy="userBean")
 	private List<Session> sessions;
 
 	//bi-directional many-to-one association to Subscribe
-	@OneToMany(mappedBy="userBean", fetch=FetchType.EAGER)
+	@OneToMany(mappedBy="userBean")
 	private List<Subscribe> subscribes;
 
 	//bi-directional many-to-one association to Useraccess
-	@OneToMany(mappedBy="userBean", fetch=FetchType.EAGER)
+	@OneToMany(mappedBy="userBean")
 	private List<Useraccess> useraccesses;
 
 	//bi-directional many-to-one association to Userconfig
-	@OneToMany(mappedBy="userBean", fetch=FetchType.EAGER)
+	@OneToMany(mappedBy="userBean")
 	private List<Userconfig> userconfigs;
 
 	public User() {

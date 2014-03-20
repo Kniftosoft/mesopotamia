@@ -15,15 +15,13 @@ public class Zustand implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GeneratedValue(strategy=GenerationType.AUTO)
-	@Column(updatable=false)
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int idzustand;
 
-	@Column(updatable=false)
 	private String beschreibung;
 
 	//bi-directional many-to-one association to Log
-	@OneToMany(mappedBy="zustandBean", fetch=FetchType.EAGER)
+	@OneToMany(mappedBy="zustandBean")
 	private List<Log> logs;
 
 	public Zustand() {

@@ -3,6 +3,8 @@
  */
 package org.kniftosoft.util.packet;
 
+import org.kniftosoft.entity.Session;
+
 import com.google.gson.JsonObject;
 
 /**
@@ -36,8 +38,8 @@ public class AUTH extends Packet {
 	/**
 	 * @param i the sessionID to set
 	 */
-	public void setSessionID(int idSessions) {
-		this.sessionID = idSessions;
+	public void setSessionID(Session session) {
+		this.sessionID = session.getIdSessions();
 	}
 
 	/**

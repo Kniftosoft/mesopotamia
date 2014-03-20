@@ -5,6 +5,7 @@ package org.kniftosoft.util.packet;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
+import javax.persistence.TransactionRequiredException;
 import javax.persistence.TypedQuery;
 
 import org.kniftosoft.entity.Session;
@@ -80,35 +81,42 @@ public class LOGIN extends Packet {
 	public void setPasswordHash(String passwordHash) {
 		this.passwordHash = passwordHash;
 	}
+	private Session storesession(Session session)
+	{
+		EntityManager em = Constants.factory.createEntityManager();
+		em.getTransaction().begin();
+    	em.persist(session);
+    	System.out.println("storing session= "+session);
+    	em.getTransaction().commit(); 	
+    	em.close();
+		return session;
+	}
 	private void login(){
 		if(peer.getSalt()!=null&&peer.isSaltused()==false)
 		{
 			String email =username.toLowerCase();
 			String pass = passwordHash;
+			EntityManager em = Constants.factory.createEntityManager();
 			try
 			{
-				EntityManager em = Constants.factory.createEntityManager();
 			    TypedQuery<User> userquery=em.createQuery("Select u FROM User u WHERE u.email = '"+email+"'", User.class).setMaxResults(1);
 			    //TODO find classcast bug fix
 			    User user= userquery.getSingleResult();
 			    String password = user.getPassword()+ClientUpDater.getpeer(peer).getSalt();
 			    if(email.toLowerCase().equals(user.getEmail().toLowerCase())&&pass.equals(SHA256Generator.StringTOSHA256(password))){
-			    	peer.setLoginverified(true);
-			    	peer.setUser(user);
-			    	peer.setSaltused(true);
-			    	ClientUpDater.updatepeer(peer);
 			    	Session session=new Session();
 			    	session.setUserBean(user);
 			    	if(persist == true)
 			    	{
-				    	em.getTransaction().begin();
-				    	em.persist(session);
-				    	System.out.println("storing session= "+session.getIdSessions());
-				    	em.getTransaction().commit();
+			    		session = storesession(session);
 			    	}
+			    	peer.setLoginverified(true);
+			    	peer.setUser(user);
+			    	peer.setSaltused(true);
+			    	ClientUpDater.updatepeer(peer);
 			    	//TODO add userconfig
 			    	AUTH ap = new AUTH();
-			    	ap.setSessionID(session.getIdSessions());
+			    	ap.setSessionID(session);
 			    	ap.setPeer(peer);
 			    	ap.setUID(uid);
 			    	ap.setUserconfig(null);
@@ -119,8 +127,6 @@ public class LOGIN extends Packet {
 			    	System.out.println("logini fail");
 			    	new NACK(uid, peer).send();
 			    }
-			    
-			    em.close();
 			
 		        
 			}catch(NoResultException e)
@@ -135,9 +141,20 @@ public class LOGIN extends Packet {
 				new NACK(uid,peer).send();
 				return;
 			}
-			catch(Exception e)
+			catch(TransactionRequiredException e)
 			{
 				e.printStackTrace();
+				new NACK(uid,peer).send();
+				return;
+			}
+			catch(Exception e)
+			{
+				new ERROR(uid, peer, 0, e.toString());
+				e.printStackTrace();
+			}
+			finally
+			{
+				em.close();
 			}
 			
 		}

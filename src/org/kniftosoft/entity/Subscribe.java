@@ -14,8 +14,15 @@ public class Subscribe implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GeneratedValue(strategy=GenerationType.AUTO)
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int idSubscribe;
+
+	@Override
+	public String toString() {
+		return "Subscribe [idSubscribe=" + idSubscribe + ", objektID="
+				+ objektID + ", appBean=" + appBean + ", userBean=" + userBean
+				+ "]";
+	}
 
 	private int objektID;
 

@@ -1,7 +1,11 @@
 package org.kniftosoft.entity;
 
 import java.io.Serializable;
+
 import javax.persistence.*;
+
+import org.kniftosoft.thread.updater.Databaselistener;
+
 import java.sql.Timestamp;
 
 
@@ -10,20 +14,17 @@ import java.sql.Timestamp;
  * 
  */
 @Entity
+@EntityListeners(Databaselistener.class)
 @NamedQuery(name="Log.findAll", query="SELECT l FROM Log l")
 public class Log implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GeneratedValue(strategy=GenerationType.AUTO)
-	@Column(updatable=false)
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int idlog;
 
-	@Column(updatable=false)
 	private int produziert;
 
-	@Version
-	@Column(updatable=false)
 	private Timestamp timestamp;
 
 	//bi-directional many-to-one association to Auftrag

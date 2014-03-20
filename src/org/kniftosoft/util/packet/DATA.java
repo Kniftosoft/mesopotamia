@@ -38,6 +38,7 @@ public class DATA extends Packet {
 	public JsonObject storeData() {
 		JsonObject data = new JsonObject();
 		data.add("result", result);
+		data.addProperty("category", category);
 		return data;
 	}
 

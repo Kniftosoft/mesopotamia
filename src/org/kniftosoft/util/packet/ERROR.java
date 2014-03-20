@@ -19,11 +19,16 @@ public class ERROR extends Packet {
 	 * @param uid
 	 * @param peer
 	 */
-	public ERROR(int uid, EuphratisSession peer,int errorCode,String errorMessage) {
+	public ERROR(int uid, EuphratisSession peer,int errorCode,String errorMessage) 
+	{
 		this.uid = uid;
 		this.peer = peer;
 		this.setErrorCode(errorCode);
 		this.setErrorMessage(errorMessage);
+	}
+	public ERROR()
+	{
+		
 	}
 	@Override
 	public void createFromJSON(JsonObject o) {
@@ -33,8 +38,14 @@ public class ERROR extends Packet {
 	}
 	@Override
 	public void executerequest() {
-		// TODO Auto-generated method stub
-		
+		System.err.print("Client error: \n  Errorcode: "+errorCode+"\n  Errormessage: "+errorMessage);
+		LOGOUT logout = new LOGOUT();
+		logout.setPeer(peer);
+		logout.setSessionID(-1);
+		logout.setReasonCode(3);
+		logout.setReasonMessage("Logout because of critical error");
+		logout.executerequest();
+		logout.send();
 	}
 	@Override
 	public JsonObject storeData() {
@@ -59,4 +70,12 @@ public class ERROR extends Packet {
 	public void setErrorMessage(String errorMessage) {
 		this.errorMessage = errorMessage;
 	}
+	public void send()
+	{
+		//TODO remove
+		System.out.println("try send:"+this.toString());
+		peer.getSession().getAsyncRemote().sendObject(this);
+		executerequest();
+	}
+	
 }

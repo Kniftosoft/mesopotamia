@@ -3,6 +3,8 @@
  */
 package org.kniftosoft.thread.updater;
 
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
@@ -28,6 +30,7 @@ public class LogGen {
 
 	private void generatelog(Maschine maschine)
 	{
+    	System.out.println("gen log for maschine: "+maschine.getIdmaschine());
 		Log log = new Log();
 		EntityManager ems = Constants.factory.createEntityManager();
 		ems.getTransaction().begin();
@@ -50,6 +53,7 @@ public class LogGen {
 		log.setIdlog(0);
 		log.setMaschineBean(maschine);
 		log.setProduziert(random(5));
+		log.setTimestamp(new Timestamp(new Date().getTime()));
 		ems.persist(log);
 		ems.getTransaction().commit();
 		ems.close();

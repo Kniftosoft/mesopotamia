@@ -103,5 +103,10 @@ public class Maschineapp extends Application {
 		
 		return data;
 	}
+	@Override
+	public int getid() {
+		// TODO Auto-generated method stub
+		return ApplicationType.Maschineapp.getTypeID();
+	}
 
 }

@@ -15,7 +15,7 @@ public class Maschine implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GeneratedValue(strategy=GenerationType.AUTO)
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int idmaschine;
 
 	private String name;
@@ -23,11 +23,11 @@ public class Maschine implements Serializable {
 	private String standort;
 
 	//bi-directional many-to-one association to Log
-	@OneToMany(mappedBy="maschineBean", fetch=FetchType.EAGER)
+	@OneToMany(mappedBy="maschineBean")
 	private List<Log> logs;
 
 	//bi-directional many-to-one association to Useraccess
-	@OneToMany(mappedBy="maschineBean", fetch=FetchType.EAGER)
+	@OneToMany(mappedBy="maschineBean")
 	private List<Useraccess> useraccesses;
 
 	public Maschine() {

@@ -74,5 +74,10 @@ public class JobApp extends Application {
 		data.addProperty("productType", job.getProduktBean().getIdprodukt());
 		return data;
 	}
+	@Override
+	public int getid() {
+		// TODO Auto-generated method stub
+		return ApplicationType.jobapp.getTypeID();
+	}
 
 }

@@ -70,4 +70,10 @@ public class Produktapp extends Application {
 	    em.close();
 	}
 
+	@Override
+	public int getid() {
+		// TODO Auto-generated method stub
+		return ApplicationType.produktapp.getTypeID();
+	}
+
 }
