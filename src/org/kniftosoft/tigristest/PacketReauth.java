@@ -16,7 +16,7 @@ public class PacketReauth extends Packet
 	{
 		JsonObject jo = new JsonObject();
 		
-		jo.addProperty("sessionID",sessionID);
+		jo.addProperty("newSessionID",sessionID);
 		jo.addProperty("username", username);
 		
 		return jo;

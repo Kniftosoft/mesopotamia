@@ -1,6 +1,6 @@
 
 /*--------------------------
- *      Tigris 0.3.4
+ *      Tigris 0.3.5
  * 	Mesopotamia Client v1
  * (C) Niklas Weissner 2014
  *-------------------------- 
@@ -9,8 +9,7 @@
 //TODO: Sort some code fragments so the source can be easier understood
 //TODO: Comment on stuff
 //TODO: Localization maybe?
-//TODO: Maybe check if a packet is missing fields it should have according to its type
-//TODO: Add polish to data fetching functions
+//TODO: Add polish to data fetching functions (and try to chech for null everywhere)
 
 //Configure this to your Euphrates installation
 //If your endpoint is absolute, make sure you include the full URI (including protocol etc.)
@@ -19,7 +18,7 @@ var MESO_ENDPOINT = "TIG_TEST_END"; //Link to Euphrates
 
 
 //Constants
-var TIGRIS_VERSION = "0.3.4";
+var TIGRIS_VERSION = "0.3.5";
 var TIGRIS_SESSION_COOKIE = "2324-tigris-session";
 
 var GENERAL_TIMEOUT = 3000; //Default timeout in milliseconds (may be overridden by some packets)
@@ -190,7 +189,7 @@ UI.init = function()
 		              { "mData": "id" },
                       { "mData": "target" },
                       { "mData": function(data, type, val) { return util_formatDate(new Date(data.startTime));} },
-                      { "mData": function(data, type, val) { return UI.productTypes[data.productType];} }
+                      { "mData": function(data, type, val) { return DataPool.getSingle(DCAT.PRODUCT, data.productType) || data.productType;} }
                 ]
 			});
 	
@@ -283,6 +282,8 @@ UI.showError = function(msg)
 	console.error(msg);
 	
 	UI.showStatus(msg, true);
+	
+	Network.clearAllTimeouts();
 };
 
 
@@ -392,13 +393,15 @@ UI.data_switchTab = function(name, callback)
 };
 
 /**
- * Updates the currently displayed data tab.
+ * Updates the data view.
  */
 UI.dataUpdate = function()
 {
 	if(UI.currentScreen == "data")
 	{
 		UI.data_updateTab(UI.currentTab);
+		
+		UI.dashboard.refresh();
 	}
 };
 
@@ -422,24 +425,17 @@ UI.data_updateTab = function(target)
 		category = DCAT.JOB;
 	}else
 	{
-		//Target not supported
-		return;
+		UI.showError("Tried to update unsupported table");
 	}
 	
-	//DataPool might not yet be filled, we have to query by ourselves and add to pool for later
-	var pkq = new Packet_Query(category, "*");
-	pkq.onResponse = function(pk)
-	{
-		table.fnClearTable();
+	DataPool.fetchWhole(category,
+			function(data, rawData)
+			{
 		
-		if(pk.typeID == PTYPE.DATA)
-		{
-			table.fnAddData(pk.data.result);
-			
-			DataPool.updateByData(category, pk.data.result);
-		}
-	};
-	Network.sendPacket(pkq);
+				table.fnClearTable();
+				
+				table.fnAddData(rawData);
+			});
 	
 };
 
@@ -458,7 +454,7 @@ UI.table_dragStop = function(event, ui)
 	
 	//The user might have reordered the table and thus messed up the coloring, so better reload data
 	//(This would not be neccesary if we could use something different than sortable for draggable table rows;
-	//thanks to you, jQuery UI)
+	// thanks to you, jQuery UI)
 	UI.dataUpdate();
 	
 	//Since hover detection does not work with a sortable on the cursor, we have to check manually by position
@@ -470,11 +466,12 @@ UI.table_dragStop = function(event, ui)
 		var id = ui.item.children("td").first().text();
 		
 		var dataUnitCatID = DCAT.byName(UI.currentTab);
-		var dataUnit = DataPool.getSingle(dataUnitCatID,id);
 		
-		f_createTile(dataUnitCatID,dataUnit);
-		
-		
+		DataPool.fetchSingle(dataUnitCatID,id,
+				function(dataUnit)
+				{
+					f_createTile(dataUnitCatID,dataUnit);
+				});
 	}
 };
 
@@ -504,7 +501,7 @@ function f_tryLogin()
 	delete passwordHashObject; //Delete unneeded vars containing sensible data. For safety :)
 	delete saltedPasswordHash;
 	
-	var packet = new Packet_Login(username, finalPasswordHash,remember);
+	var packet = new Packet_Login(username, finalPasswordHash, remember);
 	packet.onResponse = 
 		function(pk)
 		{
@@ -549,7 +546,7 @@ function f_tryRelog()
 				if(pk.typeID == PTYPE.REAUTH)
 				{
 					//The old session ID was still valid -> use echoed (maybe changed) session ID
-					Session.sessionID = pk.data.sessionID;
+					Session.sessionID = pk.data.newSessionID;
 					
 					//Store the new session ID to cookie TODO: maybe integrate this into f_setUpSession()
 					//Since this cookie was created in a session the user wanted to keep, we can assume the user wants still to keep it
@@ -628,43 +625,18 @@ function f_serverSideLogout(reason)
 
 function f_loadServerSideConfig()
 {
-	//Load a list of product types so IDs can be resolved to names
-	var queryProducts = new Packet_Query(DCAT.PRODUCT,"*");
-	queryProducts.onResponse = function(pk)
-	{
-		if(pk.typeID == PTYPE.DATA)
-		{
-			jQuery.each(pk.data.result, 
-					function(index, value)
-					{
-						UI.productTypes[value.id] = value.name;
-					});
-			
-			UI.showData(); //Everything is set up -> Show data screen
-		}
-	};
-	
+	//First fetch config, then product data
 	
 	//Fetch config data from server
-	var queryConfig = new Packet_Query(DCAT.CONFIG,"*");
-	queryConfig.onResponse = function(pk)
+	DataPool.fetchWhole(DCAT.CONFIG,
+	function(data)
 	{
-		if(pk.typeID == PTYPE.DATA)
-		{
-			//Store all of the returned config values
-			jQuery.each(pk.data.result, 
-					function(index, value)
-					{
-						Session.config[value.id] = value.name;
-					});
-			
-			//When we are finished loading config, we may continue with the product names (ensures everything is done in order)
-			Network.sendPacket(queryProducts);
-		}
-	};
-	
-	//First load config, then load product names
-	Network.sendPacket(queryConfig); 
+		//data-field is ignored, we don't need it here -> config data is also stored in data pool from now on
+		
+		//Load a list of product types so IDs can be resolved to names. After that, display data screen TODO: Maybe remove this and integrate it into mData function
+		DataPool.fetchWhole(DCAT.PRODUCT, UI.showData);
+		
+	});
 }
 
 /**
@@ -692,6 +664,9 @@ function f_createTile(category, dataUnit)
 			}else if(category == DCAT.JOB)
 			{
 				tile = new Tile_Job(dataUnit);
+			}else
+			{
+				UI.showError("Tried to create a tile of an unknown category.");
 			}
 			
 			UI.dashboard.addTile(tile);
@@ -736,78 +711,131 @@ var DataPool = {};
 DataPool.pools = {};
 
 /**
- * Returns single data unit of one category, identified by id.
+ * Retrieves a single data unit. If the desired data unit is not stored locally,
+ * it is retrieved from server. After it has been successfully located, callback
+ * is called with the unit as parameter. If the desired data unit could neither be
+ * found locally nor be fetched from server, the callback is called with null.
+ * 
+ * Note that the returned data may not be up-to-date. If most recent data is wanted,
+ * the optional parameter forceQuery can be set to true to always fetch from server
+ * regardless of whether the data is stored locally or not.
+ */
+DataPool.fetchSingle = function(category, id, callback, forceQuery)
+{
+	//Do we already have the desired data in storage and is no query wanted?
+	if(DataPool.hasItem(category,id) && !forceQuery)
+	{
+		//Yes -> no need for query
+		
+		var pool = DataPool.pools[category];
+		callback(pool[id]);
+		
+	}else
+	{
+		//No -> We need to query from server
+		
+		var query = new Packet_Query(category,id);
+		query.onResponse = function(pk)
+		{
+			if(pk.typeID == PTYPE.DATA)
+			{
+				//Data received -> Store it to pool (using echoed category to allow redirection)
+				DataPool.updateByData(pk.data.category, pk.data.result);
+				
+				//Do we have the desired unit now?
+				if(DataPool.hasItem(category,id))
+				{
+					//Yes -> report to callback
+					var pool = DataPool.pools[category];
+					callback(pool[id]);
+				}else
+				{
+					//No -> Return null to callback TODO: Check if we might count this as an error
+					
+					callback(null);
+				}
+			}
+		};
+		
+		Network.sendPacket(query);
+	}
+};
+
+/**
+ * Retrieves a whole data category. Different to fetchSingle, this function
+ * ALWAYS queries the data from the server, as there is no way to check if the current
+ * local pool is complete.
+ */
+DataPool.fetchWhole = function(category, callback)
+{
+	//We always need to query from server
+		
+	var query = new Packet_Query(category,"*");
+	query.onResponse = function(pk)
+	{
+		if(pk.typeID == PTYPE.DATA)
+		{
+			//Data received -> Store pool (using echoed category to allow redirection)
+			DataPool.updateByData(pk.data.category, pk.data.result);
+			
+			//Do we really have the right pool?
+			if(category in DataPool.pools)
+			{
+				//Yes -> report to callback
+				callback(DataPool.pools[category], pk.data.result);
+				
+			}else
+			{
+				//No -> Return null to callback TODO: Check if we might count this as an error
+				
+				callback(null);
+			}
+		}
+	};
+		
+	Network.sendPacket(query);
+	
+};
+
+/**
+ * Returns a single, locally stored data unit. Different to fetchSingle,
+ * this function needs no callback function and data is not queried when non-existent.
+ * In the latter case, null is returned.
  */
 DataPool.getSingle = function(category, id)
 {
-	if(DataPool.isPoolDirty(category))
+	if(DataPool.hasItem(category,id))
 	{
-		DataPool.refreshPool(category);
-	}
-	
-	//If there is no pool yet, we can not return anything until the refresh is done
-	if(!(category in DataPool.pools))
-	{
-		return null;
-	}
-	
-	var pool = DataPool.pools[category];
-	
-	return pool[id];
-};
-
-/**
- * Returns all stored data units of one category.
- * 
- * @returns {Array}
- */
-DataPool.getWhole = function(category)
-{
-	//Is data pool outdated or non-existent yet? Refresh it! (For later, as this happens asynchronous)
-	if(DataPool.isPoolDirty(category))
-	{
-		DataPool.refreshPool(category);
-	}
-	
-	//If there is no pool yet, we can not return anything until the refresh is done (which will be later, so return null)
-	if(!(category in DataPool.pools))
+		
+		var pool = DataPool.pools[category];
+		return pool[id];
+		
+	}else
 	{
 		return null;
 	}
-	
-	var pool = DataPool.pools[category];
-
-	//The pool is indexed with ids, we want an int-indexed array
-	var dataUnitArray = new Array();
-	var i = 0;
-	jQuery.each(pool,function(index, element)
-			{
-				dataUnitArray[i] = element;
-			});
-	
-	return dataUnitArray;
-	
 };
 
 /**
- * Reports if a data pool is outdated or non-existent.
+ * Checks if a specific data unit is present in local storage.
  * 
- * @param category The data pool category
- * @return {boolean}
+ * @returns {boolean}
  */
-DataPool.isPoolDirty = function(category)
+DataPool.hasItem = function(category,id)
 {
-	
-	if(category in DataPool.pools)
+	if(!DataPool.pools[category])
 	{
-		return true;
+		return false;
 	}
 	
-	return true; //Update always for now TODO: Change
+	var pool = DataPool.pools[category];
+	return (pool[id] != "undefined");
 };
 
 /**
  * Queries the whole data pool and stores it upon receipt.
+ * 
+ * TODO: Not needed; remove if not in use upon release
  */
 DataPool.refreshPool = function(category)
 {
@@ -868,7 +896,7 @@ Network.init = function()
 	
 	if(ENDPOINT_IS_RELATIVE)
 	{
-		//The endpoint path is relative -> we must construct absolute path from our current URL
+		//The endpoint path is relative -> we must construct an absolute path from our current URL
 		var loc = window.location;
 		
 		if(loc.protocol === "https:")
@@ -929,6 +957,7 @@ Network.ws_onMessage = function(msg)
 		return;
 	}
 	
+	//Check for obligatory fields
 	if(packet.uid === "undefined" || packet.typeID === "undefined" || packet.data === "undefined")
 	{
 		Network.serverError(ERRORCODE.BAD_PACKET, "Packet did not contain one or more of the fields: typeID, uid, data");
@@ -938,6 +967,39 @@ Network.ws_onMessage = function(msg)
 		return;
 	}
 	
+	
+	//Check for type-specific fields
+	var typeFields = packet_fields[packet.typeID];
+	
+	if(typeFields == "undefined")
+	{
+		Network.serverError(ERRORCODE.BAD_PACKET, "Unknown packet type or C->S packet only: " + packet.typeID);
+		
+		UI.showError("A fatal communication error occurred: Bad packet and shit.");
+		
+		return;
+	}
+	
+	var missingFields = "";
+	jQuery.each(typeFields,
+			function(index,item)
+			{
+				if(!packet.data[item])
+				{
+					missingFields += item + " ";
+				}
+				
+			});
+	if(missingFields != "")
+	{
+		Network.serverError(ERRORCODE.BAD_PACKET, "Packet of type " + packet.typeID + " was missing the following fields: " + missingFields);
+		
+		UI.showError("A fatal communication error occurred: Bad packet and shit.");
+		
+		return;
+	}
+	
+	//Locate packet target
 	if(("uid" + packet.uid) in Network.sentPacketMap) //UID is registered -> Packet is an answer
 	{
 		
@@ -1059,6 +1121,18 @@ Network.handshake = function(tryRelog)
 	Network.sendPacket(packet);
 };
 
+Network.clearAllTimeouts = function()
+{
+	jQuery.each(Network.sentPacketMap,
+			function(index, item)
+			{
+				if(item.timeoutID != null)
+				{
+					window.clearTimeout(item.timeoutID);
+				}
+			});
+};
+
 Network.generateUID = function()
 {
 	var uid = 0;
@@ -1168,13 +1242,10 @@ Network.request = function(pk)
 		
 	}else if(pk.typeID == PTYPE.DATA)
 	{
-		
+		//Write data to data pool
 		DataPool.updateByData(pk.data.category, pk.data.result);
 		
-		if(UI.dashboard != null)
-		{
-			UI.dashboard.refresh();
-		}
+		UI.dataUpdate();
 		
 	}else if(pk.typeID == PTYPE.LOGOUT)
 	{
@@ -1188,7 +1259,7 @@ Network.request = function(pk)
 	{
 		//This packet type was not recognized. Tell the server we did not understand his message
 		
-		Network.serverError(ERRORCODE.INVALID_PACKET, "The request was not recognized. You packet may be C->S only.");
+		Network.serverError(ERRORCODE.BAD_PACKET, "Unrecognized packet. May be C->S packet only: " + packet.typeID);
 	}
 	
 };
@@ -1276,14 +1347,17 @@ function Dashboard()
 		};
 	
 		
-	this.refreshData =
+	this.refresh =
 		function()
 		{
+			//Careful! This function is called upon receipt of tile-relevant data. Do
+			//not access remote data by yourself here!
+		
 			//Fetch new data unit object from data pool for each tile 
 			jQuery.each(reThis.tiles, 
 					function(index, item)
 					{
-						//Is a data unit registered for the current tile?
+						//Is a data unit registered for the current tile? (Use local data only)
 						var dataUnit = DataPool.getSingle(item.dataUnitCategory,item.dataUnitID);
 				
 						if(dataUnit)
@@ -1699,6 +1773,24 @@ function Packet_Error(code, message)
 	this.timeout = 0;
 }
 Packet_Error.prototype = Packet;
+
+
+/**
+ * Array storing fields defining must-have-fields for incoming packets. Used for type safety checking
+ * and error reporting.
+ *
+ * TODO: Find better name for this field
+ */
+var packet_fields = new Array();
+packet_fields[PTYPE.NULL] = [];
+packet_fields[PTYPE.ACCEPT] = ["salt"];
+packet_fields[PTYPE.AUTH] = ["sessionID"];
+packet_fields[PTYPE.REAUTH] = ["newSessionID","username"];
+packet_fields[PTYPE.LOGOUT] = ["sessionID","reasonCode","reasonMessage"];
+packet_fields[PTYPE.DATA] = ["category","result"];
+packet_fields[PTYPE.ACK] = [];
+packet_fields[PTYPE.NACK] = [];
+packet_fields[PTYPE.ERROR] = ["errorCode","errorMessage"];
 
 //---------------utility stuff----------------
 
