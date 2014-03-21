@@ -9,9 +9,6 @@ Maschine um maxspeed erweitern!
 	
 Interface.txt
 changes:
-	Subscribe
-		-Jsonarry of subscribed objekts
-	Logout
-		-Session id of persist session
-	login
-		-flag if session should be persist
+	-table update sending 3 times!
+	-implement table update as subscribe
+	-UNSUBSCRIBE not listet in packet table

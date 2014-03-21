@@ -19,8 +19,26 @@ import com.google.gson.JsonObject;
 public class RELOG extends Packet{
 
 	private int sessionID;
-	private void relog()
-	{
+
+	/* (non-Javadoc)
+	 * @see org.kniftosoft.util.packet.Packet#createFromJSON(com.google.gson.JsonObject)
+	 */
+	@Override
+	public void createFromJSON(JsonObject o) {
+		try{
+			sessionID = o.get("sessionID").getAsInt();
+		}
+		catch(NumberFormatException e)
+		{
+			sessionID = 0;
+		}
+		
+	}
+	/* (non-Javadoc)
+	 * @see org.kniftosoft.util.packet.Packet#executerequest()
+	 */
+	@Override
+	public void executerequest() {
 		if(sessionID != 0)
 		{
 			try {
@@ -34,7 +52,13 @@ public class RELOG extends Packet{
 			    	peer.setUser(session.getUserBean());
 			    	peer.setLoginverified(true);
 			    	ClientUpDater.updatepeer(peer);
-			    	new REAUTH(uid, peer,session.getIdSessions(),session.getUserBean()).send();
+			    	REAUTH reauth = new REAUTH();
+			    	reauth.setPeer(peer);
+			    	reauth.setUID(uid);
+			    	//TODO give a real new id
+			    	reauth.setNewSessionID(session.getIdSessions());
+			    	reauth.setUser(session.getUserBean());
+			    	reauth.send();
 			    }
 			    else
 			    {
@@ -56,36 +80,32 @@ public class RELOG extends Packet{
 			new NACK(uid, peer).send();
 		}
 	}
-
-	@Override
-	public void createFromJSON(JsonObject o) {
-		try{
-			sessionID = o.get("sessionID").getAsInt();
-		}
-		catch(NumberFormatException e)
-		{
-			sessionID = 0;
-		}
-		
-	}
-	@Override
-	public void executerequest() {
-		relog();
-	}
+	/* (non-Javadoc)
+	 * @see org.kniftosoft.util.packet.Packet#storeData()
+	 */
 	@Override
 	public JsonObject storeData() {
 		JsonObject data = new JsonObject();
 		data.addProperty("sessionID", sessionID);
 		return data;
 	}
+	/* (non-Javadoc)
+	 * @see org.kniftosoft.util.packet.Packet#getType()
+	 */
 	@Override
 	public PacketType getType() {
 		// TODO Auto-generated method stub
 		return PacketType.RELOG;
 	}
+	/**
+	 * @return sessionID
+	 */
 	public int getSessionID() {
 		return sessionID;
 	}
+	/**
+	 * @param sessionID
+	 */
 	public void setSessionID(int sessionID) {
 		this.sessionID = sessionID;
 	}

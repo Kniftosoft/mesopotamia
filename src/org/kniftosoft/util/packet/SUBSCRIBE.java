@@ -7,7 +7,6 @@ import javax.persistence.EntityManager;
 
 import org.kniftosoft.entity.App;
 import org.kniftosoft.entity.Subscribe;
-import org.kniftosoft.entity.User;
 import org.kniftosoft.thread.ClientUpDater;
 import org.kniftosoft.util.Constants;
 
@@ -84,18 +83,30 @@ public class SUBSCRIBE extends Packet {
 		return data;
 	}
 
+	/**
+	 * @return category
+	 */
 	public int getCategory() {
 		return category;
 	}
 
+	/**
+	 * @param category
+	 */
 	public void setCategory(int category) {
 		this.category = category;
 	}
 
+	/**
+	 * @return id
+	 */
 	public int getIdent() {
 		return id;
 	}
 
+	/**
+	 * @param ident
+	 */
 	public void setIdent(int ident) {
 		this.id = ident;
 	}

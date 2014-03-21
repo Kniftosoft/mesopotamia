@@ -7,7 +7,6 @@ import java.util.Iterator;
 
 import org.kniftosoft.entity.User;
 import org.kniftosoft.entity.Userconfig;
-import org.kniftosoft.util.EuphratisSession;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -21,29 +20,27 @@ public class REAUTH extends Packet {
 	private int newSessionID;
 	private JsonArray userConfig;
 	private User user;
-	/**
-	 * @param uid
-	 * @param peer
+	
+	/* (non-Javadoc)
+	 * @see org.kniftosoft.util.packet.Packet#executerequest()
 	 */
-	public REAUTH(int uid, EuphratisSession peer,int i,User user) {
+	@Override
+	public void executerequest() {
+		// TODO Auto-generated method stub
 		
-		// TODO Auto-generated constructor stub
-		this.uid = uid;
-		this.peer = peer;
-		this.user = user;
-		this.setNewSessionID(i);
-		for(Iterator<Userconfig> iteratur = user.getUserconfigs().iterator();iteratur.hasNext();)
-		{
-			JsonObject config = new JsonObject();
-			config.addProperty("userConfig", iteratur.next().toString());
-			userConfig.add(config);
-		}		
 	}
+	
+	/* (non-Javadoc)
+	 * @see org.kniftosoft.util.packet.Packet#createFromJSON(com.google.gson.JsonObject)
+	 */
 	@Override
 	public void createFromJSON(JsonObject o) {
 		newSessionID = o.get("newSessionID").getAsInt();
 		userConfig = o.getAsJsonArray("userConfig");		
 	}
+	/* (non-Javadoc)
+	 * @see org.kniftosoft.util.packet.Packet#storeData()
+	 */
 	@Override
 	public JsonObject storeData() {
 		JsonObject data = new JsonObject();
@@ -52,25 +49,55 @@ public class REAUTH extends Packet {
 		data.addProperty("username", user.getEmail());
 		return data;
 	}
+	/* (non-Javadoc)
+	 * @see org.kniftosoft.util.packet.Packet#getType()
+	 */
 	@Override
 	public PacketType getType() {
 		return PacketType.REAUTH;
 	}
+	
+	/**
+	 * @return newSessionID
+	 */
 	public int getNewSessionID() {
 		return newSessionID;
 	}
-	public void setNewSessionID(int i) {
-		this.newSessionID = i;
+
+	/**
+	 * @param newSessionID
+	 */
+	public void setNewSessionID(int newSessionID) {
+		this.newSessionID = newSessionID;
 	}
+	/**
+	 * @return userConfig
+	 */
 	public JsonArray getUserConfig() {
 		return userConfig;
 	}
+	/**
+	 * @param userConfig
+	 */
 	public void setUserConfig(JsonArray userConfig) {
 		this.userConfig = userConfig;
 	}
-	@Override
-	public void executerequest() {
-		// TODO Auto-generated method stub
-		
+	/**
+	 * @return the user
+	 */
+	public User getUser() {
+		return user;
+	}
+	/**
+	 * @param user sets the user and loads the userconfigs
+	 */
+	public void setUser(User user) {
+		this.user = user;
+		for(Iterator<Userconfig> iteratur = user.getUserconfigs().iterator();iteratur.hasNext();)
+		{
+			JsonObject config = new JsonObject();
+			config.addProperty("userConfig", iteratur.next().toString());
+			userConfig.add(config);
+		}		
 	}
 }

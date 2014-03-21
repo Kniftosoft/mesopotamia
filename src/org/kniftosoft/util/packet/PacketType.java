@@ -6,7 +6,7 @@ import org.kniftosoft.util.Constants;
 public enum PacketType 
 {
 	
-
+	NULL(0,NULL.class,Constants.bidirectional),
 	HANDSHAKE(1, HANDSHAKE.class,Constants.incoming),
 	ACCEPT(2, ACCEPT.class,Constants.outgoing),
 	LOGIN(10, LOGIN.class,Constants.incoming),
@@ -17,6 +17,8 @@ public enum PacketType
 	QUERY(20,QUERY.class,Constants.incoming),
 	DATA(21,DATA.class,Constants.outgoing),
 	SUBSCRIBE(22,SUBSCRIBE.class,Constants.incoming),
+	UNSUBSCRIBE(23,UNSUBSCRIBE.class,Constants.incoming),
+	CONFIG(50,CONFIG.class,Constants.incoming),
 	ACK(200, ACK.class,Constants.bidirectional),
 	NACK(201, NACK.class,Constants.bidirectional),
 	ERROR(242,ERROR.class,Constants.bidirectional);

@@ -325,7 +325,6 @@ UI.sidebarItemClicked = function(eventTarget)
 		
 		
 		var target = item.attr("data-target");
-		
 		//Update target tab, then show it
 		UI.data_updateTab(target);
 		
