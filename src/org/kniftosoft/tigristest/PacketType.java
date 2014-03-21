@@ -13,6 +13,7 @@ public enum PacketType
 	QUERY(20, PacketQuery.class),
 	DATA(21, PacketData.class),
 	SUBSCRIBE(22, PacketSubscribe.class),
+	CONFIG(50, PacketConfig.class),
 	ACK(200, PacketAck.class),
 	NACK(201, PacketNack.class),
 	ERROR(242, PacketError.class);

@@ -1,6 +1,6 @@
 
 /*--------------------------
- *      Tigris 0.3.5
+ *      Tigris 0.3.6
  * 	Mesopotamia Client v1
  * (C) Niklas Weissner 2014
  *-------------------------- 
@@ -18,11 +18,14 @@ var MESO_ENDPOINT = "TIG_TEST_END"; //Link to Euphrates
 
 
 //Constants
-var TIGRIS_VERSION = "0.3.5";
+var TIGRIS_VERSION = "0.3.6";
 var TIGRIS_SESSION_COOKIE = "2324-tigris-session";
 
 var GENERAL_TIMEOUT = 3000; //Default timeout in milliseconds (may be overridden by some packets)
 
+/**
+ * Packet type IDs
+ */
 var PTYPE =
 {
 	NULL:		0,
@@ -43,7 +46,10 @@ var PTYPE =
 	ERROR: 		242
 };
 
-var DCAT =
+/**
+ * Data type IDs
+ */
+var DTYPE =
 {
 	MACHINE:	1,
 	JOB:		2,
@@ -55,8 +61,19 @@ var DCAT =
 	
 	byName: function(name)
 	{
-		return DCAT[name.toUpperCase()];
+		return DTYPE[name.toUpperCase()];
 	}
+};
+
+/**
+ * Config type IDs
+ */
+var CTYPE =
+{
+	CONFIG_VERSION:		1,
+	INTRO_FINISHED:		2,
+	LOCALE:				3,
+	TILES:				4
 };
 
 
@@ -189,7 +206,7 @@ UI.init = function()
 		              { "mData": "id" },
                       { "mData": "target" },
                       { "mData": function(data, type, val) { return util_formatDate(new Date(data.startTime));} },
-                      { "mData": function(data, type, val) { return DataPool.getSingle(DCAT.PRODUCT, data.productType) || data.productType;} }
+                      { "mData": function(data, type, val) { return DataPool.getSingle(DTYPE.PRODUCT, data.productType).name || data.productType;} }
                 ]
 			});
 	
@@ -211,6 +228,43 @@ UI.init = function()
 };
 
 
+/**
+ * Called after all login-procedured are finished and a valid session is opened.
+ */
+UI.sessionSetup = function()
+{
+	//Load tile list from config
+	var tileConfString = DataPool.getSingle(DTYPE.CONFIG, CTYPE.TILES);
+	if(tileConfString != null)
+	{
+		try
+		{
+			var unescapedString = util_dirtyUnescape(tileConfString.value);//We need to remove escape characters created while converting this to JSON
+			
+			var tileConfig = jQuery.parseJSON(unescapedString); 
+			
+			jQuery.each(tileConfig.tileList, function(index, item)
+					{
+				
+						//Try to get the data unit for this tile
+						DataPool.fetchSingle(item.category, item.id, function(tileDataUnit)
+								{
+									//When a valid data unit is returned, create a tile. When not, discard it TODO: Maybe show a greyed out tile or something
+									if(tileDataUnit != null)
+									{
+										f_createTile(item.category, tileDataUnit);
+									}
+								});
+				
+					});
+			
+		}catch(e)
+		{
+			console.error("The tile configuration string could not be parsed: " + e); //No need to tell the user. It's not that fatal
+		}
+	}
+	
+};
 
 /**
  * Show screen with given name without any animation.
@@ -327,7 +381,7 @@ UI.sidebarItemClicked = function(eventTarget)
 		var target = item.attr("data-target");
 		
 		//Update target tab, then show it
-		UI.data_updateTab(target);
+		UI.dataUpdate(target);
 		
 		UI.data_showTab(target);
 	}
@@ -393,28 +447,30 @@ UI.data_switchTab = function(name, callback)
 };
 
 /**
- * Updates the data view.
+ * Updates the data view if displayed.
  */
-UI.dataUpdate = function()
+UI.dataUpdate = function(target)
 {
+	var t = target || UI.currentTab;
+	
 	if(UI.currentScreen == "data")
 	{
-		if(UI.currentTab == "dashboard")
+		if(t == "dashboard")
 		{
 			UI.dashboard.refresh();
 		}else
 		{
-			UI.data_updateTab(UI.currentTab);
+			UI.data_updateTable(t);
 		}
 	}
 };
 
 /**
- * Updates a data tab.
+ * Updates a data table.
  * 
- * @param target The name of the target data tab
+ * @param target The name of the target data table
  */
-UI.data_updateTab = function(target)
+UI.data_updateTable = function(target)
 {	
 	var table = null;
 	var category = 0;
@@ -422,14 +478,14 @@ UI.data_updateTab = function(target)
 	if(target == "machine")
 	{
 		table = UI.machineTable;
-		category = DCAT.MACHINE;
+		category = DTYPE.MACHINE;
 	}else if(target == "job")
 	{
 		table = UI.jobTable;
-		category = DCAT.JOB;
+		category = DTYPE.JOB;
 	}else
 	{
-		UI.showError("Tried to update unsupported table");
+		UI.showError("Tried to update unsupported table: " + target);
 	}
 	
 	DataPool.fetchWhole(category,
@@ -469,7 +525,7 @@ UI.table_dragStop = function(event, ui)
 		//Get the id from the dropped element (It must be the first column in order for this to work)
 		var id = ui.item.children("td").first().text();
 		
-		var dataUnitCatID = DCAT.byName(UI.currentTab);
+		var dataUnitCatID = DTYPE.byName(UI.currentTab);
 		
 		DataPool.fetchSingle(dataUnitCatID,id,
 				function(dataUnit)
@@ -632,13 +688,18 @@ function f_loadServerSideConfig()
 	//First fetch config, then product data
 	
 	//Fetch config data from server
-	DataPool.fetchWhole(DCAT.CONFIG,
+	DataPool.fetchWhole(DTYPE.CONFIG,
 	function(data)
 	{
 		//data-field is ignored, we don't need it here -> config data is also stored in data pool from now on
 		
 		//Load a list of product types so IDs can be resolved to names. After that, display data screen TODO: Maybe remove this and integrate it into mData function
-		DataPool.fetchWhole(DCAT.PRODUCT, UI.showData);
+		DataPool.fetchWhole(DTYPE.PRODUCT, function(data)
+				{
+					UI.sessionSetup();
+					
+					UI.showData();
+				});
 		
 	});
 }
@@ -661,11 +722,11 @@ function f_createTile(category, dataUnit)
 		{
 			var tile = null;
 			
-			if(category == DCAT.MACHINE)
+			if(category == DTYPE.MACHINE)
 			{
 				tile = new Tile_Machine(dataUnit);
 				
-			}else if(category == DCAT.JOB)
+			}else if(category == DTYPE.JOB)
 			{
 				tile = new Tile_Job(dataUnit);
 			}else
@@ -751,6 +812,7 @@ DataPool.fetchSingle = function(category, id, callback, forceQuery)
 				{
 					//Yes -> report to callback
 					var pool = DataPool.pools[category];
+					
 					callback(pool[id]);
 				}else
 				{
@@ -988,7 +1050,7 @@ Network.ws_onMessage = function(msg)
 	jQuery.each(typeFields,
 			function(index,item)
 			{
-				if(!packet.data[item])
+				if(packet.data[item] == "undefined")
 				{
 					missingFields += item + " ";
 				}
@@ -1123,6 +1185,20 @@ Network.handshake = function(tryRelog)
 	};
 	
 	Network.sendPacket(packet);
+};
+
+Network.setConfig = function(id, value)
+{
+	var config = new Packet_Config(id, value);
+	config.onResponse = function(pk)
+	{
+		if(pk.typeID == PTYPE.NACK)
+		{
+			UI.showError("Could set config " + id + " to " + value);
+		}
+	};
+	
+	Network.sendPacket(config);
 };
 
 Network.clearAllTimeouts = function()
@@ -1330,24 +1406,23 @@ function Dashboard()
 	this.addTile = 
 		function(tile)
 		{
-			var dataUnitIdent = tile.dataUnitCategory + "-" + tile.dataUnitID;
-		
-			if(dataUnitIdent in reThis.tiles)
+			if(tile.ident in reThis.tiles)
 			{
-				//Tile linking to the same data source is already on the dashboard -> refuse adding TODO: Display message
+				//Tile linking to the same data source is already on the dashboard -> refuse adding TODO: Allow grouping
 				return;
 			}
 		
-			//Switch over to dashboard, when finished -> add tile
-			UI.data_switchTab("dashboard",
-					function()
-					{
-						reThis.tiles[dataUnitIdent] = tile;
-					
-						reThis.columns[0].append(tile.base); //For testing: append tile 0 to dashboard TODO: Add parameter for desired column
-						
-						tile.onCreate();
-					});
+			reThis.tiles[tile.ident] = tile;
+		
+			var column = tile.columnID || 0; //Append tile to specified column. If not specified, add to 0
+			
+			reThis.columns[column].append(tile.base);
+			tile.columnID = column;
+			
+			tile.onCreate();
+			
+			//In order not to loose anything, we must store the tile configs RIGHT NOW
+			reThis.storeTiles();
 		};
 	
 		
@@ -1373,6 +1448,32 @@ function Dashboard()
 					});
 		
 		};
+		
+	
+	this.storeTiles = function()
+	{
+		
+		var configObject = {};
+		configObject.tileList = new Array();
+		
+		jQuery.each(reThis.tiles,
+				function(index, item)
+				{
+					var tileStor = {};
+					
+					tileStor.id = item.dataUnitID;
+					tileStor.category = item.dataUnitCategory;
+					tileStor.column = item.columnID;
+					
+					configObject.tileList.push(tileStor);
+				});
+		
+		var configString = JSON.stringify(configObject);
+		
+		Network.setConfig(CTYPE.TILES, configString);
+		
+	};
+		
 		
 	//Everything is created -> now we can add jQuery UI stuff
 	$(".dashboard-column").sortable(
@@ -1411,7 +1512,7 @@ function Tile_Machine(dataUnit)
 	var reThis = this; //We need to store this object, as 'this' is not usable in callbacks called in other contexts
 	var initialDataUnit = dataUnit;
 	
-	this.dataUnitCategory = DCAT.MACHINE;
+	this.dataUnitCategory = DTYPE.MACHINE;
 	this.dataUnitID = dataUnit.id;
 	this.ident = this.dataUnitCategory + "-" + this.dataUnitID;
 	
@@ -1555,10 +1656,9 @@ function Tile_Job(dataUnit)
 	var instance = this; //We need to store this object, as 'this' is not usable in callbacks
 	var initialDataUnit = dataUnit;
 	
-	this.dataUnitCategory = DCAT.JOB;
+	this.dataUnitCategory = DTYPE.JOB;
 	this.dataUnitID = dataUnit.id;
 	this.ident = this.dataUnitCategory + "-" + this.dataUnitID;
-	
 	
 	//Retrieve and set up HTML structure of tile from a hidden definition area in the document
 	this.base = $("#tiledef_job").clone();
@@ -1634,7 +1734,7 @@ Packet.timeout = GENERAL_TIMEOUT;
 Packet.timeoutID = null;
 Packet.allowedResponses = [];
 Packet.onResponse = function(){};
-Packet.onTimeout = function(){UI.showError("THe server took to long to respond to packet.");};
+Packet.onTimeout = function(){UI.showError("The server took to long to respond to packet.");};
 
 /**
  *
@@ -1659,9 +1759,6 @@ Packet_Handshake.prototype = Packet;
  */
 function Packet_Login(usr,pwrdHash,persist)
 {
-	this.prototype = Packet;
-	
-	
 	this.typeID = PTYPE.LOGIN;
 	
 	this.data = {};
@@ -1681,9 +1778,6 @@ Packet_Login.prototype = Packet;
  */
 function Packet_Relog(sessionID)
 {
-	this.prototype = Packet;
-	
-	
 	this.typeID = PTYPE.RELOG;
 
 	this.data = {};
@@ -1701,9 +1795,6 @@ Packet_Relog.prototype = Packet;
  */
 function Packet_Query(category, id)
 {
-	this.prototype = Packet;
-	
-	
 	this.typeID = PTYPE.QUERY;
 
 	this.data = {};
@@ -1718,12 +1809,11 @@ Packet_Query.prototype = Packet;
 
 /**
  * @constructor
+ * @param category Category of data unit
+ * @param id ID of data unit
  */
 function Packet_Subscribe(category, id)
-{
-	this.prototype = Packet;
-	
-	
+{		
 	this.typeID = PTYPE.SUBSCRIBE;
 	
 	this.data = {};
@@ -1737,14 +1827,49 @@ function Packet_Subscribe(category, id)
 Packet_Subscribe.prototype = Packet;
 
 /**
+ * @constructor
+ * @param category Category of data unit
+ * @param id ID of data unit
+ */
+function Packet_Unsubscribe(category, id)
+{
+	this.typeID = PTYPE.UNSUBSCRIBE;
+	
+	this.data = {};
+	this.data.category = category;
+	this.data.id = id;
+	
+	this.allowedResponses = [PTYPE.ACK, PTYPE.ERROR];
+	
+	this.onTimeout = function(){UI.showError("The server took to long to respond to unsubscribe.");};
+};
+Packet_Unsubscribe.prototype = Packet;
+
+/**
+ * @constructor
+ * @param id The numerical ID of the config field
+ * @param value The value to be stored
+ */
+function Packet_Config(id, value)
+{	
+	this.typeID = PTYPE.CONFIG;
+	
+	this.data = {};
+	this.data.id = id;
+	this.data.value = value;
+	
+	this.allowedResponses = [PTYPE.ACK, PTYPE.NACK];
+	
+	this.onTimeout = function(){UI.showError("The server took to long to respond to config.");};
+};
+Packet_Config.prototype = Packet;
+
+/**
  * 
  * @constructor
  */
 function Packet_Logout(session, reason, msg)
 {
-	this.prototype = Packet;
-	
-	
 	this.typeID = PTYPE.LOGOUT;
 	
 	this.data = {};
@@ -1764,9 +1889,6 @@ Packet_Logout.prototype = Packet;
  */
 function Packet_Error(code, message)
 {
-	this.prototype = Packet;
-	
-	
 	this.typeID = PTYPE.ERROR;
 	
 	this.data = {};
@@ -1869,4 +1991,31 @@ function util_containsPoint(element, x, y)
 	var endY = startY + element.height();
 	
 	return (x > startX && y > startY && x < endX && y < endY);
+}
+
+/**
+ * Removes every '\' while leaving the follwing character ('\' also).
+ * Doesn't resolve '\n' to new line etc.
+ * 
+ * @param string The string to unescape
+ * @returns {string}
+ */
+function util_dirtyUnescape(string)
+{
+	var result = "";
+	
+	for(var i = 0; i < string.length; i++)
+	{
+		var c = string.charAt(i);
+		
+		if(c == "\\")
+		{
+			result += string.charAt(++i);
+		}else
+		{
+			result += c;
+		}
+	}
+	
+	return result;
 }

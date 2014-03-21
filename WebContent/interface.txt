@@ -1,5 +1,5 @@
 +==========================================+
-| Mesopotamia Communication Protocol 1.4   |
+| Mesopotamia Communication Protocol 1.4.1 |
 |        (C) Niklas Weissner 2014          |
 +==========================================+
 
@@ -53,6 +53,8 @@ Contents
 
 21.03.2014	1.4		Extended data structures, changed type of id in CONFIG packet to int
 
+21.03.2014	1.4.1	CONFIGs names are now written in uppercase (irrelevant for storage), added a definition of data types to chapter 4
+
 
 2 - Foreword
 ============
@@ -82,7 +84,7 @@ Contents
 4 - Basic packet structure
 ==========================
 
-	Packets are in JSON-format and must at least contain the following fields:
+	Packets are transmitted in JSON-format and must at least contain the following fields:
 
 		int: typeID
 		
@@ -109,6 +111,19 @@ Contents
 	If the server/client receives a message that is not a valid packet (not in JSON-format / required fields
 	not defined) it should ignore the message, print out an error notification and abandon the connection.
 
+	Note that every field in this document has a specific data type in order to allow an estimation of which
+	values to expect within a certain field. The data types used are:
+	
+		int:	32 bit signed integer
+		long:	64 bit signed integer
+		double:	64 bit IEEE 754 floating point number
+		string:	arbitrary character sequence
+		struct: JSON object
+		
+		<data type>[] denotes an array of the given data type
+		
+	Packets are designed so all fields will ALWAYS contain the given data type and in the packet itself and
+	its data-field, no field is optional.
 
 
 
@@ -640,14 +655,14 @@ Contents
 	
 		Config name	|	ID	|									Description
 	----------------+---------------------------------------------------------------------------------------
-	configVersion	|	1	|	The version of the Tigris client that last accessed the config file. Stored
+	CONFIG_VERSION	|	1	|	The version of the Tigris client that last accessed the config file. Stored
 					|		|	so future versions of the client may update outdated configuration
 	----------------+-------+-------------------------------------------------------------------------------	
-	introFinished	|	2	|	Used to give new users an introduction. Set to true after first login. (This feature might be added later)
+	INTRO_FINISHED	|	2	|	Used to give new users an introduction. Set to true after first login. (This feature might be added later)
 	----------------+-------+-------------------------------------------------------------------------------
-	locale			|	3	|	A string identifying the language the user has selected for his GUI
+	LOCALE			|	3	|	A string identifying the language the user has selected for his GUI
 	----------------+-------+-------------------------------------------------------------------------------
-	tiles			|	4	|	A JSON string containing information on the tiles the user created on his dashbord.
+	TILES			|	4	|	A JSON string containing information on the tiles the user created on his dashbord.
 					|		|	The exact layout of this JSON object is not part of MCP but the GUI specification.
 					|		|	Therefore, it is not documented here.
 	

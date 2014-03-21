@@ -221,8 +221,9 @@ public class TigrisTestEndpoint
 			{
 				JsonObject o = new JsonObject();
 				
-				o.addProperty("id", "locale");
-				o.addProperty("value", "en-US");
+				o.addProperty("id", 4);
+				o.addProperty("value", "{\"tileList\":[{\"id\":1,\"category\":1,\"column\":0},{\"id\":0,\"category\":1,\"column\":0}]}");
+				
 				
 				result.add(o);
 			}
@@ -236,9 +237,17 @@ public class TigrisTestEndpoint
 			resp.setUID(packet.getUID());
 			
 			peer.getAsyncRemote().sendObject(resp);
+			
+		}else if(packet.getType() == PacketType.CONFIG)
+		{
+			PacketAck resp = new PacketAck();
+			resp.setUID(packet.getUID());
+			
+			peer.getAsyncRemote().sendObject(resp);
+			
 		}else if(packet.getType() == PacketType.ERROR)
 		{
-			//Ackkkkkkjj
+			//Ack
 			
 		}else
 		{
@@ -265,7 +274,7 @@ public class TigrisTestEndpoint
 	    return new String(hexChars);
 	}
 	
-	public static final String EUPHRATES_VERSION = "0.3.5";
+	public static final String EUPHRATES_VERSION = "0.3.6";
 	
 	public static final String EXAMPLE_USER = "otto";
 	public static final String EXAMPLE_PASSWORD_HASH = "c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2"; //hash of "foobar"
