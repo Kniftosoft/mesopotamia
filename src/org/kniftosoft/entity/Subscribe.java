@@ -1,74 +1,80 @@
 package org.kniftosoft.entity;
 
 import java.io.Serializable;
-import javax.persistence.*;
 
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQuery;
 
 /**
  * The persistent class for the subscribe database table.
  * 
  */
 @Entity
-@NamedQuery(name="Subscribe.findAll", query="SELECT s FROM Subscribe s")
+@NamedQuery(name = "Subscribe.findAll", query = "SELECT s FROM Subscribe s")
 public class Subscribe implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int idSubscribe;
-
-	@Override
-	public String toString() {
-		return "Subscribe [idSubscribe=" + idSubscribe + ", objektID="
-				+ objektID + ", appBean=" + appBean + ", userBean=" + userBean
-				+ "]";
-	}
 
 	private int objektID;
 
-	//bi-directional many-to-one association to App
+	// bi-directional many-to-one association to App
 	@ManyToOne
-	@JoinColumn(name="app")
+	@JoinColumn(name = "app")
 	private App appBean;
 
-	//bi-directional many-to-one association to User
+	// bi-directional many-to-one association to User
 	@ManyToOne
-	@JoinColumn(name="user")
+	@JoinColumn(name = "user")
 	private User userBean;
 
 	public Subscribe() {
 	}
 
-	public int getIdSubscribe() {
-		return this.idSubscribe;
+	public App getAppBean() {
+		return appBean;
 	}
 
-	public void setIdSubscribe(int idSubscribe) {
-		this.idSubscribe = idSubscribe;
+	public int getIdSubscribe() {
+		return idSubscribe;
 	}
 
 	public int getObjektID() {
-		return this.objektID;
+		return objektID;
 	}
 
-	public void setObjektID(int objektID) {
-		this.objektID = objektID;
-	}
-
-	public App getAppBean() {
-		return this.appBean;
+	public User getUserBean() {
+		return userBean;
 	}
 
 	public void setAppBean(App appBean) {
 		this.appBean = appBean;
 	}
 
-	public User getUserBean() {
-		return this.userBean;
+	public void setIdSubscribe(int idSubscribe) {
+		this.idSubscribe = idSubscribe;
+	}
+
+	public void setObjektID(int objektID) {
+		this.objektID = objektID;
 	}
 
 	public void setUserBean(User userBean) {
 		this.userBean = userBean;
+	}
+
+	@Override
+	public String toString() {
+		return "Subscribe [idSubscribe=" + idSubscribe + ", objektID="
+				+ objektID + ", appBean=" + appBean + ", userBean=" + userBean
+				+ "]";
 	}
 
 }

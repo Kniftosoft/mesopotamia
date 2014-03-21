@@ -6,15 +6,13 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
-import org.kniftosoft.thread.ClientUpDater;
+import org.kniftosoft.util.ErrorType;
 import org.kniftosoft.util.EuphratisSession;
+import org.kniftosoft.util.Peerholder;
 import org.kniftosoft.util.packet.ERROR;
 import org.kniftosoft.util.packet.Packet;
 
-@ServerEndpoint(value = "/TIG_TEST_END",
-configurator=Mesoendconfigurator.class,
-encoders = {PacketEncoder.class},
-decoders = {PacketDecoder.class})
+@ServerEndpoint(value = "/TIG_TEST_END", configurator = Mesoendconfigurator.class, encoders = { PacketEncoder.class }, decoders = { PacketDecoder.class })
 /**
  * 
  * @author julian
@@ -22,61 +20,53 @@ decoders = {PacketDecoder.class})
  */
 public class MesopotamiaEndpoint {
 	/**
-	 * 
-	 * @param packet Received message from client
-	 * @param peer Client who sends message
+	 * removes the session from the session set
+	 * @param peer
+	 */
+	@OnClose
+	public void onClose(Session peer) {
+		try {
+			Peerholder.removepeer(peer);
+		} catch (final Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+
+	/**
+	 * Handles Messages
+	 * @param packet
+	 * @param peer
 	 */
 	@OnMessage
-	public void onMessage(Packet packet,Session peer)
-	{
-		try
-		{
-			packet.setPeer(ClientUpDater.getpeer(peer));
-			//TODO remove before publishing
-			System.out.println("recived Packet:"+packet.toString());
+	public void onMessage(Packet packet, Session peer) {
+		try {
+			packet.setPeer(Peerholder.getpeer(peer));
 			packet.executerequest();
-		}
-		catch(Exception e)
-		{
-			ERROR er = new ERROR(packet.getUID(), packet.getPeer(), 0, "Unhandled Error");
+		} catch (final Exception e) {
+			final ERROR er = new ERROR();
+			er.setPeer(packet.getPeer());
+			er.setUID(packet.getUID());
+			er.setError(ErrorType.UNKNOWN);
 			er.send();
 			e.printStackTrace();
 		}
-			
+
 	}
+
+
 	/**
-	 * 
-	 * @param peer adds the new session to the session set and starts a updating Thread
+	 * add the Peer to the Peerholder
+	 * @param peer
 	 */
 	@OnOpen
-	public void onOpen (Session peer)
-	{
-		System.out.println("new peer: "+peer);
-		try{
-			EuphratisSession es = new EuphratisSession(peer);
-			ClientUpDater.addpeer(es);
-		}catch(Exception e)
-		{
+	public void onOpen(Session peer) {
+		try {
+			final EuphratisSession es = new EuphratisSession(peer);
+			Peerholder.addpeer(es);
+		} catch (final Exception e) {
 			e.printStackTrace();
 		}
 	}
-	/**
-	 * 
-	 * @param peer removes the session from the session set and stops the updating Thread
-	 */
-	@OnClose
-	public void onClose (Session peer)
-	{
-		System.out.println("remove peer: "+peer);
-		try
-		{
-			EuphratisSession es = new EuphratisSession(peer);
-			ClientUpDater.removepeer(es);
-		}catch(Exception e)
-		{
-			e.printStackTrace();
-		}
-	}
-	
 
 }

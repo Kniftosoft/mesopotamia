@@ -5,28 +5,34 @@ import com.google.gson.JsonObject;
 /**
  * 
  * @author julian
- *
+ * 
  */
 public class NULL extends Packet {
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.kniftosoft.util.packet.Packet#createFromJSON(com.google.gson.JsonObject)
+	 */
+	@Override
+	public void createFromJSON(JsonObject o) {
+		// NO DATA
+
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see org.kniftosoft.util.packet.Packet#executerequest()
 	 */
 	@Override
 	public void executerequest() {
 		// NO ACTION
 	}
-	
-	/* (non-Javadoc)
-	 * @see org.kniftosoft.util.packet.Packet#createFromJSON(com.google.gson.JsonObject)
-	 */
-	@Override
-	public void createFromJSON(JsonObject o) {
-		// NO DATA
-		
-	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see org.kniftosoft.util.packet.Packet#getType()
 	 */
 	@Override
@@ -34,7 +40,9 @@ public class NULL extends Packet {
 		return PacketType.NULL;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see org.kniftosoft.util.packet.Packet#storeData()
 	 */
 	@Override

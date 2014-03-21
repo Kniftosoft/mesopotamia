@@ -10,37 +10,43 @@ import com.google.gson.JsonObject;
 
 /**
  * @author julian
- *
+ * 
  */
-public class CONFIG extends Packet{
+public class CONFIG extends Packet {
 
 	private String id;
 	private String value;
+
+
 	/* (non-Javadoc)
+	 * 
+	 * @see org.kniftosoft.util.packet.Packet#createFromJSON(com.google.gson.JsonObject)
+	 */
+	@Override
+	public void createFromJSON(JsonObject o) {
+		id = o.get("id").getAsString();
+		value = o.get("value").getAsString();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see org.kniftosoft.util.packet.Packet#executerequest()
 	 */
 	@Override
-	public void executerequest() 
-	{
-		Userconfig conf = new Userconfig();
+	public void executerequest() {
+		final Userconfig conf = new Userconfig();
 		conf.setUserBean(peer.getUser());
 		conf.setValue(value);
-		EntityManager em = Constants.factory.createEntityManager();
+		final EntityManager em = Constants.factory.createEntityManager();
 		conf.setConfigtype(em.find(Configtype.class, Integer.parseInt(id)));
 		em.persist(conf);
 		em.close();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.kniftosoft.util.packet.Packet#createFromJSON(com.google.gson.JsonObject)
-	 */
-	@Override
-	public void createFromJSON(JsonObject o) {
-		this.id 	= o.get("id").getAsString();
-		this.value 	= o.get("value").getAsString();
-	}
-
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see org.kniftosoft.util.packet.Packet#getType()
 	 */
 	@Override
@@ -48,12 +54,14 @@ public class CONFIG extends Packet{
 		return PacketType.CONFIG;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see org.kniftosoft.util.packet.Packet#storeData()
 	 */
 	@Override
 	public JsonObject storeData() {
-		JsonObject data = new JsonObject();
+		final JsonObject data = new JsonObject();
 		data.addProperty("id", id);
 		data.addProperty("value", value);
 		return data;

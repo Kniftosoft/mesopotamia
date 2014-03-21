@@ -3,8 +3,6 @@
  */
 package org.kniftosoft.application;
 
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import javax.persistence.EntityManager;
@@ -19,23 +17,27 @@ import com.google.gson.JsonObject;
 
 /**
  * @author julian
- *
+ * 
  */
 public class Produktapp extends Application {
 
 	
-	List<Produkt> produkts = new ArrayList<Produkt>();
+
 	/* (non-Javadoc)
+	 * 
 	 * @see org.kniftosoft.application.Application#getdata(org.kniftosoft.entity.Subscribe)
 	 */
 	@Override
 	public JsonArray getdata(Subscribe sub) {
-		JsonArray datas = new JsonArray();
-		readprodukt();
-		for(Iterator<Produkt> iterator = produkts.iterator(); iterator.hasNext();)
-		 {	
-			datas.add(getsingeledataset(iterator.next()));
-		 }
+		final JsonArray datas = new JsonArray();
+		final EntityManager em = Constants.factory.createEntityManager();
+		em.getTransaction().begin();
+		List<Produkt> produkts = em.createNamedQuery("Produkt.findAll", Produkt.class).getResultList();
+		em.getTransaction().commit();
+		em.close();
+		for (final Produkt produkt : produkts) {
+			datas.add(getsingeledataset(produkt));
+		}
 
 		return datas;
 	}
@@ -45,35 +47,36 @@ public class Produktapp extends Application {
 	 */
 	@Override
 	public JsonArray getdata(User user, String ident) {
-		JsonArray datas = new JsonArray();
-		readprodukt();
-		for(Iterator<Produkt> iterator = produkts.iterator(); iterator.hasNext();)
-		 {	
-			datas.add(getsingeledataset(iterator.next()));
-		 }
+		final JsonArray datas = new JsonArray();
+		final EntityManager em = Constants.factory.createEntityManager();
+		em.getTransaction().begin();
+		List<Produkt> produkts = em.createNamedQuery("Produkt.findAll", Produkt.class).getResultList();
+		em.getTransaction().commit();
+		em.close();
+		for (final Produkt produkt : produkts) {
+			datas.add(getsingeledataset(produkt));
+		}
 
 		return datas;
 	}
-	private JsonObject getsingeledataset(Produkt produkt)
-	{
-		JsonObject data = new JsonObject();
+
+	/* (non-Javadoc)
+	 * @see org.kniftosoft.application.Application#getid()
+	 */
+	@Override
+	public int getid() {
+		return ApplicationType.produktapp.getTypeID();
+	}
+
+	/**
+	 * Collects all data for a single Produkt
+	 * @param produkt
+	 * @return data
+	 */
+	private JsonObject getsingeledataset(Produkt produkt) {
+		final JsonObject data = new JsonObject();
 		data.addProperty("id", produkt.getIdprodukt());
 		data.addProperty("name", produkt.getBeschreibung());
 		return data;
 	}
-	private void readprodukt()
-	{
-		EntityManager em = Constants.factory.createEntityManager();
-	    em.getTransaction().begin();
-	    produkts = em.createNamedQuery("Produkt.findAll",Produkt.class).getResultList();
-	    em.getTransaction().commit();
-	    em.close();
-	}
-
-	@Override
-	public int getid() {
-		// TODO Auto-generated method stub
-		return ApplicationType.produktapp.getTypeID();
-	}
-
 }

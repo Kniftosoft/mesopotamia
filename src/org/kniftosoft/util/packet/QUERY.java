@@ -1,118 +1,130 @@
-/**
- * 
- */
 package org.kniftosoft.util.packet;
 
 import javax.websocket.DecodeException;
 
 import org.kniftosoft.application.Application;
 import org.kniftosoft.application.ApplicationType;
+import org.kniftosoft.util.ErrorType;
 
 import com.google.gson.JsonObject;
 
 /**
  * @author julian
- *
+ * 
  */
 public class QUERY extends Packet {
-	private int category;
-	private String ident;
 	private Application app;
-	
-	
+	private int category;
+	private String id;
 
-	/* (non-Javadoc)
-	 * @see org.kniftosoft.util.packet.Packet#executerequest()
-	 */
-	@Override
-	public void executerequest() {
-		// TODO execute query
-		if(category != 0)
-		{
-			try
-			{
-				
-				ApplicationType apptype = ApplicationType.byID(category);
-				try 
-				{	
-					try
-					{
-						
-						app = (Application) apptype.getAppClass().newInstance();
-						DATA response = new DATA();
-						response.setPeer(peer);
-						response.setUID(uid);
-						response.setResult(app.getdata(peer.getUser(),""));
-						response.setCategory(app.getid());
-						response.send();
-					}catch (InstantiationException e) 
-					{
-						throw new DecodeException("Could not instantiate Application class of Application type " , apptype.name());	
-					}catch (IllegalAccessException e) 
-					{
-						throw new DecodeException("Could not instantiate Application class of Application type " , apptype.name());
-					}
-				}catch(DecodeException e)
-				{
-					System.out.println(e.toString());
-				}
-			}catch(Exception e)
-			{
-				e.printStackTrace();
-				System.err.println("query"+e.toString());
-				ERROR response = new ERROR(uid, peer,3, " internal problems");
-				response.send();
-			}	
-		}
-		else
-		{
-			ERROR response = new ERROR(uid, peer,6, "Category 0 ist not allowed for QUERY-Packets");
-			response.send();
-		}
-	}
-
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see org.kniftosoft.util.packet.Packet#createFromJSON(com.google.gson.JsonObject)
 	 */
 	@Override
 	public void createFromJSON(JsonObject o) {
 		category = o.get("category").getAsInt();
-		ident = o.get("id").getAsString();
+		id = o.get("id").getAsString();
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.kniftosoft.util.packet.Packet#executerequest()
+	 */
+	@Override
+	public void executerequest() {
+		if (category != 0) {
+			try {
+				final ApplicationType apptype = ApplicationType.byID(category);
+				try {
+
+					app = (Application) apptype.getAppClass().newInstance();
+					final DATA response = new DATA();
+					response.setPeer(peer);
+					response.setUID(uid);
+					response.setResult(app.getdata(peer.getUser(), ""));
+					response.setCategory(app.getid());
+					response.send();
+				} catch (final InstantiationException e) {
+					throw new DecodeException(
+							"Could not instantiate Application class of Application type ",
+							apptype.name());
+				} catch (final IllegalAccessException e) {
+					throw new DecodeException(
+							"Could not instantiate Application class of Application type ",
+							apptype.name());
+				}
+			} catch (final DecodeException e) {
+				System.out.println(e.toString());
+			} catch (final Exception e) {
+				e.printStackTrace();
+				final ERROR er = new ERROR();
+				er.setPeer(peer);
+				er.setUID(uid);
+				er.setError(ErrorType.INTERNAL_EXCEPTION);
+				er.send();
+			}
+		} else {
+			final ERROR er = new ERROR();
+			er.setPeer(peer);
+			er.setUID(uid);
+			er.setError(ErrorType.NOT_ALLOWED);
+			er.setErrorMessage("Category 0 ist not allowed for QUERY-Packets");
+			er.send();
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see org.kniftosoft.util.packet.Packet#getType()
 	 */
 	@Override
 	public PacketType getType() {
 		return PacketType.QUERY;
 	}
-
-	/* (non-Javadoc)
+	
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see org.kniftosoft.util.packet.Packet#storeData()
 	 */
 	@Override
 	public JsonObject storeData() {
-		JsonObject data = new JsonObject();
+		final JsonObject data = new JsonObject();
 		data.addProperty("category", category);
-		data.addProperty("ident", ident);
+		data.addProperty("id", id);
 		return data;
 	}
 
+	/**
+	 * @return category
+	 */
 	public int getCategory() {
 		return category;
 	}
 
+	/**
+	 * @return id
+	 */
+	public String getID() {
+		return id;
+	}
+
+	/**
+	 * @param category
+	 */
 	public void setCategory(int category) {
 		this.category = category;
 	}
 
-	public String getIdent() {
-		return ident;
-	}
-
-	public void setIdent(String ident) {
-		this.ident = ident;
+	/**
+	 * @param id
+	 */
+	public void setID(String id) {
+		this.id = id;
 	}
 
 }

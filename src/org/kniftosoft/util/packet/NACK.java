@@ -1,48 +1,55 @@
-/**
- * 
- */
 package org.kniftosoft.util.packet;
-
-import org.kniftosoft.util.EuphratisSession;
 
 import com.google.gson.JsonObject;
 
 /**
  * @author julian
- *
+ * 
  */
-public class NACK extends Packet{
+public class NACK extends Packet {
 
-	/**
-	 * @param uid
-	 * @param peer
-	 */
-	public NACK(int uid, EuphratisSession peer) {
-		this.uid = uid;
-		this.peer = peer;
+	public NACK() {
 	}
 
-	//NO DATA FIELDS
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.kniftosoft.util.packet.Packet#createFromJSON(com.google.gson.JsonObject)
+	 */
 	@Override
 	public void createFromJSON(JsonObject o) {
-		
-	}
-	//NOT EXECUTABLE
-	@Override
-	public void executerequest() {
-		// TODO Auto-generated method stub
-		
-	}
-	//NO DATA FIELDS
-	@Override
-	public JsonObject storeData() {
-		// TODO Auto-generated method stub
-		return new JsonObject();
+		// NO DATA FIELDS
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.kniftosoft.util.packet.Packet#executerequest()
+	 */
+	@Override
+	public void executerequest() {
+		// NOT EXECUTABLE
+
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.kniftosoft.util.packet.Packet#getType()
+	 */
 	@Override
 	public PacketType getType() {
-		// TODO Auto-generated method stub
 		return PacketType.NACK;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.kniftosoft.util.packet.Packet#storeData()
+	 */
+	@Override
+	public JsonObject storeData() {
+		// NO DATA FIELDS
+		return new JsonObject();
 	}
 }

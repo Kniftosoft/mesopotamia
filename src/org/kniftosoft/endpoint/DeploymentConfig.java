@@ -7,15 +7,17 @@ import javax.persistence.Persistence;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
-import org.kniftosoft.thread.ClientUpDater;
+import org.kniftosoft.LogBot.Logbot;
 import org.kniftosoft.util.Constants;
 
 /**
  * @author julian
- *
+ * 
  */
 public class DeploymentConfig implements ServletContextListener {
-	ClientUpDater updater;
+	
+	Logbot updater;
+
 	/* (non-Javadoc)
 	 * @see javax.servlet.ServletContextListener#contextDestroyed(javax.servlet.ServletContextEvent)
 	 */
@@ -30,12 +32,12 @@ public class DeploymentConfig implements ServletContextListener {
 	 */
 	@Override
 	public void contextInitialized(ServletContextEvent arg0) {
-		updater = new ClientUpDater();
+		updater = new Logbot();
 		updater.setDaemon(true);
 		updater.setName("Update Thread");
 		updater.start();
-		Constants.factory =Persistence.createEntityManagerFactory(Constants.PERSISTENCE_UNIT_NAME);
-		
+		Constants.factory = Persistence
+				.createEntityManagerFactory(Constants.PERSISTENCE_UNIT_NAME);
 
 	}
 

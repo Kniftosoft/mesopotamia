@@ -11,75 +11,85 @@ import org.kniftosoft.util.packet.PacketType;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-public class PacketDecoder implements Decoder.Text<Packet>
-{
+/**
+ * @author julian
+ *
+ */
+public class PacketDecoder implements Decoder.Text<Packet> {
 	private JsonParser parser;
+
+	/* (non-Javadoc)
+	 * @see javax.websocket.Decoder.Text#decode(java.lang.String)
+	 */
 	@Override
-	public void destroy() 
-	{
-		
+	public Packet decode(String msg) throws DecodeException {
+		try {
+			parser = new JsonParser();
+			final JsonObject jsonPacket = (JsonObject) parser.parse(msg);
+
+			final int packetTypeID = jsonPacket.get("typeID").getAsInt();
+
+			final PacketType type = PacketType.byID(packetTypeID);
+
+			if (type == null || type.getDirection() == Constants.outgoing) {
+				throw new DecodeException(msg, "Invalid packet type ID: "
+						+ packetTypeID);
+			}
+
+			try {
+				System.out.println("create packet: " + msg);
+				final Packet packet = (Packet) type.getPacketClass()
+						.newInstance();
+				packet.setUID(jsonPacket.get("uid").getAsInt());
+				packet.createFromJSON(jsonPacket.get("data").getAsJsonObject());
+
+				return packet;
+
+			} catch (final InstantiationException e) {
+				e.printStackTrace();
+				throw new DecodeException(msg,
+						"Could not instantiate packet class of packet type "
+								+ type.name());
+			} catch (final IllegalAccessException e) {
+				e.printStackTrace();
+				throw new DecodeException(msg,
+						"Could not instantiate packet class of packet type "
+								+ type.name());
+			}
+		} catch (final Exception e) {
+			e.printStackTrace();
+			throw new DecodeException(msg, "unknown");
+		}
 	}
 
+	/* (non-Javadoc)
+	 * @see javax.websocket.Decoder#destroy()
+	 */
 	@Override
-	public void init(EndpointConfig ec) 
-	{
+	public void destroy() {
 
 	}
-	
+
+	/* (non-Javadoc)
+	 * @see javax.websocket.Decoder#init(javax.websocket.EndpointConfig)
+	 */
 	@Override
-	public Packet decode(String msg) throws DecodeException 
-	{
-		try{
+	public void init(EndpointConfig ec) {
+
+	}
+
+	/* (non-Javadoc)
+	 * @see javax.websocket.Decoder.Text#willDecode(java.lang.String)
+	 */
+	@Override
+	public boolean willDecode(String msg) {
 		parser = new JsonParser();
-		JsonObject jsonPacket = (JsonObject)parser.parse(msg);
-		
-		int packetTypeID = jsonPacket.get("typeID").getAsInt();
-		
-		PacketType type = PacketType.byID(packetTypeID);
-		
-		if(type == null|| type.getDirection()==Constants.outgoing)
-		{
-			throw new DecodeException(msg,"Invalid packet type ID: " + packetTypeID);
-		}
-		
-		try 
-		{
-			System.out.println("create packet: "+msg);
-			Packet packet = (Packet) type.getPacketClass().newInstance();
-			packet.setUID(jsonPacket.get("uid").getAsInt());
-			packet.createFromJSON(jsonPacket.get("data").getAsJsonObject());
-			
-			return packet;
-			
-		}catch (InstantiationException e) 
-		{
-			e.printStackTrace();
-			throw new DecodeException(msg,"Could not instantiate packet class of packet type " + type.name());
-		}
-		catch (IllegalAccessException e) 
-		{
-			e.printStackTrace();
-			throw new DecodeException(msg,"Could not instantiate packet class of packet type " + type.name());
-		}
-		}catch(Exception e)
-		{
-			e.printStackTrace();
-			throw new DecodeException(msg, "unknown");	
-		}
-	}
-
-	@Override
-	public boolean willDecode(String msg) 
-	{
-		parser = new JsonParser();
-		JsonObject jsonPacket = (JsonObject)parser.parse(msg);
-		if(jsonPacket.has("typeID")&&jsonPacket.has("uid")&&jsonPacket.has("data"))
-		{
+		final JsonObject jsonPacket = (JsonObject) parser.parse(msg);
+		if (jsonPacket.has("typeID") && jsonPacket.has("uid")
+				&& jsonPacket.has("data")) {
 			return true;
-		}
-		else
-		{
+		} else {
 			return false;
 		}
-	}	
+	}
 }

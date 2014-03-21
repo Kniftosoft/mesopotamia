@@ -1,50 +1,62 @@
-/**
- * 
- */
 package org.kniftosoft.util.packet;
-
-import org.kniftosoft.util.EuphratisSession;
 
 import com.google.gson.JsonObject;
 
 /**
  * @author julian
- *
+ * 
  */
 public class ACCEPT extends Packet {
 
 	String salt;
-	/**
-	 * @param uid
-	 * @param peer
-	 */
-	public ACCEPT(int uid, EuphratisSession peer) {
-		this.uid = uid;
-		this.peer = peer;
-		this.salt = peer.getSalt();
-	}
 
+
+	/* (non-Javadoc)
+	 * 
+	 * @see org.kniftosoft.util.packet.Packet#createFromJSON(com.google.gson.JsonObject)
+	 */
 	@Override
 	public void createFromJSON(JsonObject o) {
-		this.salt = o.get("salt").getAsString();
-		
+		salt = o.get("salt").getAsString();
+
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.kniftosoft.util.packet.Packet#executerequest()
+	 */
 	@Override
-	public JsonObject storeData() {
-		JsonObject jo = new JsonObject();
-		jo.addProperty("salt", salt);
-		return jo;
+	public void executerequest() {
+
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.kniftosoft.util.packet.Packet#getType()
+	 */
 	@Override
 	public PacketType getType() {
 		return PacketType.ACCEPT;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.kniftosoft.util.packet.Packet#storeData()
+	 */
 	@Override
-	public void executerequest() {
-		// TODO Auto-generated method stub
-		
+	public JsonObject storeData() {
+		final JsonObject jo = new JsonObject();
+		jo.addProperty("salt", salt);
+		return jo;
+	}
+	
+	/**
+	 * @param salt
+	 */
+	public void setSalt(String salt) {
+		this.salt = salt;
 	}
 }

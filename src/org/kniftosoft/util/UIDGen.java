@@ -1,41 +1,48 @@
 package org.kniftosoft.util;
 
-public class UIDGen 
-{
+/**
+ * @author julian
+ * @deprecated rewrite for reusing uid's
+ */
+@Deprecated
+public class UIDGen {
 
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//Warning!!! This Class is only for testing - it is not useful for UID generation
-	//where UIDs are supposed to be re-used
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	
-	private UIDGen()
-	{
-		nextUID = 1;
-	}
-	
-	
-	public int generateUID()
-	{
-		int uid = nextUID;
-		
-		nextUID += 2; //Generate only odd UIDs
-		
-		return uid;
-	}
-	
 	private int nextUID;
-	
-	
 	private static UIDGen singleton;
-	
-	public static UIDGen instance()
-	{
-		if(singleton == null)
-		{
+
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// Warning!!! This Class is only for testing - it is not useful for UID
+	// generation
+	// where UIDs are supposed to be re-used
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+	/**
+	 * @return singleton Return only a new UIDGen if no one already exist
+	 */
+	public static UIDGen instance() {
+		if (singleton == null) {
 			singleton = new UIDGen();
 		}
-		
+
 		return singleton;
 	}
-	
+
+	/**
+	 * 
+	 */
+	private UIDGen() {
+		nextUID = 1;
+	}
+
+	/**
+	 * @return uid
+	 */
+	public int generateUID() {
+		final int uid = nextUID;
+
+		nextUID += 2; // Generate only odd UIDs
+
+		return uid;
+	}
+
 }

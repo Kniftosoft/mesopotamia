@@ -2,199 +2,200 @@
 
 <html>
 
-	<head>
-	
-		<meta charset="ISO-8859-1">
-	
-		<title>Mesopotamia Tigris</title>
-		
-		<link rel="stylesheet" href="./css/tigris_styles.css">
-		<link rel="stylesheet" href="./css/jquery.dataTables.css">
-		
-		<script src="lib/jquery-1.11.0.js"></script>
-		<script src="lib/jquery-ui.js"></script>
-		<script src="lib/CryptoJS/core-min.js"></script>
-		<script src="lib/CryptoJS/format-hex.js"></script>
-		<script src="lib/CryptoJS/sha256.js"></script>
-		<script src="lib/gaugeSVG.js"></script><!-- Gauge lib from http://www.codeproject.com/Articles/604502/A-universal-gauge-for-your-web-dashboard -->
-		<script src="lib/jquery.dataTables.min.js"></script>
-		
-		<script src="tigris_script.js"></script>
-	
-	</head>
-	
-	<body>
-	
-		<div id="screen-status" class="screen">
-		
-			<!-- Since login-* classes are only visual, we can use them in status window too -->
-			
-			<div class="login-frame">
-				<div class="login-header">
-					<span class="heading-major">Tigris</span><br>
-				</div>
-				
-				<div class="login-content">
-					<span id="statusbox">If you can read this, your browser does not support JavaScript. In that case, Tigris will not work.</span>
-				</div>
-			</div>
-		
-		</div>
-	
-		<div id="screen-login" class="screen" style="display:none;">
-			
-			<div class="login-frame">
-				<div class="login-header">
-					<span class="heading-major">Tigris</span><br>
-					<span class="heading-minor">&nbsp;Login</span>
-				</div>
-				
-				<form id="loginform" class="login-content">
-				
-					<p id="loginerror" class="error"></p>
-					<p><label for="username">User</label><br><input type="text" name="username" id="loginform_username" class="input"></p>
-					<p><label for="password">Pass</label><br><input type="password" name="password" id="loginform_password" class="input"></p>
-					
-					<p id="rememberBox"><input type="checkbox" id="loginform_remember" class="checkbox">Remember me</p>
-					
-					<p id="loginbutton"><input type="submit" name="login" class="button" value="Login"></p>
-					
-				</form>
-			</div>
-				
-		</div>
-	
-	
-		<div id="screen-data" class="screen" style="display:none;">
-		
-			<div id="sidebar" style="display:none;">
-			
-				<a id="sidebar_dashboard_link" class="sidebar-item sidebar-item-active" data-target="dashboard">Dashboard</a>
-				
-				<a class="sidebar-item" data-target="machine">Machines</a>
-				<a class="sidebar-item" data-target="job">Jobs</a>
-				<!-- <a class="sidebar-item" data-target="warnings">Warnings</a>
-				<a class="sidebar-item" data-target="info">Info</a> -->
-				
-			</div>
-			
-			<div id="tilecreator" style="display:none;">Drop here to create tile on dashboard</div>
-			
-			<div id="sidebar-handle">
-				<!-- Long vertical bar  -->
-			</div>
-			
-			<div id="data-header">
-				Tigris				
-				<div id="user-controls">
+<head>
 
-					<span id="username"></span>
-				
-					<a id="logout"><img src="css/images/exit.png"></a>
-				
-				</div>
+<meta charset="ISO-8859-1">
+
+<title>Mesopotamia Tigris</title>
+
+<link rel="stylesheet" href="./css/tigris_styles.css">
+<link rel="stylesheet" href="./css/jquery.dataTables.css">
+
+<script src="lib/jquery-1.11.0.js"></script>
+<script src="lib/jquery-ui.js"></script>
+<script src="lib/CryptoJS/core-min.js"></script>
+<script src="lib/CryptoJS/format-hex.js"></script>
+<script src="lib/CryptoJS/sha256.js"></script>
+<script src="lib/gaugeSVG.js"></script>
+<!-- Gauge lib from http://www.codeproject.com/Articles/604502/A-universal-gauge-for-your-web-dashboard -->
+<script src="lib/jquery.dataTables.min.js"></script>
+
+<script src="tigris_script.js"></script>
+
+</head>
+
+<body>
+
+	<div id="screen-status" class="screen">
+
+		<!-- Since login-* classes are only visual, we can use them in status window too -->
+
+		<div class="login-frame">
+			<div class="login-header">
+				<span class="heading-major">Tigris</span><br>
 			</div>
-			
-			<!-- List of dashboard tabs -->
-			<div id="tab-dashboard" class="data-frame-tab">
-				
+
+			<div class="login-content">
+				<span id="statusbox">If you can read this, your browser does
+					not support JavaScript. In that case, Tigris will not work.</span>
 			</div>
-				
-			<div id="tab-machine" class="data-frame-tab">
-			
-				<div class="table-container">
-					<table id="table-machine" class="data-view-table">
-					
-						<thead>
-							<tr>
-								<th>Machine ID</th>
-								<th>Name</th>
-								<th>Job ID</th>
-								<th>Production speed</th>
-								<th>Status</th>
-							</tr>
-						</thead>
-						
-					</table>
-				</div>
-				
-			</div>
-			
-			<div id="tab-job" class="data-frame-tab">
-			
-			
-				<div class="table-container">
-					<table id="table-job" class="data-view-table">
-					
-						<thead>
-							<tr>
-								<th>Job ID</th>
-								<th>Target product count</th>
-								<th>Start time</th>
-								<th>Product type</th>
-							</tr>
-						</thead>
-						
-					</table>
-				</div>
-			
-			</div>
-			
-			<div id="tab-warning" class="data-frame-tab">
-				This is the tab for warnings
-			</div>
-			
-			<div id="tab-stat" class="data-frame-tab">
-				This is the tab for statistics
-			</div>
-			
 		</div>
-	
-	
-		<!-- Container for tile definitions. Should never be visible at any time! -->
-		<div style="display:none;">
-		
-			<div id="tiledef_machine" class="tile tile-half tile-machine">
-				<h2>Title goes here</h2>
-				<a class="size-button"><img src="images/forward_enabled.png"></img></a><br>
-				
-				<div class="left-content">
-				
-					<div class="machine-speed-gauge"></div>
-					
-					<img class="icon repair-icon" src="images/wrench.png" style="display:none;"></img>
-					<img class="icon cleaning-icon" src="images/broom.png" style="display:none;"></img>
-				</div>
-				
-				<div class="right-content">
-					
-					
-					
-				</div>
-				
+
+	</div>
+
+	<div id="screen-login" class="screen" style="display: none;">
+
+		<div class="login-frame">
+			<div class="login-header">
+				<span class="heading-major">Tigris</span><br> <span
+					class="heading-minor">&nbsp;Login</span>
 			</div>
-			
-			<div id="tiledef_job" class="tile tile-half tile-job">
-				<h2>Title goes here</h2>
-				<a class="size-button"><img src="images/forward_enabled.png"></img></a><br>
-				
-				<div class="left-content">
-					
-					
-					
-				</div>
-				
-				<div class="right-content">
-					
-					
-					
-				</div>
-				
-			</div>
-			
-		
+
+			<form id="loginform" class="login-content">
+
+				<p id="loginerror" class="error"></p>
+				<p>
+					<label for="username">User</label><br>
+					<input type="text" name="username" id="loginform_username"
+						class="input">
+				</p>
+				<p>
+					<label for="password">Pass</label><br>
+					<input type="password" name="password" id="loginform_password"
+						class="input">
+				</p>
+
+				<p id="rememberBox">
+					<input type="checkbox" id="loginform_remember" class="checkbox">Remember
+					me
+				</p>
+
+				<p id="loginbutton">
+					<input type="submit" name="login" class="button" value="Login">
+				</p>
+
+			</form>
 		</div>
-	
-	</body>
+
+	</div>
+
+
+	<div id="screen-data" class="screen" style="display: none;">
+
+		<div id="sidebar" style="display: none;">
+
+			<a id="sidebar_dashboard_link"
+				class="sidebar-item sidebar-item-active" data-target="dashboard">Dashboard</a>
+
+			<a class="sidebar-item" data-target="machine">Machines</a> <a
+				class="sidebar-item" data-target="job">Jobs</a>
+			<!-- <a class="sidebar-item" data-target="warnings">Warnings</a>
+				<a class="sidebar-item" data-target="info">Info</a> -->
+
+		</div>
+
+		<div id="tilecreator" style="display: none;">Drop here to create
+			tile on dashboard</div>
+
+		<div id="sidebar-handle">
+			<!-- Long vertical bar  -->
+		</div>
+
+		<div id="data-header">
+			Tigris
+			<div id="user-controls">
+
+				<span id="username"></span> <a id="logout"><img
+					src="css/images/exit.png"></a>
+
+			</div>
+		</div>
+
+		<!-- List of dashboard tabs -->
+		<div id="tab-dashboard" class="data-frame-tab"></div>
+
+		<div id="tab-machine" class="data-frame-tab">
+
+			<div class="table-container">
+				<table id="table-machine" class="data-view-table">
+
+					<thead>
+						<tr>
+							<th>Machine ID</th>
+							<th>Name</th>
+							<th>Job ID</th>
+							<th>Production speed</th>
+							<th>Status</th>
+						</tr>
+					</thead>
+
+				</table>
+			</div>
+
+		</div>
+
+		<div id="tab-job" class="data-frame-tab">
+
+
+			<div class="table-container">
+				<table id="table-job" class="data-view-table">
+
+					<thead>
+						<tr>
+							<th>Job ID</th>
+							<th>Target product count</th>
+							<th>Start time</th>
+							<th>Product type</th>
+						</tr>
+					</thead>
+
+				</table>
+			</div>
+
+		</div>
+
+		<div id="tab-warning" class="data-frame-tab">This is the tab for
+			warnings</div>
+
+		<div id="tab-stat" class="data-frame-tab">This is the tab for
+			statistics</div>
+
+	</div>
+
+
+	<!-- Container for tile definitions. Should never be visible at any time! -->
+	<div style="display: none;">
+
+		<div id="tiledef_machine" class="tile tile-half tile-machine">
+			<h2>Title goes here</h2>
+			<a class="size-button"><img src="images/forward_enabled.png"></img></a><br>
+
+			<div class="left-content">
+
+				<div class="machine-speed-gauge"></div>
+
+				<img class="icon repair-icon" src="images/wrench.png"
+					style="display: none;"></img> <img class="icon cleaning-icon"
+					src="images/broom.png" style="display: none;"></img>
+			</div>
+
+			<div class="right-content"></div>
+
+		</div>
+
+		<div id="tiledef_job" class="tile tile-half tile-job">
+			<h2>Title goes here</h2>
+			<a class="size-button"><img src="images/forward_enabled.png"></img></a><br>
+
+			<div class="left-content"></div>
+
+			<div class="right-content"></div>
+
+		</div>
+
+
+	</div>
+
+</body>
 
 </html>

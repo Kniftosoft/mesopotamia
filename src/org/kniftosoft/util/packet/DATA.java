@@ -1,6 +1,3 @@
-/**
- * 
- */
 package org.kniftosoft.util.packet;
 
 import com.google.gson.JsonArray;
@@ -8,58 +5,68 @@ import com.google.gson.JsonObject;
 
 /**
  * @author julian
- *
+ * 
  */
 public class DATA extends Packet {
 
-	private JsonArray result;
-	/**
-	 * @return the result
-	 */
-	public JsonArray getResult() {
-		return result;
-	}
-
-	/**
-	 * @param result the result to set
-	 */
-	public void setResult(JsonArray result) {
-		this.result = result;
-	}
-
 	private int category;
+	private JsonArray result;
 
+
+	/* (non-Javadoc)
+	 * 
+	 * @see org.kniftosoft.util.packet.Packet#createFromJSON(com.google.gson.JsonObject)
+	 */
 	@Override
-	public void createFromJSON(JsonObject o) {
-		result = o.getAsJsonArray("result");
+	public void createFromJSON(JsonObject data) {
+		result = data.getAsJsonArray("result");
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.kniftosoft.util.packet.Packet#executerequest()
+	 */
+	@Override
+	public void executerequest() {
+
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.kniftosoft.util.packet.Packet#getType()
+	 */
+	@Override
+	public PacketType getType() {
+		return PacketType.DATA;
+	}
+	
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.kniftosoft.util.packet.Packet#storeData()
+	 */
 	@Override
 	public JsonObject storeData() {
-		JsonObject data = new JsonObject();
+		final JsonObject data = new JsonObject();
 		data.add("result", result);
 		data.addProperty("category", category);
 		return data;
 	}
 
-	@Override
-	public PacketType getType() {
-		// TODO Auto-generated method stub
-		return PacketType.DATA;
-	}
-
-	@Override
-	public void executerequest() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public int getCategory() {
-		return category;
-	}
-
+	/**
+	 * @param category
+	 */
 	public void setCategory(int category) {
 		this.category = category;
+	}
+
+	/**
+	 * @param result
+	 */
+	public void setResult(JsonArray result) {
+		this.result = result;
 	}
 
 }

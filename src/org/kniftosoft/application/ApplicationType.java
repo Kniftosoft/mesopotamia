@@ -1,46 +1,53 @@
 package org.kniftosoft.application;
 
+/**
+ * @author julian
+ *
+ */
+public enum ApplicationType {
 
-
-public enum ApplicationType 
-{
-	
 	Maschineapp(1, Maschineapp.class),
-	jobapp(2,JobApp.class),
+	jobapp(2, JobApp.class),
 	produktapp(11,Produktapp.class),
 	Configapp(20, Config.class);
 
-	
 	private int typeID;
 	private Class<?> appClass;
 	
-	private ApplicationType(int typeID, Class<?> appClass)
-	{
-		this.typeID = typeID;
-		this.appClass = appClass;
-	}
-	
-	
-	public int getTypeID()
-	{
-		return typeID;
-	}
-	
-	public Class<?> getAppClass()
-	{
-		return appClass;
-	}
-	
-	public static ApplicationType byID(int id)
-	{
-		for(ApplicationType a : ApplicationType.values())
-		{
-			if(a.getTypeID() == id)
-			{
+	/**
+	 * @param id
+	 * @return ApplicationType
+	 */
+	public static ApplicationType byID(int id) {
+		for (final ApplicationType a : ApplicationType.values()) {
+			if (a.getTypeID() == id) {
 				return a;
 			}
 		}
-		
+
 		return null;
+	}
+
+	/**
+	 * @param typeID
+	 * @param appClass
+	 */
+	private ApplicationType(int typeID, Class<?> appClass) {
+		this.typeID = typeID;
+		this.appClass = appClass;
+	}
+
+	/**
+	 * @return appclass
+	 */
+	public Class<?> getAppClass() {
+		return appClass;
+	}
+
+	/**
+	 * @return typeID
+	 */
+	public int getTypeID() {
+		return typeID;
 	}
 }

@@ -1,37 +1,51 @@
-/**
- * 
- */
 package org.kniftosoft.util.packet;
 
 import com.google.gson.JsonObject;
 
 /**
  * @author julian
- *
+ * 
  */
-public class ACK extends Packet{
+public class ACK extends Packet {
 
-	// NO DATA FIELDS
+	/* (non-Javadoc)
+	 * 
+	 * @see org.kniftosoft.util.packet.Packet#createFromJSON(com.google.gson.JsonObject)
+	 */
 	@Override
 	public void createFromJSON(JsonObject o) {
-		
-	}
-	// NO DATA FIELDS
-	@Override
-	public JsonObject storeData() {
-		return new JsonObject();
+		// NO DATA FIELDS
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.kniftosoft.util.packet.Packet#executerequest()
+	 */
+	@Override
+	public void executerequest() {
+		// NO AKTION
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.kniftosoft.util.packet.Packet#getType()
+	 */
 	@Override
 	public PacketType getType() {
-		// TODO Auto-generated method stub
 		return PacketType.ACK;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.kniftosoft.util.packet.Packet#storeData()
+	 */
 	@Override
-	public void executerequest() {
-		// TODO Auto-generated method stub
-		
+	public JsonObject storeData() {
+		// NO DATA FIELDS
+		return new JsonObject();
 	}
 
 }
