@@ -20,6 +20,7 @@ var MESO_ENDPOINT = "TIG_TEST_END"; //Link to Euphrates
 //Constants
 var TIGRIS_VERSION = "0.3.6";
 var TIGRIS_SESSION_COOKIE = "2324-tigris-session";
+var TIGRIS_SESSION_COOKIE_TTL = 365; //The number of days a stored session cookie will last 
 
 var GENERAL_TIMEOUT = 3000; //Default timeout in milliseconds (may be overridden by some packets)
 
@@ -186,19 +187,19 @@ UI.init = function()
                       { "mData": function(data, type, val) { return UI.statusTest[data.status]; }}
                     ]});
 	
-	$("#table-machine tbody").sortable(
-			{
-		
-				distance: 10,
-				
-				connectWith: "#tilecreator",
-				
-				start: UI.table_dragStart,
-				stop: UI.table_dragStop,
-				
-				helper: "clone"
-		
-			});
+	var tableSortOptions = 
+		{
+			distance: 10,
+			
+			connectWith: "#tilecreator",
+			
+			start: UI.table_dragStart,
+			stop: UI.table_dragStop,
+			
+			helper: "clone"
+		};
+	
+	$("#table-machine tbody").sortable(tableSortOptions);
 	
 	UI.jobTable = $("#table-job").dataTable(
 			{
@@ -210,19 +211,7 @@ UI.init = function()
                 ]
 			});
 	
-	$("#table-job tbody").sortable(
-			{
-		
-				distance: 10,
-				
-				connectWith: "#tilecreator",
-				
-				start: UI.table_dragStart,
-				stop: UI.table_dragStop,
-				
-				helper: "clone"
-		
-			});
+	$("#table-job tbody").sortable(tableSortOptions);
 	
 	UI.showStatus("Connecting to the server..."); //Initially show message on connection status
 };
@@ -576,7 +565,7 @@ function f_tryLogin()
 				Session.remember = remember;
 				if(remember) //Store session ID in cookie if session is to be remembered
 				{
-					util_setCookie(TIGRIS_SESSION_COOKIE, Session.sessionID);
+					util_setCookie(TIGRIS_SESSION_COOKIE, Session.sessionID,TIGRIS_SESSION_COOKIE_TTL);
 				}
 				
 				//As the user is now logged in, we can load his configuration stored on the server
@@ -610,7 +599,7 @@ function f_tryRelog()
 					
 					//Store the new session ID to cookie TODO: maybe integrate this into f_setUpSession()
 					//Since this cookie was created in a session the user wanted to keep, we can assume the user wants still to keep it
-					util_setCookie(TIGRIS_SESSION_COOKIE, Session.sessionID);
+					util_setCookie(TIGRIS_SESSION_COOKIE, Session.sessionID, TIGRIS_SESSION_COOKIE_TTL);
 					
 					//As there was no login, the server has to tell us who we are
 					Session.username = pk.data.username;
@@ -725,6 +714,8 @@ function f_createTile(category, dataUnit, store)
 			
 			if(category == DTYPE.MACHINE)
 			{
+				console.log(dataUnit.name + ": " + dataUnit.status);
+				
 				tile = new Tile_Machine(dataUnit);
 				
 			}else if(category == DTYPE.JOB)
@@ -733,6 +724,7 @@ function f_createTile(category, dataUnit, store)
 			}else
 			{
 				UI.showError("Tried to create a tile of an unknown category.");
+				return;
 			}
 			
 			UI.dashboard.addTile(tile,store);
@@ -783,7 +775,7 @@ Session.clear = function()
 	Session.sessionID = null;
 	Session.username = "";
 	
-	util_setCookie(TIGRIS_SESSION_COOKIE, "", -9999);
+	util_setCookie(TIGRIS_SESSION_COOKIE, "", -1);
 };
 
 
@@ -1019,7 +1011,7 @@ Network.init = function()
 
 Network.ws_onOpen = function()
 {
-	Network.handshake(); //Only start handshaking after connection has been established
+	Network.handshake(true); //Only start handshaking after connection has been established
 };
 
 Network.ws_onMessage = function(msg)
@@ -1525,6 +1517,8 @@ function Tile_Machine(dataUnit)
 	this.dataUnitID = dataUnit.id;
 	this.ident = this.dataUnitCategory + "-" + this.dataUnitID;
 	
+	this.width = 1; //Set upon size calculation
+	
 	//Retrieve and set up HTML structure of tile from a hidden definition area in the document
 	this.base = $("#tiledef_machine").clone();
 	this.base.attr("id","tile_" + this.ident);
@@ -1537,16 +1531,22 @@ function Tile_Machine(dataUnit)
 	this.rightContent = this.base.children(".right-content").first();
 	
 	this.repairIcon = this.leftContent.children(".repair-icon").first();
-	this.repairIcon.hide();
-	
 	this.cleaningIcon = this.leftContent.children(".cleaning-icon").first();
-	this.cleaningIcon.hide();
+	this.errorIcon = this.leftContent.children(".error-icon").first();
 	
 	this.gaugeBase = this.leftContent.children(".machine-speed-gauge").first();
 	this.gaugeBase.attr("id","tile_" + this.ident + "_gauge");
 	
 	this.gauge = null;
 	
+	this.STATUS =
+		{
+			RUNNING:	1,
+			ERROR:		2,
+			REPAIR:		3,
+			MODIFIC:	4,
+			CLEANING:	5
+		};
 	
 	//Called immediately after tile was appended to dashboard
 	this.onCreate = function()
@@ -1582,8 +1582,18 @@ function Tile_Machine(dataUnit)
 	
 	this.resize = function(size)
 	{
-		reThis.base.css("width",size);
+		reThis.width = size;
+		
 		reThis.base.css("height",size);
+		
+		if(reThis.base.hasClass("tile-full"))
+		{
+			reThis.base.css("width",size*2);
+		}else
+		{
+			reThis.base.css("width",size);
+		}
+		
 		
 		reThis.leftContent.css("width",size);
 		reThis.leftContent.css("height",size - 13); //Minus 13 pixel header height
@@ -1593,11 +1603,12 @@ function Tile_Machine(dataUnit)
 		reThis.rightContent.css("height",size - 13); //Minus 13 pixel header height
 		reThis.rightContent.css("left",size);
 		
-		reThis.repairIcon.css("width",size * 0.8);
-		reThis.repairIcon.css("height",size * 0.8);
-		
-		reThis.cleaningIcon.css("width",size * 0.8);
-		reThis.cleaningIcon.css("height",size * 0.8);
+		//Adjust size and margin for all icons
+		var icons = reThis.leftContent.children(".icon");
+		icons.css("width",size * 0.8);
+		icons.css("height",size * 0.8);
+		icons.css("margin-left",size * 0.1); //Center icons
+		icons.css("margin-right",size * 0.1);
 		
 		reThis.gaugeBase.css("width",size * 0.8);
 		reThis.gaugeBase.css("height",size * 0.8);
@@ -1611,26 +1622,38 @@ function Tile_Machine(dataUnit)
 		
 		reThis.rightContent.html("Status: " + UI.statusTest[newDataUnit.status] + "<br>Job: " + newDataUnit.job);
 		
-		if(newDataUnit.status == 1) //Running TODO: Store those in constants
+		console.log(newDataUnit.name + ": " + newDataUnit.status);
+		
+		if(newDataUnit.status == reThis.STATUS.RUNNING)
 		{
+			reThis.base.children(".icon").hide(); //Hide all icons
+			
 			reThis.gaugeBase.show();
-			reThis.repairIcon.hide();
-			reThis.cleaningIcon.hide();
+			reThis.gauge.refresh(Math.round(newDataUnit.speed)); //Refresh gauge when running
 			
-		}else if(newDataUnit.status == 2 || newDataUnit.status == 3 || newDataUnit.status == 4) //TODO: Error displayed as repair, change!
+		}else if(newDataUnit.status == reThis.STATUS.REPAIR || newDataUnit.status == reThis.STATUS.MODIFIC)
 		{
-			reThis.repairIcon.show();
 			reThis.gaugeBase.hide();
-			reThis.cleaningIcon.hide();
+			reThis.base.children(".icon").hide();
 			
-		}else if(newDataUnit.status == 5)
+			reThis.repairIcon.show();console.log("I idsmjsiohdgasdff");
+			
+		}else if(newDataUnit.status == reThis.STATUS.ERROR)
 		{
-			reThis.repairIcon.hide();
 			reThis.gaugeBase.hide();
+			reThis.base.children(".icon").hide();
+			
+			reThis.errorIcon.show();
+			
+			
+		}else if(newDataUnit.status == reThis.STATUS.CLEANING)
+		{
+			reThis.gaugeBase.hide();
+			reThis.base.children(".icon").hide();
+			
 			reThis.cleaningIcon.show();
 		}
 		
-		reThis.gauge.refresh(Math.round(newDataUnit.speed));
 	};
 	
 	this.toggleSize = function()
@@ -1641,7 +1664,7 @@ function Tile_Machine(dataUnit)
 			reThis.base.addClass("tile-full");
 			
 			//Slide tile to full size
-			reThis.base.animate({width: UI.dashboard.tileWidth * 2}, 350, "easeInOutElastic");
+			reThis.base.animate({width: reThis.width * 2}, 350, "easeInOutElastic");
 
 			
 		}else if(reThis.base.hasClass("tile-full"))
@@ -1649,7 +1672,7 @@ function Tile_Machine(dataUnit)
 			reThis.base.removeClass("tile-full");
 			reThis.base.addClass("tile-half");
 			
-			reThis.base.animate({width: UI.dashboard.tileWidth}, 350, "easeInOutElastic");
+			reThis.base.animate({width: reThis.width}, 350, "easeInOutElastic");
 		}
 	
 	};
@@ -1934,12 +1957,12 @@ packet_fields[PTYPE.ERROR] = ["errorCode","errorMessage"];
  * 
  * @param name Name of the cookie
  * @param value Value of the cookie
- * @param ttl Lifespan of the cookie in seconds
+ * @param ttl Lifespan of the cookie in days
  */
 function util_setCookie(name, value, ttl)
 {
 	var expires = new Date();
-	expires.setSeconds(expires.getSeconds() + ttl);
+	expires.setDate(expires.getDate() + ttl);
 
 	var valueFormat = escape(value) + ((expires==null) ? "" : "; expires=" + expires.toUTCString());
 

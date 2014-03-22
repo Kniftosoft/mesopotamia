@@ -436,7 +436,7 @@ body
 
 .tile .icon
 {
-	margin: 5px auto 0px auto;
+	margin-top: 8px;
 	
 	/* width, height set by script */
 }
