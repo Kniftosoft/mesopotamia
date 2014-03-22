@@ -9,7 +9,7 @@
 //TODO: Sort some code fragments so the source can be easier understood
 //TODO: Comment on stuff
 //TODO: Localization maybe?
-//TODO: Add polish to data fetching functions (and try to chech for null everywhere)
+//TODO: Add polish to data fetching functions (and try to check for null everywhere)
 
 //Configure this to your Euphrates installation
 //If your endpoint is absolute, make sure you include the full URI (including protocol etc.)
@@ -234,25 +234,25 @@ UI.init = function()
 UI.sessionSetup = function()
 {
 	//Load tile list from config
-	var tileConfString = DataPool.getSingle(DTYPE.CONFIG, CTYPE.TILES);
-	if(tileConfString != null)
+	var tileConfList = DataPool.getSingle(DTYPE.CONFIG, CTYPE.TILES);
+	if(tileConfList != null)
 	{
 		try
 		{
-			var unescapedString = util_dirtyUnescape(tileConfString.value);//We need to remove escape characters created while converting this to JSON
-			
-			var tileConfig = jQuery.parseJSON(unescapedString); 
-			
-			jQuery.each(tileConfig.tileList, function(index, item)
+			//Don't forget tileConfigList.value is an ARRAY of strings! I know this is confusing.
+			jQuery.each(tileConfList.value, function(index, item)
 					{
-				
+						var unescapedString = util_dirtyUnescape(item);//We need to remove escape characters created while converting this to JSON
+						
+						var tileConfig = jQuery.parseJSON(unescapedString); 
+						
 						//Try to get the data unit for this tile
-						DataPool.fetchSingle(item.category, item.id, function(tileDataUnit)
+						DataPool.fetchSingle(tileConfig.category, tileConfig.id, function(tileDataUnit)
 								{
 									//When a valid data unit is returned, create a tile. When not, discard it TODO: Maybe show a greyed out tile or something
 									if(tileDataUnit != null)
 									{
-										f_createTile(item.category, tileDataUnit);
+										f_createTile(tileConfig.category, tileDataUnit ,false); //Don't store tiles. We would send exactly what we received
 									}
 								});
 				
@@ -260,7 +260,7 @@ UI.sessionSetup = function()
 			
 		}catch(e)
 		{
-			console.error("The tile configuration string could not be parsed: " + e); //No need to tell the user. It's not that fatal
+			console.error("The tile configuration string could not be parsed: " + e); //No need to tell the user. It's not that fatal. Just log the error for debugging
 		}
 	}
 	
@@ -274,7 +274,7 @@ UI.sessionSetup = function()
 UI.showScreen = function(name)
 {
 	$(".screen").hide(); //Hide all screens...
-	$("#screen-" + name).show(); //and show only disered one
+	$("#screen-" + name).show(); //and show only desired one
 	
 	UI.currentScreen = name;
 };
@@ -530,7 +530,7 @@ UI.table_dragStop = function(event, ui)
 		DataPool.fetchSingle(dataUnitCatID,id,
 				function(dataUnit)
 				{
-					f_createTile(dataUnitCatID,dataUnit);
+					f_createTile(dataUnitCatID,dataUnit,true); //Create tile and write tile config to remote storage
 				});
 	}
 };
@@ -672,7 +672,7 @@ function f_serverSideLogout(reason)
 	//TODO: Put this to central location
 	var msgs = {};
 	msgs[LOGOUTREASON.UNKNOWN] = "of an unknown reason.";
-	msgs[LOGOUTREASON.SESSION_EXPIRED] = "your session lost its validity.";
+	msgs[LOGOUTREASON.SESSION_EXPIRED] = "your session lost it's validity.";
 	msgs[LOGOUTREASON.INTERNAL_ERROR] = "an internal server error occurred.";
 	msgs[LOGOUTREASON.REFUSED] = "you were somehow suddenly refused.";
 	msgs[LOGOUTREASON.CLOSED_BY_USER] = "it says the user did it. Alright, who was it then?";
@@ -710,9 +710,10 @@ function f_loadServerSideConfig()
  * 
  * @param category The category id of data unit
  * @param dataUnit The data unit object
+ * @param store Set to true if storage should be updated after succesful creation
  * @returns {any}
  */
-function f_createTile(category, dataUnit)
+function f_createTile(category, dataUnit, store)
 {
 	
 	var subPacket = new Packet_Subscribe(category,dataUnit.id);
@@ -734,7 +735,7 @@ function f_createTile(category, dataUnit)
 				UI.showError("Tried to create a tile of an unknown category.");
 			}
 			
-			UI.dashboard.addTile(tile);
+			UI.dashboard.addTile(tile,store);
 			
 		}else if(pk.typeID == PTYPE.ERROR)
 		{
@@ -755,6 +756,24 @@ Session.sessionID = null;
 Session.config = {};
 Session.username = "";
 Session.remember = false;
+
+/**
+ * Stores a single config entry (consisting of an array of strings) in the
+ * user-specific server-side config file.
+ */
+Session.setConfig = function(id, value)
+{
+	var config = new Packet_Config(id, value);
+	config.onResponse = function(pk)
+	{
+		if(pk.typeID == PTYPE.NACK)
+		{
+			UI.showError("Could not set config " + id + " to " + value);
+		}
+	};
+	
+	Network.sendPacket(config);
+};
 
 /**
  * Removes any session related data to begin a new session.
@@ -1163,7 +1182,7 @@ Network.handshake = function(tryRelog)
 			//Connection to server is OK -> The user may log in
 			//First look if there is already a session to be restored.
 			
-			if(tryRelog || true)
+			if(tryRelog)
 			{
 				f_tryRelog(); //This method also displays login screen if no session is to be restored; No need for us to take care of that
 			}else
@@ -1185,20 +1204,6 @@ Network.handshake = function(tryRelog)
 	};
 	
 	Network.sendPacket(packet);
-};
-
-Network.setConfig = function(id, value)
-{
-	var config = new Packet_Config(id, value);
-	config.onResponse = function(pk)
-	{
-		if(pk.typeID == PTYPE.NACK)
-		{
-			UI.showError("Could set config " + id + " to " + value);
-		}
-	};
-	
-	Network.sendPacket(config);
 };
 
 Network.clearAllTimeouts = function()
@@ -1257,7 +1262,7 @@ Network.sendPacket = function(packet, uid)
 		//Check if packet expects any responses
 		if(packet.allowedResponses.length > 0)
 		{
-			//Store packet so a response can be passed to its response handler
+			//Store packet so a response can be passed to it's response handler
 			Network.sentPacketMap["uid" + packetToSend.uid] = packet;
 			
 			//Set a timeout for each packet that is removed upon response in the n_ws_onMessage methode (only if timeout is > 0)
@@ -1404,7 +1409,7 @@ function Dashboard()
 	
 	
 	this.addTile = 
-		function(tile)
+		function(tile, store)
 		{
 			if(tile.ident in reThis.tiles)
 			{
@@ -1421,8 +1426,11 @@ function Dashboard()
 			
 			tile.onCreate();
 			
-			//In order not to loose anything, we must store the tile configs RIGHT NOW
-			reThis.storeTiles();
+			//In order not to loose anything, we must store the tile configs
+			if(store) //But only if it is allowed. Tiles should NOT be stored after they are re-created from storage
+			{
+				reThis.storeTiles();
+			}
 		};
 	
 		
@@ -1453,8 +1461,7 @@ function Dashboard()
 	this.storeTiles = function()
 	{
 		
-		var configObject = {};
-		configObject.tileList = new Array();
+		var configArray = new Array();
 		
 		jQuery.each(reThis.tiles,
 				function(index, item)
@@ -1465,12 +1472,14 @@ function Dashboard()
 					tileStor.category = item.dataUnitCategory;
 					tileStor.column = item.columnID;
 					
-					configObject.tileList.push(tileStor);
+					var tileStorString = JSON.stringify(tileStor);
+					
+					configArray.push(tileStorString);
 				});
 		
-		var configString = JSON.stringify(configObject);
 		
-		Network.setConfig(CTYPE.TILES, configString);
+		
+		Session.setConfig(CTYPE.TILES, configArray);
 		
 	};
 		

@@ -13,7 +13,9 @@ import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 
 @ServerEndpoint(
 		value = "/TIG_TEST_END",
@@ -221,8 +223,13 @@ public class TigrisTestEndpoint
 			{
 				JsonObject o = new JsonObject();
 				
+				JsonArray ja = new JsonArray();
+				ja.add(new JsonPrimitive("{\"id\":0,\"category\":1,\"column\":0}"));
+				ja.add(new JsonPrimitive("{\"id\":1,\"category\":1,\"column\":1}"));
+				ja.add(new JsonPrimitive("{\"id\":2,\"category\":1,\"column\":2}"));
+				
 				o.addProperty("id", 4);
-				o.addProperty("value", "{\"tileList\":[{\"id\":1,\"category\":1,\"column\":0},{\"id\":0,\"category\":1,\"column\":0}]}");
+				o.add("value", ja);
 				
 				
 				result.add(o);
