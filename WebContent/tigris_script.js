@@ -6,6 +6,7 @@
  *-------------------------- 
  */
 
+//TODO: Give your sources
 //TODO: Sort some code fragments so the source can be easier understood
 //TODO: Comment on stuff
 //TODO: Localization maybe?
@@ -1556,29 +1557,16 @@ function Tile_Machine(dataUnit)
 	this.onCreate = function()
 	{
 		//Create gauge
-		reThis.gauge = new GaugeSVG(
-		{
-			
-			id: "tile_" + reThis.ident + "_gauge",
-			
-			title: "Production speed",
-			label: "screws/hour",
-			
-			min: 0,
-			max: 1000,
-			
-			labelColor: "#444",
-			valueColor: "#444",
-			titleColor: "#444",
-			
-			upperWarningLimit: 1000,
-			upperActionLimit: 1000,
-			
-			showMinMax: true,
-			canvasBackColor: "transparent",
-			showGaugeShadow: false
-			
-		});
+		reThis.gauge = new JustGage(
+				{
+					id: "tile_" + reThis.ident + "_gauge",
+					value: 0,
+					min: 0,
+					max: 1000,
+					title: "Production speed",
+					
+					 showInnerShadow: false
+				});
 		
 		//Update new tile once
 		reThis.update(initialDataUnit);
@@ -1614,8 +1602,8 @@ function Tile_Machine(dataUnit)
 		icons.css("margin-left",size * 0.1); //Center icons
 		icons.css("margin-right",size * 0.1);
 		
-		reThis.gaugeBase.css("width",size * 0.8);
-		reThis.gaugeBase.css("height",size * 0.8);
+		reThis.gaugeBase.css("width", size);
+		reThis.gaugeBase.css("height", size);
 	};
 	this.resize(UI.dashboard.tileWidth); //Set up tile size
 	
@@ -2028,8 +2016,8 @@ function util_containsPoint(element, x, y)
 }
 
 /**
- * Removes every '\' while leaving the follwing character ('\' also).
- * Doesn't resolve '\n' to new line etc.
+ * Removes every '\' while leaving the follwing character ('\\' converts to '\').
+ * Doesn't resolve '\n' to new line. Simply inserts 'n'. Therefore dirty.
  * 
  * @param string The string to unescape
  * @returns {string}

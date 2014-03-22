@@ -16,8 +16,9 @@
 		<script src="lib/CryptoJS/core-min.js"></script>
 		<script src="lib/CryptoJS/format-hex.js"></script>
 		<script src="lib/CryptoJS/sha256.js"></script>
-		<script src="lib/gaugeSVG.js"></script><!-- Gauge lib from http://www.codeproject.com/Articles/604502/A-universal-gauge-for-your-web-dashboard -->
 		<script src="lib/jquery.dataTables.min.js"></script>
+		<script src="lib/raphael.js"></script>
+    	<script src="lib/justgage.1.0.1.min.js"></script>
 		
 		<script src="tigris_script.js"></script>
 	
@@ -25,7 +26,7 @@
 	
 	<body>
 	
-		<div id="screen-status" class="screen">
+		<div id="screen-status" class="screen fixed-screen">
 		
 			<!-- Since login-* classes are only visual, we can use them in status window too -->
 			
@@ -41,7 +42,7 @@
 		
 		</div>
 	
-		<div id="screen-login" class="screen" style="display:none;">
+		<div id="screen-login" class="screen fixed-screen" style="display:none;">
 			
 			<div class="login-frame">
 				<div class="login-header">
