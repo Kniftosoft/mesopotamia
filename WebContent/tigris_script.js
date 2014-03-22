@@ -1,6 +1,6 @@
 
 /*--------------------------
- *      Tigris 0.3.6
+ *      Tigris 0.3.7
  * 	Mesopotamia Client v1
  * (C) Niklas Weissner 2014
  *-------------------------- 
@@ -18,7 +18,7 @@ var MESO_ENDPOINT = "TIG_TEST_END"; //Link to Euphrates
 
 
 //Constants
-var TIGRIS_VERSION = "0.3.6";
+var TIGRIS_VERSION = "0.3.7";
 var TIGRIS_SESSION_COOKIE = "2324-tigris-session";
 var TIGRIS_SESSION_COOKIE_TTL = 365; //The number of days a stored session cookie will last 
 
@@ -713,9 +713,7 @@ function f_createTile(category, dataUnit, store)
 			var tile = null;
 			
 			if(category == DTYPE.MACHINE)
-			{
-				console.log(dataUnit.name + ": " + dataUnit.status);
-				
+			{			
 				tile = new Tile_Machine(dataUnit);
 				
 			}else if(category == DTYPE.JOB)
@@ -1358,10 +1356,12 @@ function Dashboard()
 	this.resize =
 		function()
 		{
-			//The jQuery width method seems not to work with a hidden object that defines only percentage dimensions.
 			//As the dashboard has the width of the document with absolute margins, we can calculate the tile sizes using the documents width
-			reThis.width = $(document).width() - 10;
-			reThis.height = $(document).height() - 47;
+			reThis.width = $(document).width() - 20; //No idea why we have to take the margin times 2, but it works
+			reThis.height = $(document).height() - 57;
+			
+			reThis.base.css("width",reThis.width);
+			reThis.base.css("height",reThis.height);
 			
 			//Apparently, a horizontal resolution of 1920 is best viewed with 4 columns TODO: Further research on that 
 			// (1920 - 10) / 4 = 477.5
@@ -1499,7 +1499,11 @@ function Dashboard()
 			
 				handle: "h2",
 				
-				revert: 200
+				revert: 200,
+				
+				tolerance: "pointer",
+				
+				scrollSpeed: 10
 			});
 }
 
@@ -1622,8 +1626,6 @@ function Tile_Machine(dataUnit)
 		
 		reThis.rightContent.html("Status: " + UI.statusTest[newDataUnit.status] + "<br>Job: " + newDataUnit.job);
 		
-		console.log(newDataUnit.name + ": " + newDataUnit.status);
-		
 		if(newDataUnit.status == reThis.STATUS.RUNNING)
 		{
 			reThis.base.children(".icon").hide(); //Hide all icons
@@ -1636,7 +1638,7 @@ function Tile_Machine(dataUnit)
 			reThis.gaugeBase.hide();
 			reThis.base.children(".icon").hide();
 			
-			reThis.repairIcon.show();console.log("I idsmjsiohdgasdff");
+			reThis.repairIcon.show();
 			
 		}else if(newDataUnit.status == reThis.STATUS.ERROR)
 		{
