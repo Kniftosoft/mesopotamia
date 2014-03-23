@@ -38,12 +38,13 @@ public class Config extends Application {
 		return datas;
 	}
 
+	//TODO id not used
 	/* (non-Javadoc)
 	 * 
 	 * @see org.kniftosoft.application.Application#getdata(org.kniftosoft.entity.User, java.lang.String)
 	 */
 	@Override
-	public JsonArray getdata(User user, String ident) {
+	public JsonArray getdata(User user, String id) {
 		final JsonArray datas = new JsonArray();
 		readconfig();
 		for (final Userconfig userconfig : configs) {

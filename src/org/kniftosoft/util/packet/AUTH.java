@@ -11,7 +11,6 @@ import com.google.gson.JsonObject;
 public class AUTH extends Packet {
 
 	private int sessionID;
-	private JsonObject userconfig;
 
 	
 	/* (non-Javadoc)
@@ -21,7 +20,6 @@ public class AUTH extends Packet {
 	@Override
 	public void createFromJSON(JsonObject o) {
 		sessionID = o.get("sessionID").getAsInt();
-		userconfig = o.get("userconfig").getAsJsonObject();
 	}
 
 	/*
@@ -53,7 +51,6 @@ public class AUTH extends Packet {
 	public JsonObject storeData() {
 		final JsonObject data = new JsonObject();
 		data.addProperty("sessionID", sessionID);
-		data.add("userconfig", userconfig);
 		return data;
 	}
 	
@@ -62,13 +59,6 @@ public class AUTH extends Packet {
 	 */
 	public void setSessionID(Session session) {
 		sessionID = session.getIdSessions();
-	}
-
-	/**
-	 * @param userconfig
-	 */
-	public void setUserconfig(JsonObject userconfig) {
-		this.userconfig = userconfig;
 	}
 
 }

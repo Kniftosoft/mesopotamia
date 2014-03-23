@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
 import org.kniftosoft.entity.Log;
@@ -89,6 +90,7 @@ public class Maschineapp extends Application {
 	 */
 	private JsonObject getsingledataset(Maschine maschine) {
 		List<Log> logs;
+		Long total=(long) 0;
 		final JsonObject data = new JsonObject();
 		System.out.println("found" + maschine.toString());
 		final EntityManager em = Constants.factory.createEntityManager();
@@ -98,6 +100,8 @@ public class Maschineapp extends Application {
 						"Select l FROM Log l WHERE l.maschineBean =:maschine ORDER BY l.timestamp DESC ",
 						Log.class).setParameter("maschine", maschine)
 				.setMaxResults(2).getResultList();
+		Query q =em.createQuery("SELECT SUM(l.produziert) FROM Log l WHERE l.maschineBean =:maschine GROUP BY l.maschineBean").setParameter("maschine", maschine);
+		total = (Long) q.getSingleResult();	
 		em.getTransaction().commit();
 		em.close();
 		// TODO Array index out of range
@@ -105,16 +109,15 @@ public class Maschineapp extends Application {
 		try {
 			// Differenz zwischen timestamps in ms /(1000*60*60) (3600000) für
 			// die stunden
-			data.addProperty(
-					"speed",
+			data.addProperty("speed",
 					(double) Math.round((double) logs.get(0).getProduziert()
-							/ (logs.get(0).getTimestamp().getTime() - logs
-									.get(1).getTimestamp().getTime()) * 3600000
-							* 100) / 100);
+							/ (logs.get(0).getTimestamp().getTime() - logs.get(1).getTimestamp().getTime()) * 3600000* 100) / 100);
 			data.addProperty("name", maschine.getName());
 			data.addProperty("job", logs.get(0).getAuftragBean().getIdauftrag());
-			data.addProperty("status", logs.get(0).getZustandBean()
-					.getIdzustand());
+			data.addProperty("status", logs.get(0).getZustandBean().getIdzustand());
+			data.addProperty("maxSpeed", maschine.getMaximumspeed());	
+			//TODO dont works right (mysql limit 1000)
+			data.addProperty("totalProduced", total);
 			System.out.println("got data from logid: " + logs.get(0).getIdlog()
 					+ " " + logs.get(1).getIdlog());
 		} catch (final ArrayIndexOutOfBoundsException e) {
@@ -122,6 +125,8 @@ public class Maschineapp extends Application {
 			data.addProperty("speed", 0);
 			data.addProperty("name", maschine.getName());
 			data.addProperty("job", 0);
+			data.addProperty("maxSpeed", 0);
+			data.addProperty("totalProduced", 0);
 			data.addProperty("status", 2);
 		}
 

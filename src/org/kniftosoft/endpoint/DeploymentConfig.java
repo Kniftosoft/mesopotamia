@@ -1,6 +1,3 @@
-/**
- * 
- */
 package org.kniftosoft.endpoint;
 
 import javax.persistence.Persistence;
@@ -16,14 +13,14 @@ import org.kniftosoft.util.Constants;
  */
 public class DeploymentConfig implements ServletContextListener {
 	
-	Logbot updater;
+	Logbot logbot;
 
 	/* (non-Javadoc)
 	 * @see javax.servlet.ServletContextListener#contextDestroyed(javax.servlet.ServletContextEvent)
 	 */
 	@Override
 	public void contextDestroyed(ServletContextEvent arg0) {
-		updater.interrupt();
+		logbot.interrupt();
 		Constants.factory.close();
 	}
 
@@ -32,10 +29,10 @@ public class DeploymentConfig implements ServletContextListener {
 	 */
 	@Override
 	public void contextInitialized(ServletContextEvent arg0) {
-		updater = new Logbot();
-		updater.setDaemon(true);
-		updater.setName("Update Thread");
-		updater.start();
+		logbot = new Logbot();
+		logbot.setDaemon(true);
+		logbot.setName("Update Thread");
+		logbot.start();
 		Constants.factory = Persistence
 				.createEntityManagerFactory(Constants.PERSISTENCE_UNIT_NAME);
 

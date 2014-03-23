@@ -1,35 +1,54 @@
 package org.kniftosoft.entity;
 
 import java.io.Serializable;
+import javax.persistence.*;
 import java.util.List;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
 
 /**
  * The persistent class for the produkt database table.
  * 
  */
 @Entity
-@NamedQuery(name = "Produkt.findAll", query = "SELECT p FROM Produkt p")
+@NamedQuery(name="Produkt.findAll", query="SELECT p FROM Produkt p")
 public class Produkt implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int idprodukt;
 
 	private String beschreibung;
 
-	// bi-directional many-to-one association to Auftrag
-	@OneToMany(mappedBy = "produktBean")
+	//bi-directional many-to-one association to Auftrag
+	@OneToMany(mappedBy="produktBean")
 	private List<Auftrag> auftrags;
 
 	public Produkt() {
+	}
+
+	public int getIdprodukt() {
+		return this.idprodukt;
+	}
+
+	public void setIdprodukt(int idprodukt) {
+		this.idprodukt = idprodukt;
+	}
+
+	public String getBeschreibung() {
+		return this.beschreibung;
+	}
+
+	public void setBeschreibung(String beschreibung) {
+		this.beschreibung = beschreibung;
+	}
+
+	public List<Auftrag> getAuftrags() {
+		return this.auftrags;
+	}
+
+	public void setAuftrags(List<Auftrag> auftrags) {
+		this.auftrags = auftrags;
 	}
 
 	public Auftrag addAuftrag(Auftrag auftrag) {
@@ -39,35 +58,11 @@ public class Produkt implements Serializable {
 		return auftrag;
 	}
 
-	public List<Auftrag> getAuftrags() {
-		return auftrags;
-	}
-
-	public String getBeschreibung() {
-		return beschreibung;
-	}
-
-	public int getIdprodukt() {
-		return idprodukt;
-	}
-
 	public Auftrag removeAuftrag(Auftrag auftrag) {
 		getAuftrags().remove(auftrag);
 		auftrag.setProduktBean(null);
 
 		return auftrag;
-	}
-
-	public void setAuftrags(List<Auftrag> auftrags) {
-		this.auftrags = auftrags;
-	}
-
-	public void setBeschreibung(String beschreibung) {
-		this.beschreibung = beschreibung;
-	}
-
-	public void setIdprodukt(int idprodukt) {
-		this.idprodukt = idprodukt;
 	}
 
 }

@@ -30,6 +30,7 @@ public class UNSUBSCRIBE extends Packet {
 
 	}
 
+	//TODO add error response
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -51,6 +52,10 @@ public class UNSUBSCRIBE extends Packet {
 							.createEntityManager();
 					em.remove(sub);
 					em.close();
+					ACK ack = new ACK();
+					ack.setPeer(peer);
+					ack.setUID(uid);
+					ack.send();
 				}
 			}
 		} else {
@@ -67,6 +72,10 @@ public class UNSUBSCRIBE extends Packet {
 							.createEntityManager();
 					em.remove(sub);
 					em.close();
+					ACK ack = new ACK();
+					ack.setPeer(peer);
+					ack.setUID(uid);
+					ack.send();
 				}
 			}
 		}

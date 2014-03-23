@@ -74,12 +74,10 @@ public class LOGIN extends Packet {
 					peer.setUser(user);
 					peer.setSaltused(true);
 					Peerholder.updatepeer(peer);
-					// TODO add userconfig
 					final AUTH ap = new AUTH();
 					ap.setSessionID(session);
 					ap.setPeer(peer);
 					ap.setUID(uid);
-					ap.setUserconfig(null);
 					ap.send();
 				} else {
 					final NACK nack = new NACK();

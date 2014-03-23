@@ -14,7 +14,7 @@ import com.google.gson.JsonObject;
  */
 public class CONFIG extends Packet {
 
-	private String id;
+	private int id;
 	private String value;
 
 
@@ -24,7 +24,7 @@ public class CONFIG extends Packet {
 	 */
 	@Override
 	public void createFromJSON(JsonObject o) {
-		id = o.get("id").getAsString();
+		id = o.get("id").getAsInt();
 		value = o.get("value").getAsString();
 	}
 
@@ -35,13 +35,31 @@ public class CONFIG extends Packet {
 	 */
 	@Override
 	public void executerequest() {
-		final Userconfig conf = new Userconfig();
-		conf.setUserBean(peer.getUser());
-		conf.setValue(value);
-		final EntityManager em = Constants.factory.createEntityManager();
-		conf.setConfigtype(em.find(Configtype.class, Integer.parseInt(id)));
-		em.persist(conf);
-		em.close();
+		try
+		{
+			final EntityManager em = Constants.factory.createEntityManager();
+			final Userconfig conf = new Userconfig();
+			conf.setUserBean(peer.getUser());
+			conf.setValue(value);	
+			conf.setConfigtype(em.find(Configtype.class, id));
+			em.getTransaction().begin();
+			em.persist(conf);
+			em.getTransaction().commit();
+			em.close();
+			ACK ack = new ACK();
+			ack.setPeer(peer);
+			ack.setUID(uid);
+			ack.send();
+		}catch(Exception e)
+		{
+			e.printStackTrace();
+			NACK nack = new NACK();
+			nack.setPeer(peer);
+			nack.setUID(uid);
+			nack.send();
+		}
+		
+		
 	}
 
 	/*

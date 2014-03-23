@@ -1,9 +1,6 @@
 package org.kniftosoft.util.packet;
 
 import org.kniftosoft.entity.User;
-import org.kniftosoft.entity.Userconfig;
-
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 /**
@@ -14,7 +11,6 @@ import com.google.gson.JsonObject;
 public class REAUTH extends Packet {
 	private int newSessionID;
 	private User user;
-	private JsonArray userConfig;
 
 	/*
 	 * (non-Javadoc)
@@ -24,7 +20,6 @@ public class REAUTH extends Packet {
 	@Override
 	public void createFromJSON(JsonObject o) {
 		newSessionID = o.get("newSessionID").getAsInt();
-		userConfig = o.getAsJsonArray("userConfig");
 	}
 
 	/*
@@ -56,7 +51,6 @@ public class REAUTH extends Packet {
 	public JsonObject storeData() {
 		final JsonObject data = new JsonObject();
 		data.addProperty("newSessionID", newSessionID);
-		data.add("userConfig", userConfig);
 		data.addProperty("username", user.getEmail());
 		return data;
 	}
@@ -69,17 +63,10 @@ public class REAUTH extends Packet {
 	}
 	
 	/**
-	 * @return the user
+	 * @return user
 	 */
 	public User getUser() {
 		return user;
-	}
-
-	/**
-	 * @return userConfig
-	 */
-	public JsonArray getUserConfig() {
-		return userConfig;
 	}
 
 	/**
@@ -90,24 +77,12 @@ public class REAUTH extends Packet {
 	}
 
 	/**
-	 * sets the user and loads the userconfigs
+	 * sets the user 
 	 * @param user
 	 *            
 	 */
 	public void setUser(User user) {
 		this.user = user;
-		for (final Userconfig userconfig2 : user.getUserconfigs()) {
-			final JsonObject config = new JsonObject();
-			config.addProperty("userConfig", userconfig2.toString());
-			userConfig.add(config);
-		}
-	}
-
-	/**
-	 * @param userConfig
-	 */
-	public void setUserConfig(JsonArray userConfig) {
-		this.userConfig = userConfig;
 	}
 
 }

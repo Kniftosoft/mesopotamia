@@ -56,6 +56,7 @@ public class LogGen {
 		log.setProduziert(random(3));
 		log.setTimestamp(new Timestamp(new Date().getTime()));
 		ems.persist(log);
+		System.err.print("new log");
 		ems.getTransaction().commit();
 		ems.close();
 	}
