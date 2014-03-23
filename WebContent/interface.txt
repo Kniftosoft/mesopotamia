@@ -1,5 +1,5 @@
 +==========================================+
-| Mesopotamia Communication Protocol 1.4.2 |
+| Mesopotamia Communication Protocol 1.4.3 |
 |        (C) Niklas Weissner 2014          |
 +==========================================+
 
@@ -57,6 +57,7 @@ Contents
 
 22.03.2014	1.4.2	value field of data unit CONFIG is now an array of strings
 
+23.03.2014	1.4.3	Added location attribute to machines
 
 
 
@@ -596,6 +597,7 @@ Contents
 		double:		maxSpeed (The highest speed to be displayed)
 		int:		totalProduced (The amount of units produced in total)
 		int:		status (For a list of possible values, see "Notes")
+		string:		location (A string identifying the location of the machine)
 	
 	-Notes:
 		Possible values for the status field:

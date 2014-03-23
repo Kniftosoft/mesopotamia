@@ -458,9 +458,31 @@ body
 	/* width, height set by script */
 }
 
+.tile .right-content .label
+{
+	margin-bottom: 6px;
+}
+
+.tile .right-content .value
+{
+	margin-bottom: 6px;
+}
+
 /* These are currently used only for identification and may get style information later */
 .tile-half{}
 
 .tile-full{}
 
+
+/*Overriding jQuery UI widget classes */
+
+.ui-progressbar
+{
+	
+}
+
+.ui-progressbar-value
+{
+	
+}
 

@@ -1,6 +1,6 @@
 
 /*--------------------------
- *      Tigris 0.3.7
+ *      Tigris 0.3.8
  * 	Mesopotamia Client v1
  * (C) Niklas Weissner 2014
  *-------------------------- 
@@ -19,7 +19,7 @@ var MESO_ENDPOINT = "TIG_TEST_END"; //Link to Euphrates
 
 
 //Constants
-var TIGRIS_VERSION = "0.3.7";
+var TIGRIS_VERSION = "0.3.8";
 var TIGRIS_SESSION_COOKIE = "2324-tigris-session";
 var TIGRIS_SESSION_COOKIE_TTL = 365; //The number of days a stored session cookie will last 
 
@@ -121,7 +121,15 @@ function()
 var UI = {};
 
 UI.currentScreen = "status"; //Status message for noscript is displayed by default through pure html
-UI.currentTab = null;
+UI.currentTab = null; 
+/**
+ * Storage for data unit ident of table row beeing dragged
+ */
+UI.currentTableHelper = 
+{
+	id: 0,
+	category: 0
+};
 
 UI.dashboard = null;
 UI.sidebarEnabled = true;
@@ -196,8 +204,13 @@ UI.init = function()
 			
 			start: UI.table_dragStart,
 			stop: UI.table_dragStop,
+			sort: UI.table_dragging,
 			
-			helper: "clone"
+			helper: UI.table_createHelper,
+			
+			cursorAt: { top: 20, left: 20 },
+			
+			appendTo: document.body
 		};
 	
 	$("#table-machine tbody").sortable(tableSortOptions);
@@ -496,45 +509,76 @@ UI.table_dragStart = function(event, ui)
 	UI.sidebarEnabled = false;
 };
 
+UI.table_dragging = function(event, ui)
+{
+	//Check if cursor is inside tileCreator
+	//Since hover detection does not work with a sortable on the cursor, we have to check manually by position
+	if(util_containsPoint(UI.tileCreator,event.pageX,event.pageY) && UI.currentTab != "dashboard")
+	{
+		$("#tilecreator").hide("slide");
+		
+		UI.data_switchTab("dashboard");
+	}
+};
+
 UI.table_dragStop = function(event, ui)
 {
-	$("#tilecreator").hide("slide");
-	
 	UI.sidebarEnabled = true;
+	
+	$("#tilecreator").hide("slide");
 	
 	//The user might have reordered the table and thus messed up the coloring, so better reload data
 	//(This would not be neccesary if we could use something different than sortable for draggable table rows;
 	// thanks to you, jQuery UI)
 	UI.dataUpdate();
 	
-	//Since hover detection does not work with a sortable on the cursor, we have to check manually by position
-	if(util_containsPoint(UI.tileCreator,event.pageX,event.pageY))
+	//Was tile dropped on dashboard?
+	if(util_containsPoint(UI.dashboard.base,event.pageX,event.pageY) && UI.currentTab == "dashboard")
 	{
-		//The user dropped the row in the tile creator
+		//Yes -> Create new tile
 		
-		//Get the id from the dropped element (It must be the first column in order for this to work)
-		var id = ui.item.children("td").first().text();
-		
-		var dataUnitCatID = DTYPE.byName(UI.currentTab);
+		//Get the data unit ident of the dropped element (Stored in attributes of the custom helper)
+		var id = UI.currentTableHelper.id;
+		var dataUnitCatID = UI.currentTableHelper.category;
 		
 		DataPool.fetchSingle(dataUnitCatID,id,
 				function(dataUnit)
 				{
-					f_createTile(dataUnitCatID,dataUnit,true); //Create tile and write tile config to remote storage
+					if(dataUnit != null)
+					{
+						
+						f_createTile(dataUnitCatID,dataUnit,true); //Create tile and write tile config to remote storage
+					}
 				});
 	}
 };
 
-/*UI.table_createColHelper = function()
+/**
+ * Creates a helper for the sortable widget. Provides a preview of the tile that can be placed
+ * on the dashboard.
+ */
+UI.table_createHelper = function(event, item)
 {
-	var row = $(this);
+	//Get data unit information in order to create tile object for dragging around
+	var id = item.find("td").first().text(); //ID is the first table column in the dragged row
+	var dataUnitCatID = DTYPE.byName(UI.currentTab);
 	
-	var helper = $("<div>");
-	helper.addClass("tile-creator-helper");
-	helper.css("width","120px");
-	
-	return helper;
-};*/
+	var dataUnit = DataPool.getSingle(dataUnitCatID, id);
+	if(dataUnit != null)
+	{
+		var tile = tileFromCategory(dataUnitCatID, dataUnit);
+		
+		tile.update(dataUnit);
+		
+		UI.currentTableHelper.id = id;
+		UI.currentTableHelper.category = dataUnitCatID;
+		
+		return tile.base;
+	}else
+	{
+		return this;
+	}
+};
 
 //-------------Functional stuff------------
 
@@ -701,7 +745,7 @@ function f_loadServerSideConfig()
  * @param category The category id of data unit
  * @param dataUnit The data unit object
  * @param store Set to true if storage should be updated after succesful creation
- * @returns {any}
+ * @returns {any} The tile
  */
 function f_createTile(category, dataUnit, store)
 {
@@ -711,22 +755,12 @@ function f_createTile(category, dataUnit, store)
 	{
 		if(pk.typeID == PTYPE.ACK)
 		{
-			var tile = null;
+			var tile = tileFromCategory(category, dataUnit);
 			
-			if(category == DTYPE.MACHINE)
-			{			
-				tile = new Tile_Machine(dataUnit);
-				
-			}else if(category == DTYPE.JOB)
+			if(tile != null)
 			{
-				tile = new Tile_Job(dataUnit);
-			}else
-			{
-				UI.showError("Tried to create a tile of an unknown category.");
-				return;
+				UI.dashboard.addTile(tile,store);
 			}
-			
-			UI.dashboard.addTile(tile,store);
 			
 		}else if(pk.typeID == PTYPE.ERROR)
 		{
@@ -1485,6 +1519,8 @@ function Dashboard()
 				
 				start: function(event, ui)
 				{
+					UI.sidebarEnabled = false;
+					
 					//As jQuery UIs sortable does not support dynamic sized placeholders,
 					//we must change them manually
 					if(ui.item.hasClass("tile"))
@@ -1496,6 +1532,11 @@ function Dashboard()
 						
 					}
 					
+				},
+				
+				stop: function(event, ui)
+				{
+					UI.sidebarEnabled = true;
 				},
 			
 				handle: "h2",
@@ -1509,6 +1550,25 @@ function Dashboard()
 }
 
 //-------tile constructors------------
+
+/**
+ * Selects right tile constructor from given category ID.
+ */
+function tileFromCategory(category, dataUnit)
+{
+	if(category == DTYPE.MACHINE)
+	{
+		return new Tile_Machine(dataUnit);
+	}else if(category == DTYPE.JOB)
+	{
+		return new Tile_Job(dataUnit);
+	}else
+	{
+		UI.showError("Tried to create tile of unknown category: " + category);
+		return null;
+	}
+}
+
 
 /**
  * @constructor
@@ -1529,17 +1589,20 @@ function Tile_Machine(dataUnit)
 	this.base.attr("id","tile_" + this.ident);
 	
 	this.title = this.base.children("h2").first();
-	this.sizeButton = this.base.children(".size-button").first();
+	this.sizeButton = this.base.find(".size-button").first();
 	
-	this.leftContent = this.base.children(".left-content").first();
+	this.leftContent = this.base.find(".left-content").first();
+	this.rightContent = this.base.find(".right-content").first();
 	
-	this.rightContent = this.base.children(".right-content").first();
+	this.repairIcon = this.base.find(".repair-icon").first();
+	this.cleaningIcon = this.base.find(".cleaning-icon").first();
+	this.errorIcon = this.base.find(".error-icon").first();
 	
-	this.repairIcon = this.leftContent.children(".repair-icon").first();
-	this.cleaningIcon = this.leftContent.children(".cleaning-icon").first();
-	this.errorIcon = this.leftContent.children(".error-icon").first();
+	this.statusValue = this.base.find(".status-value").first();
+	this.jobValue = this.base.find(".job-value").first();
+	this.locationValue = this.base.find(".location-value").first();
 	
-	this.gaugeBase = this.leftContent.children(".machine-speed-gauge").first();
+	this.gaugeBase = this.base.find(".machine-speed-gauge").first();
 	this.gaugeBase.attr("id","tile_" + this.ident + "_gauge");
 	
 	this.gauge = null;
@@ -1612,26 +1675,32 @@ function Tile_Machine(dataUnit)
 	{
 		reThis.title.text("Machine '" + newDataUnit.name + "'");
 		
-		reThis.rightContent.html("Status: " + UI.statusTest[newDataUnit.status] + "<br>Job: " + newDataUnit.job);
+		reThis.statusValue.text(UI.statusTest[newDataUnit.status] || newDataUnit.status);
+		reThis.jobValue.text(newDataUnit.job);
+		reThis.locationValue.text(newDataUnit.location);
 		
 		if(newDataUnit.status == reThis.STATUS.RUNNING)
 		{
-			reThis.base.children(".icon").hide(); //Hide all icons
+			reThis.base.find(".icon").hide(); //Hide all icons
 			
-			reThis.gaugeBase.show();
-			reThis.gauge.refresh(Math.round(newDataUnit.speed)); //Refresh gauge when running
-			
+			//Gauge can only be created after it has been added to document. This, however may be calleb before that
+			if(reThis.gauge != null)
+			{
+				reThis.gaugeBase.show();
+				reThis.gauge.refresh(Math.round(newDataUnit.speed)); //Refresh gauge when running
+			}
+				
 		}else if(newDataUnit.status == reThis.STATUS.REPAIR || newDataUnit.status == reThis.STATUS.MODIFIC)
 		{
 			reThis.gaugeBase.hide();
-			reThis.base.children(".icon").hide();
+			reThis.base.find(".icon").hide();
 			
 			reThis.repairIcon.show();
 			
 		}else if(newDataUnit.status == reThis.STATUS.ERROR)
 		{
 			reThis.gaugeBase.hide();
-			reThis.base.children(".icon").hide();
+			reThis.base.find(".icon").hide();
 			
 			reThis.errorIcon.show();
 			
@@ -1639,7 +1708,7 @@ function Tile_Machine(dataUnit)
 		}else if(newDataUnit.status == reThis.STATUS.CLEANING)
 		{
 			reThis.gaugeBase.hide();
-			reThis.base.children(".icon").hide();
+			reThis.base.find(".icon").hide();
 			
 			reThis.cleaningIcon.show();
 		}
