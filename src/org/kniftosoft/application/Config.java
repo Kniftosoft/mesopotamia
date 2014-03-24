@@ -13,6 +13,7 @@ import org.kniftosoft.util.Constants;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 
 /**
  * @author julian
@@ -78,8 +79,7 @@ public class Config extends Application {
 		{
 			if(conf.getConfigtype().getIdConfigtypes() == type.getIdConfigtypes())
 			{
-				JsonObject value = new JsonObject();
-				value.addProperty("1", conf.getValue());
+				JsonPrimitive value = new JsonPrimitive(conf.getValue());
 				values.add(value);
 			}
 		}
