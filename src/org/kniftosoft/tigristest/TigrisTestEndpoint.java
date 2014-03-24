@@ -157,14 +157,18 @@ public class TigrisTestEndpoint
 						
 						String[] set = line.split(";");
 						
-						int id = Integer.parseInt(set[0]);
-						String name = set[1];
-						int job = Integer.parseInt(set[2]);
-						double speed = Double.parseDouble(set[3]) + (Math.random() * 30);
-						int status = Integer.parseInt(set[4]);
+						JsonObject m = new JsonObject();
 						
-						Machine m = new Machine(id,name,job,speed,status);
-						result.add(m.toJson());
+						m.addProperty("id", Integer.parseInt(set[0]));
+						m.addProperty("name", set[1]);
+						m.addProperty("job", Integer.parseInt(set[2]));
+						m.addProperty("speed", Double.parseDouble(set[3]) + (Math.random() * 30));
+						m.addProperty("status", Integer.parseInt(set[4]));
+						m.addProperty("maxSpeed", Double.parseDouble(set[5]));
+						m.addProperty("totalProduced", Integer.parseInt(set[6]));
+						m.addProperty("location", set[7]);
+						
+						result.add(m);
 					}
 					
 				} catch (IOException e)

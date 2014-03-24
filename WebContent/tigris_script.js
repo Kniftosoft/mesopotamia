@@ -190,10 +190,12 @@ UI.init = function()
 	UI.machineTable = $("#table-machine").dataTable({
 		"aoColumns": [
 		              { "mData": "id" },
-                      { "mData": "name" },
+                      { "mData": "name" }, 
+                      { "mData": function(data, type, val) { return UI.statusTest[data.status]; }},
+                      { "mData": "location"},
                       { "mData": "job" },
                       { "mData": "speed" },
-                      { "mData": function(data, type, val) { return UI.statusTest[data.status]; }}
+                      { "mData": "totalProduced"}
                     ]});
 	
 	var tableSortOptions = 
@@ -255,7 +257,7 @@ UI.sessionSetup = function()
 									//When a valid data unit is returned, create a tile. When not, discard it TODO: Maybe show a greyed out tile or something
 									if(tileDataUnit != null)
 									{
-										f_createTile(tileConfig.category, tileDataUnit ,false); //Don't store tiles. We would send exactly what we received
+										f_createTileOnDashboard(tileConfig.category, tileDataUnit, tileConfig.column ,false); //Don't store tiles. We would send exactly what we received
 									}
 								});
 				
@@ -547,7 +549,7 @@ UI.table_dragStop = function(event, ui)
 					if(dataUnit != null)
 					{
 						
-						f_createTile(dataUnitCatID,dataUnit,true); //Create tile and write tile config to remote storage
+						f_createTileOnDashboard(dataUnitCatID,dataUnit,true); //Create tile and write tile config to remote storage
 					}
 				});
 	}
@@ -747,7 +749,7 @@ function f_loadServerSideConfig()
  * @param store Set to true if storage should be updated after succesful creation
  * @returns {any} The tile
  */
-function f_createTile(category, dataUnit, store)
+function f_createTileOnDashboard(category, dataUnit, column, store)
 {
 	
 	var subPacket = new Packet_Subscribe(category,dataUnit.id);
@@ -757,9 +759,14 @@ function f_createTile(category, dataUnit, store)
 		{
 			var tile = tileFromCategory(category, dataUnit);
 			
+			tile.columnID = column;
+			
 			if(tile != null)
 			{
 				UI.dashboard.addTile(tile,store);
+				
+				//In order not to loose anything, we must store the tile configs
+				UI.dashboard.storeTiles();
 			}
 			
 		}else if(pk.typeID == PTYPE.ERROR)
@@ -1448,16 +1455,16 @@ function Dashboard()
 		
 			var column = tile.columnID || 0; //Append tile to specified column. If not specified, add to 0
 			
+			//If the column this tile was stored in does not exist anymore, put it in the last column
+			if(column >= reThis.columns.length)
+			{
+				column = reThis.columns.length - 1;
+			}
+			
 			reThis.columns[column].append(tile.base);
 			tile.columnID = column;
 			
 			tile.onCreate();
-			
-			//In order not to loose anything, we must store the tile configs
-			if(store) //But only if it is allowed. Tiles should NOT be stored after they are re-created from storage
-			{
-				reThis.storeTiles();
-			}
 		};
 	
 		

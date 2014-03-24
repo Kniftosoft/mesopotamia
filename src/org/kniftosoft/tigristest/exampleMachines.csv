@@ -1,9 +1,9 @@
 #This file contains example machine data for the Mesopotamia PSS
 
-# id ; name ; job ; speed ; status
+# id ; name ; job ; speed ; status ; maxSpeed ; totalProduced ; location
 
-0;That specific machine;23;600;1
-1;The other machine;624;15;3
-2;BK5423;555;742;1
-3;BMS34234;1000;999;2
-4;ASHPD;326;120;5
+0;That specific machine;23;600;1;1000;435;Hall 2
+1;The other machine;624;15;3;1000;322;Hall 3
+2;BK5423;555;742;1;1000;1;Hall 5
+3;BMS34234;1000;999;2;1000;300;Hall 6
+4;ASHPD;326;120;5;1000;7465;Hall 0
