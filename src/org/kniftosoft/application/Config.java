@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.persistence.EntityManager;
 
+import org.kniftosoft.entity.Configtype;
 import org.kniftosoft.entity.Subscribe;
 import org.kniftosoft.entity.User;
 import org.kniftosoft.entity.Userconfig;
@@ -21,6 +22,7 @@ public class Config extends Application {
 
 	User user;
 	List<Userconfig> configs = new ArrayList<Userconfig>();
+	List<Configtype> types  = new ArrayList<Configtype>();
 
 	/* (non-Javadoc)
 	 * 
@@ -28,11 +30,11 @@ public class Config extends Application {
 	 */
 	@Override
 	public JsonArray getdata(Subscribe sub) {
+		gettypes();
 		user = sub.getUserBean();
 		final JsonArray datas = new JsonArray();
-		readconfig();
-		for (final Userconfig userconfig : configs) {
-			datas.add(getsingeledataset(userconfig));
+		for (final Configtype type : types) {
+			datas.add(getsingeledataset(sub.getUserBean().getUserconfigs(),type));
 		}
 
 		return datas;
@@ -45,10 +47,11 @@ public class Config extends Application {
 	 */
 	@Override
 	public JsonArray getdata(User user, String id) {
+		gettypes();
 		final JsonArray datas = new JsonArray();
-		readconfig();
-		for (final Userconfig userconfig : configs) {
-			datas.add(getsingeledataset(userconfig));
+		for (final Configtype type : types) {
+			JsonObject data = getsingeledataset(user.getUserconfigs(),type);
+			datas.add(data);			
 		}
 
 		return datas;
@@ -68,25 +71,32 @@ public class Config extends Application {
 	 * @param config
 	 * @return data 
 	 */
-	private JsonObject getsingeledataset(Userconfig config) {
-		final JsonObject data = new JsonObject();
-		data.addProperty("id", config.getIduserconfig());
-		data.addProperty("value", config.getValue());
+	private JsonObject getsingeledataset(List<Userconfig> config,Configtype type) {
+		JsonObject data = null;
+		final JsonArray values = new JsonArray();
+		for(Userconfig conf : config)
+		{
+			if(conf.getConfigtype().getIdConfigtypes() == type.getIdConfigtypes())
+			{
+				JsonObject value = new JsonObject();
+				value.addProperty("1", conf.getValue());
+				values.add(value);
+			}
+		}
+
+		data = new JsonObject();
+		data.addProperty("id", type.getIdConfigtypes());
+		data.add("value",values);	
 		return data;
 	}
-
-	/**
-	 * get all configs for a user
-	 */
-	private void readconfig() {
+	
+	private void gettypes()
+	{
 		final EntityManager em = Constants.factory.createEntityManager();
 		em.getTransaction().begin();
-		configs = em
-				.createQuery(
-						"Select c FROM Userconfig c WHERE c.userBean =:user",
-						Userconfig.class).setParameter("user", user)
-				.getResultList();
+		types = em.createNamedQuery("Configtype.findAll",Configtype.class).getResultList();
 		em.getTransaction().commit();
 		em.close();
 	}
+	
 }

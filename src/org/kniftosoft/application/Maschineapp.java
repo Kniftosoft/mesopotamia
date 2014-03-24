@@ -30,7 +30,6 @@ public class Maschineapp extends Application {
 	@Override
 	public JsonArray getdata(Subscribe sub) {
 		final JsonArray datas = new JsonArray();
-		System.out.println("found" + sub.toString());
 		final EntityManager em = Constants.factory.createEntityManager();
 		datas.add(getsingledataset(em.find(Maschine.class, sub.getObjektID())));
 		em.close();
@@ -104,6 +103,7 @@ public class Maschineapp extends Application {
 		total = (Long) q.getSingleResult();	
 		em.getTransaction().commit();
 		em.close();
+		
 		// TODO Array index out of range
 		data.addProperty("id", maschine.getIdmaschine());
 		try {
@@ -118,8 +118,7 @@ public class Maschineapp extends Application {
 			data.addProperty("maxSpeed", maschine.getMaximumspeed());	
 			//TODO dont works right (mysql limit 1000)
 			data.addProperty("totalProduced", total);
-			System.out.println("got data from logid: " + logs.get(0).getIdlog()
-					+ " " + logs.get(1).getIdlog());
+			data.addProperty("location", maschine.getStandort());
 		} catch (final ArrayIndexOutOfBoundsException e) {
 			// TODO optimize
 			data.addProperty("speed", 0);
@@ -128,6 +127,7 @@ public class Maschineapp extends Application {
 			data.addProperty("maxSpeed", 0);
 			data.addProperty("totalProduced", 0);
 			data.addProperty("status", 2);
+			data.addProperty("location", maschine.getStandort());
 		}
 
 		return data;

@@ -22,9 +22,6 @@ public class User implements Serializable {
 	@Column(name="ACC_TYPE")
 	private int accType;
 
-	@Column(name="CONFIG_ID")
-	private int configId;
-
 	private String email;
 
 	private String nachname;
@@ -72,14 +69,6 @@ public class User implements Serializable {
 
 	public void setAccType(int accType) {
 		this.accType = accType;
-	}
-
-	public int getConfigId() {
-		return this.configId;
-	}
-
-	public void setConfigId(int configId) {
-		this.configId = configId;
 	}
 
 	public String getEmail() {

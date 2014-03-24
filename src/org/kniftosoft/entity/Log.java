@@ -1,11 +1,7 @@
 package org.kniftosoft.entity;
 
 import java.io.Serializable;
-
 import javax.persistence.*;
-
-import org.kniftosoft.update.Databaselistener;
-
 import java.sql.Timestamp;
 
 
@@ -13,7 +9,6 @@ import java.sql.Timestamp;
  * The persistent class for the log database table.
  * 
  */
-@EntityListeners(Databaselistener.class)
 @Entity
 @NamedQuery(name="Log.findAll", query="SELECT l FROM Log l")
 public class Log implements Serializable {

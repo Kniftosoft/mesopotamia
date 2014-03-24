@@ -1,15 +1,16 @@
 
 /*--------------------------
- *      Tigris 0.3.6
+ *      Tigris 0.3.8
  * 	Mesopotamia Client v1
  * (C) Niklas Weissner 2014
  *-------------------------- 
  */
 
+//TODO: Give your sources
 //TODO: Sort some code fragments so the source can be easier understood
 //TODO: Comment on stuff
 //TODO: Localization maybe?
-//TODO: Add polish to data fetching functions (and try to chech for null everywhere)
+//TODO: Add polish to data fetching functions (and try to check for null everywhere)
 
 //Configure this to your Euphrates installation
 //If your endpoint is absolute, make sure you include the full URI (including protocol etc.)
@@ -18,8 +19,9 @@ var MESO_ENDPOINT = "TIG_TEST_END"; //Link to Euphrates
 
 
 //Constants
-var TIGRIS_VERSION = "0.3.6";
+var TIGRIS_VERSION = "0.3.8";
 var TIGRIS_SESSION_COOKIE = "2324-tigris-session";
+var TIGRIS_SESSION_COOKIE_TTL = 365; //The number of days a stored session cookie will last 
 
 var GENERAL_TIMEOUT = 3000; //Default timeout in milliseconds (may be overridden by some packets)
 
@@ -119,7 +121,15 @@ function()
 var UI = {};
 
 UI.currentScreen = "status"; //Status message for noscript is displayed by default through pure html
-UI.currentTab = null;
+UI.currentTab = null; 
+/**
+ * Storage for data unit ident of table row beeing dragged
+ */
+UI.currentTableHelper = 
+{
+	id: 0,
+	category: 0
+};
 
 UI.dashboard = null;
 UI.sidebarEnabled = true;
@@ -186,19 +196,24 @@ UI.init = function()
                       { "mData": function(data, type, val) { return UI.statusTest[data.status]; }}
                     ]});
 	
-	$("#table-machine tbody").sortable(
-			{
-		
-				distance: 10,
-				
-				connectWith: "#tilecreator",
-				
-				start: UI.table_dragStart,
-				stop: UI.table_dragStop,
-				
-				helper: "clone"
-		
-			});
+	var tableSortOptions = 
+		{
+			distance: 10,
+			
+			connectWith: "#tilecreator",
+			
+			start: UI.table_dragStart,
+			stop: UI.table_dragStop,
+			sort: UI.table_dragging,
+			
+			helper: UI.table_createHelper,
+			
+			cursorAt: { top: 20, left: 20 },
+			
+			appendTo: document.body
+		};
+	
+	$("#table-machine tbody").sortable(tableSortOptions);
 	
 	UI.jobTable = $("#table-job").dataTable(
 			{
@@ -210,19 +225,7 @@ UI.init = function()
                 ]
 			});
 	
-	$("#table-job tbody").sortable(
-			{
-		
-				distance: 10,
-				
-				connectWith: "#tilecreator",
-				
-				start: UI.table_dragStart,
-				stop: UI.table_dragStop,
-				
-				helper: "clone"
-		
-			});
+	$("#table-job tbody").sortable(tableSortOptions);
 	
 	UI.showStatus("Connecting to the server..."); //Initially show message on connection status
 };
@@ -234,25 +237,25 @@ UI.init = function()
 UI.sessionSetup = function()
 {
 	//Load tile list from config
-	var tileConfString = DataPool.getSingle(DTYPE.CONFIG, CTYPE.TILES);
-	if(tileConfString != null)
+	var tileConfList = DataPool.getSingle(DTYPE.CONFIG, CTYPE.TILES);
+	if(tileConfList != null)
 	{
 		try
 		{
-			var unescapedString = util_dirtyUnescape(tileConfString.value);//We need to remove escape characters created while converting this to JSON
-			
-			var tileConfig = jQuery.parseJSON(unescapedString); 
-			
-			jQuery.each(tileConfig.tileList, function(index, item)
+			//Don't forget tileConfigList.value is an ARRAY of strings! I know this is confusing.
+			jQuery.each(tileConfList.value, function(index, item)
 					{
-				
+						var unescapedString = util_dirtyUnescape(item);//We need to remove escape characters created while converting this to JSON
+						
+						var tileConfig = jQuery.parseJSON(unescapedString); 
+						
 						//Try to get the data unit for this tile
-						DataPool.fetchSingle(item.category, item.id, function(tileDataUnit)
+						DataPool.fetchSingle(tileConfig.category, tileConfig.id, function(tileDataUnit)
 								{
 									//When a valid data unit is returned, create a tile. When not, discard it TODO: Maybe show a greyed out tile or something
 									if(tileDataUnit != null)
 									{
-										f_createTile(item.category, tileDataUnit);
+										f_createTile(tileConfig.category, tileDataUnit ,false); //Don't store tiles. We would send exactly what we received
 									}
 								});
 				
@@ -260,7 +263,7 @@ UI.sessionSetup = function()
 			
 		}catch(e)
 		{
-			console.error("The tile configuration string could not be parsed: " + e); //No need to tell the user. It's not that fatal
+			console.error("The tile configuration string could not be parsed: " + e); //No need to tell the user. It's not that fatal. Just log the error for debugging
 		}
 	}
 	
@@ -274,7 +277,7 @@ UI.sessionSetup = function()
 UI.showScreen = function(name)
 {
 	$(".screen").hide(); //Hide all screens...
-	$("#screen-" + name).show(); //and show only disered one
+	$("#screen-" + name).show(); //and show only desired one
 	
 	UI.currentScreen = name;
 };
@@ -506,45 +509,76 @@ UI.table_dragStart = function(event, ui)
 	UI.sidebarEnabled = false;
 };
 
+UI.table_dragging = function(event, ui)
+{
+	//Check if cursor is inside tileCreator
+	//Since hover detection does not work with a sortable on the cursor, we have to check manually by position
+	if(util_containsPoint(UI.tileCreator,event.pageX,event.pageY) && UI.currentTab != "dashboard")
+	{
+		$("#tilecreator").hide("slide");
+		
+		UI.data_switchTab("dashboard");
+	}
+};
+
 UI.table_dragStop = function(event, ui)
 {
-	$("#tilecreator").hide("slide");
-	
 	UI.sidebarEnabled = true;
+	
+	$("#tilecreator").hide("slide");
 	
 	//The user might have reordered the table and thus messed up the coloring, so better reload data
 	//(This would not be neccesary if we could use something different than sortable for draggable table rows;
 	// thanks to you, jQuery UI)
 	UI.dataUpdate();
 	
-	//Since hover detection does not work with a sortable on the cursor, we have to check manually by position
-	if(util_containsPoint(UI.tileCreator,event.pageX,event.pageY))
+	//Was tile dropped on dashboard?
+	if(util_containsPoint(UI.dashboard.base,event.pageX,event.pageY) && UI.currentTab == "dashboard")
 	{
-		//The user dropped the row in the tile creator
+		//Yes -> Create new tile
 		
-		//Get the id from the dropped element (It must be the first column in order for this to work)
-		var id = ui.item.children("td").first().text();
-		
-		var dataUnitCatID = DTYPE.byName(UI.currentTab);
+		//Get the data unit ident of the dropped element (Stored in attributes of the custom helper)
+		var id = UI.currentTableHelper.id;
+		var dataUnitCatID = UI.currentTableHelper.category;
 		
 		DataPool.fetchSingle(dataUnitCatID,id,
 				function(dataUnit)
 				{
-					f_createTile(dataUnitCatID,dataUnit);
+					if(dataUnit != null)
+					{
+						
+						f_createTile(dataUnitCatID,dataUnit,true); //Create tile and write tile config to remote storage
+					}
 				});
 	}
 };
 
-/*UI.table_createColHelper = function()
+/**
+ * Creates a helper for the sortable widget. Provides a preview of the tile that can be placed
+ * on the dashboard.
+ */
+UI.table_createHelper = function(event, item)
 {
-	var row = $(this);
+	//Get data unit information in order to create tile object for dragging around
+	var id = item.find("td").first().text(); //ID is the first table column in the dragged row
+	var dataUnitCatID = DTYPE.byName(UI.currentTab);
 	
-	var helper = $("<div>");
-	helper.addClass("tile-creator-helper");
-	helper.css("width","120px");
-	
-	return helper;
-};*/
+	var dataUnit = DataPool.getSingle(dataUnitCatID, id);
+	if(dataUnit != null)
+	{
+		var tile = tileFromCategory(dataUnitCatID, dataUnit);
+		
+		tile.update(dataUnit);
+		
+		UI.currentTableHelper.id = id;
+		UI.currentTableHelper.category = dataUnitCatID;
+		
+		return tile.base;
+	}else
+	{
+		return this;
+	}
+};
 
 //-------------Functional stuff------------
 
@@ -576,7 +610,7 @@ function f_tryLogin()
 				Session.remember = remember;
 				if(remember) //Store session ID in cookie if session is to be remembered
 				{
-					util_setCookie(TIGRIS_SESSION_COOKIE, Session.sessionID);
+					util_setCookie(TIGRIS_SESSION_COOKIE, Session.sessionID,TIGRIS_SESSION_COOKIE_TTL);
 				}
 				
 				//As the user is now logged in, we can load his configuration stored on the server
@@ -610,7 +644,7 @@ function f_tryRelog()
 					
 					//Store the new session ID to cookie TODO: maybe integrate this into f_setUpSession()
 					//Since this cookie was created in a session the user wanted to keep, we can assume the user wants still to keep it
-					util_setCookie(TIGRIS_SESSION_COOKIE, Session.sessionID);
+					util_setCookie(TIGRIS_SESSION_COOKIE, Session.sessionID, TIGRIS_SESSION_COOKIE_TTL);
 					
 					//As there was no login, the server has to tell us who we are
 					Session.username = pk.data.username;
@@ -672,7 +706,7 @@ function f_serverSideLogout(reason)
 	//TODO: Put this to central location
 	var msgs = {};
 	msgs[LOGOUTREASON.UNKNOWN] = "of an unknown reason.";
-	msgs[LOGOUTREASON.SESSION_EXPIRED] = "your session lost its validity.";
+	msgs[LOGOUTREASON.SESSION_EXPIRED] = "your session lost it's validity.";
 	msgs[LOGOUTREASON.INTERNAL_ERROR] = "an internal server error occurred.";
 	msgs[LOGOUTREASON.REFUSED] = "you were somehow suddenly refused.";
 	msgs[LOGOUTREASON.CLOSED_BY_USER] = "it says the user did it. Alright, who was it then?";
@@ -710,9 +744,10 @@ function f_loadServerSideConfig()
  * 
  * @param category The category id of data unit
  * @param dataUnit The data unit object
- * @returns {any}
+ * @param store Set to true if storage should be updated after succesful creation
+ * @returns {any} The tile
  */
-function f_createTile(category, dataUnit)
+function f_createTile(category, dataUnit, store)
 {
 	
 	var subPacket = new Packet_Subscribe(category,dataUnit.id);
@@ -720,21 +755,12 @@ function f_createTile(category, dataUnit)
 	{
 		if(pk.typeID == PTYPE.ACK)
 		{
-			var tile = null;
+			var tile = tileFromCategory(category, dataUnit);
 			
-			if(category == DTYPE.MACHINE)
+			if(tile != null)
 			{
-				tile = new Tile_Machine(dataUnit);
-				
-			}else if(category == DTYPE.JOB)
-			{
-				tile = new Tile_Job(dataUnit);
-			}else
-			{
-				UI.showError("Tried to create a tile of an unknown category.");
+				UI.dashboard.addTile(tile,store);
 			}
-			
-			UI.dashboard.addTile(tile);
 			
 		}else if(pk.typeID == PTYPE.ERROR)
 		{
@@ -757,6 +783,24 @@ Session.username = "";
 Session.remember = false;
 
 /**
+ * Stores a single config entry (consisting of an array of strings) in the
+ * user-specific server-side config file.
+ */
+Session.setConfig = function(id, value)
+{
+	var config = new Packet_Config(id, value);
+	config.onResponse = function(pk)
+	{
+		if(pk.typeID == PTYPE.NACK)
+		{
+			UI.showError("Could not set config " + id + " to " + value);
+		}
+	};
+	
+	Network.sendPacket(config);
+};
+
+/**
  * Removes any session related data to begin a new session.
  */
 Session.clear = function()
@@ -764,7 +808,7 @@ Session.clear = function()
 	Session.sessionID = null;
 	Session.username = "";
 	
-	util_setCookie(TIGRIS_SESSION_COOKIE, "", -9999);
+	util_setCookie(TIGRIS_SESSION_COOKIE, "", -1);
 };
 
 
@@ -1000,7 +1044,7 @@ Network.init = function()
 
 Network.ws_onOpen = function()
 {
-	Network.handshake(); //Only start handshaking after connection has been established
+	Network.handshake(true); //Only start handshaking after connection has been established
 };
 
 Network.ws_onMessage = function(msg)
@@ -1163,7 +1207,7 @@ Network.handshake = function(tryRelog)
 			//Connection to server is OK -> The user may log in
 			//First look if there is already a session to be restored.
 			
-			if(tryRelog || true)
+			if(tryRelog)
 			{
 				f_tryRelog(); //This method also displays login screen if no session is to be restored; No need for us to take care of that
 			}else
@@ -1185,20 +1229,6 @@ Network.handshake = function(tryRelog)
 	};
 	
 	Network.sendPacket(packet);
-};
-
-Network.setConfig = function(id, value)
-{
-	var config = new Packet_Config(id, value);
-	config.onResponse = function(pk)
-	{
-		if(pk.typeID == PTYPE.NACK)
-		{
-			UI.showError("Could set config " + id + " to " + value);
-		}
-	};
-	
-	Network.sendPacket(config);
 };
 
 Network.clearAllTimeouts = function()
@@ -1257,7 +1287,7 @@ Network.sendPacket = function(packet, uid)
 		//Check if packet expects any responses
 		if(packet.allowedResponses.length > 0)
 		{
-			//Store packet so a response can be passed to its response handler
+			//Store packet so a response can be passed to it's response handler
 			Network.sentPacketMap["uid" + packetToSend.uid] = packet;
 			
 			//Set a timeout for each packet that is removed upon response in the n_ws_onMessage methode (only if timeout is > 0)
@@ -1361,10 +1391,12 @@ function Dashboard()
 	this.resize =
 		function()
 		{
-			//The jQuery width method seems not to work with a hidden object that defines only percentage dimensions.
 			//As the dashboard has the width of the document with absolute margins, we can calculate the tile sizes using the documents width
-			reThis.width = $(document).width() - 10;
-			reThis.height = $(document).height() - 47;
+			reThis.width = $(document).width() - 20; //No idea why we have to take the margin times 2, but it works
+			reThis.height = $(document).height() - 57;
+			
+			reThis.base.css("width",reThis.width);
+			reThis.base.css("height",reThis.height);
 			
 			//Apparently, a horizontal resolution of 1920 is best viewed with 4 columns TODO: Further research on that 
 			// (1920 - 10) / 4 = 477.5
@@ -1404,7 +1436,7 @@ function Dashboard()
 	
 	
 	this.addTile = 
-		function(tile)
+		function(tile, store)
 		{
 			if(tile.ident in reThis.tiles)
 			{
@@ -1421,8 +1453,11 @@ function Dashboard()
 			
 			tile.onCreate();
 			
-			//In order not to loose anything, we must store the tile configs RIGHT NOW
-			reThis.storeTiles();
+			//In order not to loose anything, we must store the tile configs
+			if(store) //But only if it is allowed. Tiles should NOT be stored after they are re-created from storage
+			{
+				reThis.storeTiles();
+			}
 		};
 	
 		
@@ -1453,8 +1488,7 @@ function Dashboard()
 	this.storeTiles = function()
 	{
 		
-		var configObject = {};
-		configObject.tileList = new Array();
+		var configArray = new Array();
 		
 		jQuery.each(reThis.tiles,
 				function(index, item)
@@ -1465,12 +1499,14 @@ function Dashboard()
 					tileStor.category = item.dataUnitCategory;
 					tileStor.column = item.columnID;
 					
-					configObject.tileList.push(tileStor);
+					var tileStorString = JSON.stringify(tileStor);
+					
+					configArray.push(tileStorString);
 				});
 		
-		var configString = JSON.stringify(configObject);
 		
-		Network.setConfig(CTYPE.TILES, configString);
+		
+		Session.setConfig(CTYPE.TILES, configArray);
 		
 	};
 		
@@ -1483,6 +1519,8 @@ function Dashboard()
 				
 				start: function(event, ui)
 				{
+					UI.sidebarEnabled = false;
+					
 					//As jQuery UIs sortable does not support dynamic sized placeholders,
 					//we must change them manually
 					if(ui.item.hasClass("tile"))
@@ -1495,14 +1533,42 @@ function Dashboard()
 					}
 					
 				},
+				
+				stop: function(event, ui)
+				{
+					UI.sidebarEnabled = true;
+				},
 			
 				handle: "h2",
 				
-				revert: 200
+				revert: 200,
+				
+				tolerance: "pointer",
+				
+				scrollSpeed: 10
 			});
 }
 
 //-------tile constructors------------
+
+/**
+ * Selects right tile constructor from given category ID.
+ */
+function tileFromCategory(category, dataUnit)
+{
+	if(category == DTYPE.MACHINE)
+	{
+		return new Tile_Machine(dataUnit);
+	}else if(category == DTYPE.JOB)
+	{
+		return new Tile_Job(dataUnit);
+	}else
+	{
+		UI.showError("Tried to create tile of unknown category: " + category);
+		return null;
+	}
+}
+
 
 /**
  * @constructor
@@ -1516,56 +1582,54 @@ function Tile_Machine(dataUnit)
 	this.dataUnitID = dataUnit.id;
 	this.ident = this.dataUnitCategory + "-" + this.dataUnitID;
 	
+	this.width = 1; //Set upon size calculation
+	
 	//Retrieve and set up HTML structure of tile from a hidden definition area in the document
 	this.base = $("#tiledef_machine").clone();
 	this.base.attr("id","tile_" + this.ident);
 	
 	this.title = this.base.children("h2").first();
-	this.sizeButton = this.base.children(".size-button").first();
+	this.sizeButton = this.base.find(".size-button").first();
 	
-	this.leftContent = this.base.children(".left-content").first();
+	this.leftContent = this.base.find(".left-content").first();
+	this.rightContent = this.base.find(".right-content").first();
 	
-	this.rightContent = this.base.children(".right-content").first();
+	this.repairIcon = this.base.find(".repair-icon").first();
+	this.cleaningIcon = this.base.find(".cleaning-icon").first();
+	this.errorIcon = this.base.find(".error-icon").first();
 	
-	this.repairIcon = this.leftContent.children(".repair-icon").first();
-	this.repairIcon.hide();
+	this.statusValue = this.base.find(".status-value").first();
+	this.jobValue = this.base.find(".job-value").first();
+	this.locationValue = this.base.find(".location-value").first();
 	
-	this.cleaningIcon = this.leftContent.children(".cleaning-icon").first();
-	this.cleaningIcon.hide();
-	
-	this.gaugeBase = this.leftContent.children(".machine-speed-gauge").first();
+	this.gaugeBase = this.base.find(".machine-speed-gauge").first();
 	this.gaugeBase.attr("id","tile_" + this.ident + "_gauge");
 	
 	this.gauge = null;
 	
+	this.STATUS =
+		{
+			RUNNING:	1,
+			ERROR:		2,
+			REPAIR:		3,
+			MODIFIC:	4,
+			CLEANING:	5
+		};
 	
 	//Called immediately after tile was appended to dashboard
 	this.onCreate = function()
 	{
 		//Create gauge
-		reThis.gauge = new GaugeSVG(
-		{
-			
-			id: "tile_" + reThis.ident + "_gauge",
-			
-			title: "Production speed",
-			label: "screws/hour",
-			
-			min: 0,
-			max: 1000,
-			
-			labelColor: "#444",
-			valueColor: "#444",
-			titleColor: "#444",
-			
-			upperWarningLimit: 1000,
-			upperActionLimit: 1000,
-			
-			showMinMax: true,
-			canvasBackColor: "transparent",
-			showGaugeShadow: false
-			
-		});
+		reThis.gauge = new JustGage(
+				{
+					id: "tile_" + reThis.ident + "_gauge",
+					value: 0,
+					min: 0,
+					max: 1000,
+					title: "Production speed",
+					
+					 showInnerShadow: false
+				});
 		
 		//Update new tile once
 		reThis.update(initialDataUnit);
@@ -1573,8 +1637,18 @@ function Tile_Machine(dataUnit)
 	
 	this.resize = function(size)
 	{
-		reThis.base.css("width",size);
+		reThis.width = size;
+		
 		reThis.base.css("height",size);
+		
+		if(reThis.base.hasClass("tile-full"))
+		{
+			reThis.base.css("width",size*2);
+		}else
+		{
+			reThis.base.css("width",size);
+		}
+		
 		
 		reThis.leftContent.css("width",size);
 		reThis.leftContent.css("height",size - 13); //Minus 13 pixel header height
@@ -1584,14 +1658,15 @@ function Tile_Machine(dataUnit)
 		reThis.rightContent.css("height",size - 13); //Minus 13 pixel header height
 		reThis.rightContent.css("left",size);
 		
-		reThis.repairIcon.css("width",size * 0.8);
-		reThis.repairIcon.css("height",size * 0.8);
+		//Adjust size and margin for all icons
+		var icons = reThis.leftContent.children(".icon");
+		icons.css("width",size * 0.8);
+		icons.css("height",size * 0.8);
+		icons.css("margin-left",size * 0.1); //Center icons
+		icons.css("margin-right",size * 0.1);
 		
-		reThis.cleaningIcon.css("width",size * 0.8);
-		reThis.cleaningIcon.css("height",size * 0.8);
-		
-		reThis.gaugeBase.css("width",size * 0.8);
-		reThis.gaugeBase.css("height",size * 0.8);
+		reThis.gaugeBase.css("width", size);
+		reThis.gaugeBase.css("height", size);
 	};
 	this.resize(UI.dashboard.tileWidth); //Set up tile size
 	
@@ -1600,28 +1675,44 @@ function Tile_Machine(dataUnit)
 	{
 		reThis.title.text("Machine '" + newDataUnit.name + "'");
 		
-		reThis.rightContent.html("Status: " + UI.statusTest[newDataUnit.status] + "<br>Job: " + newDataUnit.job);
+		reThis.statusValue.text(UI.statusTest[newDataUnit.status] || newDataUnit.status);
+		reThis.jobValue.text(newDataUnit.job);
+		reThis.locationValue.text(newDataUnit.location);
 		
-		if(newDataUnit.status == 1) //Running TODO: Store those in constants
+		if(newDataUnit.status == reThis.STATUS.RUNNING)
 		{
-			reThis.gaugeBase.show();
-			reThis.repairIcon.hide();
-			reThis.cleaningIcon.hide();
+			reThis.base.find(".icon").hide(); //Hide all icons
 			
-		}else if(newDataUnit.status == 2 || newDataUnit.status == 3 || newDataUnit.status == 4) //TODO: Error displayed as repair, change!
+			//Gauge can only be created after it has been added to document. This, however may be calleb before that
+			if(reThis.gauge != null)
+			{
+				reThis.gaugeBase.show();
+				reThis.gauge.refresh(Math.round(newDataUnit.speed)); //Refresh gauge when running
+			}
+				
+		}else if(newDataUnit.status == reThis.STATUS.REPAIR || newDataUnit.status == reThis.STATUS.MODIFIC)
 		{
+			reThis.gaugeBase.hide();
+			reThis.base.find(".icon").hide();
+			
 			reThis.repairIcon.show();
-			reThis.gaugeBase.hide();
-			reThis.cleaningIcon.hide();
 			
-		}else if(newDataUnit.status == 5)
+		}else if(newDataUnit.status == reThis.STATUS.ERROR)
 		{
-			reThis.repairIcon.hide();
 			reThis.gaugeBase.hide();
+			reThis.base.find(".icon").hide();
+			
+			reThis.errorIcon.show();
+			
+			
+		}else if(newDataUnit.status == reThis.STATUS.CLEANING)
+		{
+			reThis.gaugeBase.hide();
+			reThis.base.find(".icon").hide();
+			
 			reThis.cleaningIcon.show();
 		}
 		
-		reThis.gauge.refresh(Math.round(newDataUnit.speed));
 	};
 	
 	this.toggleSize = function()
@@ -1632,7 +1723,7 @@ function Tile_Machine(dataUnit)
 			reThis.base.addClass("tile-full");
 			
 			//Slide tile to full size
-			reThis.base.animate({width: UI.dashboard.tileWidth * 2}, 350, "easeInOutElastic");
+			reThis.base.animate({width: reThis.width * 2}, 350, "easeInOutElastic");
 
 			
 		}else if(reThis.base.hasClass("tile-full"))
@@ -1640,7 +1731,7 @@ function Tile_Machine(dataUnit)
 			reThis.base.removeClass("tile-full");
 			reThis.base.addClass("tile-half");
 			
-			reThis.base.animate({width: UI.dashboard.tileWidth}, 350, "easeInOutElastic");
+			reThis.base.animate({width: reThis.width}, 350, "easeInOutElastic");
 		}
 	
 	};
@@ -1925,12 +2016,12 @@ packet_fields[PTYPE.ERROR] = ["errorCode","errorMessage"];
  * 
  * @param name Name of the cookie
  * @param value Value of the cookie
- * @param ttl Lifespan of the cookie in seconds
+ * @param ttl Lifespan of the cookie in days
  */
 function util_setCookie(name, value, ttl)
 {
 	var expires = new Date();
-	expires.setSeconds(expires.getSeconds() + ttl);
+	expires.setDate(expires.getDate() + ttl);
 
 	var valueFormat = escape(value) + ((expires==null) ? "" : "; expires=" + expires.toUTCString());
 
@@ -1994,8 +2085,8 @@ function util_containsPoint(element, x, y)
 }
 
 /**
- * Removes every '\' while leaving the follwing character ('\' also).
- * Doesn't resolve '\n' to new line etc.
+ * Removes every '\' while leaving the follwing character ('\\' converts to '\').
+ * Doesn't resolve '\n' to new line. Simply inserts 'n'. Therefore dirty.
  * 
  * @param string The string to unescape
  * @returns {string}

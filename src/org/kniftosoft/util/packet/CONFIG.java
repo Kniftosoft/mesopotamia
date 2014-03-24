@@ -1,11 +1,16 @@
 package org.kniftosoft.util.packet;
 
+import java.util.Iterator;
+
 import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
 
 import org.kniftosoft.entity.Configtype;
 import org.kniftosoft.entity.Userconfig;
 import org.kniftosoft.util.Constants;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 /**
@@ -15,7 +20,7 @@ import com.google.gson.JsonObject;
 public class CONFIG extends Packet {
 
 	private int id;
-	private String value;
+	private JsonArray values;
 
 
 	/* (non-Javadoc)
@@ -25,7 +30,7 @@ public class CONFIG extends Packet {
 	@Override
 	public void createFromJSON(JsonObject o) {
 		id = o.get("id").getAsInt();
-		value = o.get("value").getAsString();
+		values = o.get("value").getAsJsonArray();
 	}
 
 	/*
@@ -38,13 +43,24 @@ public class CONFIG extends Packet {
 		try
 		{
 			final EntityManager em = Constants.factory.createEntityManager();
-			final Userconfig conf = new Userconfig();
-			conf.setUserBean(peer.getUser());
-			conf.setValue(value);	
-			conf.setConfigtype(em.find(Configtype.class, id));
 			em.getTransaction().begin();
-			em.persist(conf);
+			final TypedQuery<Userconfig> delconf = em.createQuery(
+					"Select c FROM Userconfig c WHERE c.userBean=:user AND c.configtype =:type",
+					Userconfig.class).setParameter("user", peer.getUser()).setParameter("type", em.find(Configtype.class, id));
+			for (Iterator<Userconfig> iterator = delconf.getResultList().iterator();iterator.hasNext();) {
+				em.remove(iterator.next());
+			}
 			em.getTransaction().commit();
+			for(Iterator<JsonElement> iterator = values.iterator(); iterator.hasNext();)
+			{
+				final Userconfig conf = new Userconfig();
+				conf.setUserBean(peer.getUser());
+				conf.setValue(iterator.next().getAsString());	
+				conf.setConfigtype(em.find(Configtype.class, id));
+				em.getTransaction().begin();
+				em.persist(conf);
+				em.getTransaction().commit();
+			}
 			em.close();
 			ACK ack = new ACK();
 			ack.setPeer(peer);
@@ -81,7 +97,7 @@ public class CONFIG extends Packet {
 	public JsonObject storeData() {
 		final JsonObject data = new JsonObject();
 		data.addProperty("id", id);
-		data.addProperty("value", value);
+		data.add("value", values);
 		return data;
 	}
 
