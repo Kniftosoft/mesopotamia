@@ -249,6 +249,13 @@ public class TigrisTestEndpoint
 			
 			peer.getAsyncRemote().sendObject(resp);
 			
+		}else if(packet.getType() == PacketType.UNSUBSCRIBE)
+		{
+			PacketAck resp = new PacketAck();
+			resp.setUID(packet.getUID());
+			
+			peer.getAsyncRemote().sendObject(resp);
+			
 		}else if(packet.getType() == PacketType.CONFIG)
 		{
 			PacketAck resp = new PacketAck();
@@ -285,7 +292,7 @@ public class TigrisTestEndpoint
 	    return new String(hexChars);
 	}
 	
-	public static final String EUPHRATES_VERSION = "0.3.8";
+	public static final String EUPHRATES_VERSION = "0.4";
 	
 	public static final String EXAMPLE_USER = "otto";
 	public static final String EXAMPLE_PASSWORD_HASH = "c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2"; //hash of "foobar"

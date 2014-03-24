@@ -1,6 +1,6 @@
 
 /*--------------------------
- *      Tigris 0.3.8
+ *        Tigris 0.4
  * 	Mesopotamia Client v1
  * (C) Niklas Weissner 2014
  *-------------------------- 
@@ -19,7 +19,7 @@ var MESO_ENDPOINT = "TIG_TEST_END"; //Link to Euphrates
 
 
 //Constants
-var TIGRIS_VERSION = "0.3.8";
+var TIGRIS_VERSION = "0.4";
 var TIGRIS_SESSION_COOKIE = "2324-tigris-session";
 var TIGRIS_SESSION_COOKIE_TTL = 365; //The number of days a stored session cookie will last 
 
@@ -257,7 +257,7 @@ UI.sessionSetup = function()
 									//When a valid data unit is returned, create a tile. When not, discard it TODO: Maybe show a greyed out tile or something
 									if(tileDataUnit != null)
 									{
-										f_createTileOnDashboard(tileConfig.category, tileDataUnit, tileConfig.column ,false); //Don't store tiles. We would send exactly what we received
+										f_createTileOnDashboard(tileConfig.category, tileDataUnit,false, tileConfig.column); //Don't store tiles. We would send exactly what we received
 									}
 								});
 				
@@ -506,7 +506,8 @@ UI.data_updateTable = function(target)
 
 UI.table_dragStart = function(event, ui)
 {
-	$("#tilecreator").show("slide");
+	UI.tileCreator.text("Move tile here to switch to dashboard");
+	UI.tileCreator.show("slide");
 	
 	UI.sidebarEnabled = false;
 };
@@ -749,7 +750,7 @@ function f_loadServerSideConfig()
  * @param store Set to true if storage should be updated after succesful creation
  * @returns {any} The tile
  */
-function f_createTileOnDashboard(category, dataUnit, column, store)
+function f_createTileOnDashboard(category, dataUnit, store, column)
 {
 	
 	var subPacket = new Packet_Subscribe(category,dataUnit.id);
@@ -776,6 +777,30 @@ function f_createTileOnDashboard(category, dataUnit, column, store)
 	};
 	
 	Network.sendPacket(subPacket);
+}
+
+/**
+ * Unsubscribes the data unit and removed it's associated tile from the dashboard.
+ * 
+ * @param category
+ * @param id
+ */
+function f_removeTileFromDashboard(category, id)
+{
+	var unsubPacket = new Packet_Unsubscribe(category, id);
+	unsubPacket.onResponse = function(pk)
+	{
+		if(pk.typeID == PTYPE.ACK)
+		{
+			
+			UI.dashboard.removeTile(category, id);
+			
+		}else if(pk.typeID == PTYPE.ERROR)
+		{
+			UI.showError("Unsubscribing a data unit has failed: " + pk.data.errorMessage);
+		}
+	};
+	Network.sendPacket(unsubPacket);
 }
 
 /**
@@ -1388,7 +1413,7 @@ Network.request = function(pk)
  */
 function Dashboard()
 {
-	var reThis = this; //We can not use 'this' in functions called from outside, so we store it
+	var _this = this; //We can not use 'this' in functions called from outside, so we store it
 	
 	this.base = $("#tab-dashboard");
 	
@@ -1399,74 +1424,87 @@ function Dashboard()
 		function()
 		{
 			//As the dashboard has the width of the document with absolute margins, we can calculate the tile sizes using the documents width
-			reThis.width = $(document).width() - 20; //No idea why we have to take the margin times 2, but it works
-			reThis.height = $(document).height() - 57;
+			_this.width = $(document).width() - 20; //No idea why we have to take the margin times 2, but it works
+			_this.height = $(document).height() - 57;
 			
-			reThis.base.css("width",reThis.width);
-			reThis.base.css("height",reThis.height);
+			_this.base.css("width",_this.width);
+			_this.base.css("height",_this.height);
 			
 			//Apparently, a horizontal resolution of 1920 is best viewed with 4 columns TODO: Further research on that 
 			// (1920 - 10) / 4 = 477.5
-			reThis.columnCount = Math.round(reThis.width / 477.5);
-			reThis.columnWidth = reThis.width / reThis.columnCount;
+			_this.columnCount = Math.round(_this.width / 477.5);
+			_this.columnWidth = _this.width / _this.columnCount;
 			
-			reThis.tileWidth = (reThis.columnWidth - 10) / 2; //Width of a half tile (including the 5px margin on each side)
+			_this.tileWidth = (_this.columnWidth - 10) / 2; //Width of a half tile (including the 5px margin on each side)
 			
 			//Update column size
-			for(var i = 0; i < reThis.columnCount ; i++)
+			for(var i = 0; i < _this.columnCount ; i++)
 			{
 				//Change width of existing columns, create new for non-existing
-				if(reThis.columns[i])
+				if(_this.columns[i])
 				{
-					reThis.columns[i].css("width",reThis.columnWidth);
+					_this.columns[i].css("width",_this.columnWidth);
 				}else
 				{
 					var col = $("<div>");
 					col.attr("id","dash-col-" + i);
 					col.addClass("dashboard-column");
-					col.css("width",reThis.columnWidth);
+					col.css("width",_this.columnWidth);
 					
-					reThis.columns[i] = col;
-					reThis.base.append(col);
+					_this.columns[i] = col;
+					_this.base.append(col);
 				}
 				
 			}
 			
 			//Update tile size
-			jQuery.each(reThis.tiles, 
+			jQuery.each(_this.tiles, 
 					function(index, item)
 					{
-						item.resize(reThis.tileWidth);
+						item.resize(_this.tileWidth);
 					});
 		};
 	this.resize();
 	
 	
 	this.addTile = 
-		function(tile, store)
+		function(tile)
 		{
-			if(tile.ident in reThis.tiles)
+			if(tile.ident in _this.tiles)
 			{
 				//Tile linking to the same data source is already on the dashboard -> refuse adding TODO: Allow grouping
 				return;
 			}
 		
-			reThis.tiles[tile.ident] = tile;
-		
-			var column = tile.columnID || 0; //Append tile to specified column. If not specified, add to 0
+			_this.tiles[tile.ident] = tile;
+			
+			var column = ((tile.columnID == "undefined" || tile.columnID == null) ? 0 : tile.columnID); //Append tile to specified column. If not specified, add to 0
 			
 			//If the column this tile was stored in does not exist anymore, put it in the last column
-			if(column >= reThis.columns.length)
+			if(column >= _this.columns.length)
 			{
-				column = reThis.columns.length - 1;
+				column = _this.columns.length - 1;
 			}
 			
-			reThis.columns[column].append(tile.base);
+			_this.columns[column].append(tile.base);
 			tile.columnID = column;
 			
 			tile.onCreate();
 		};
 	
+		
+	this.removeTile =
+		function(category, id)
+		{
+			var ident = category + "-" + id;
+			
+			if(_this.tiles[ident])
+			{
+				delete _this.tiles[ident];
+				
+				_this.base.find("#tile_" + ident).remove();
+			}
+		};
 		
 	this.refresh =
 		function()
@@ -1475,7 +1513,7 @@ function Dashboard()
 			//not access remote data by yourself here!
 		
 			//Fetch new data unit object from data pool for each tile 
-			jQuery.each(reThis.tiles, 
+			jQuery.each(_this.tiles, 
 					function(index, item)
 					{
 						//Is a data unit registered for the current tile? (Use local data only)
@@ -1497,7 +1535,7 @@ function Dashboard()
 		
 		var configArray = new Array();
 		
-		jQuery.each(reThis.tiles,
+		jQuery.each(_this.tiles,
 				function(index, item)
 				{
 					var tileStor = {};
@@ -1528,14 +1566,17 @@ function Dashboard()
 				{
 					UI.sidebarEnabled = false;
 					
+					UI.tileCreator.text("Drop here to delete tile");
+					UI.tileCreator.show("slide");
+					
 					//As jQuery UIs sortable does not support dynamic sized placeholders,
 					//we must change them manually
 					if(ui.item.hasClass("tile"))
 					{
 						//Only change the placeholder for actual tiles beeing dragged
 						
-						$(".tile-placeholder").css("height", reThis.tileWidth); //Height is always the same
-						$(".tile-placeholder").css("width", ui.item.hasClass("tile-half") ? reThis.tileWidth : reThis.tileWidth*2);
+						$(".tile-placeholder").css("height", _this.tileWidth); //Height is always the same
+						$(".tile-placeholder").css("width", ui.item.hasClass("tile-half") ? _this.tileWidth : _this.tileWidth*2);
 						
 					}
 					
@@ -1544,6 +1585,16 @@ function Dashboard()
 				stop: function(event, ui)
 				{
 					UI.sidebarEnabled = true;
+					
+					UI.tileCreator.hide("slide");
+					
+					if(util_containsPoint(UI.tileCreator, event.pageX, event.pageY))
+					{
+						var id = ui.item.attr("data-dataUnitID");
+						var cat = ui.item.attr("data-dataUnitCategory");
+						
+						f_removeTileFromDashboard(cat,id);
+					}
 				},
 			
 				handle: "h2",
@@ -1582,7 +1633,7 @@ function tileFromCategory(category, dataUnit)
  */
 function Tile_Machine(dataUnit)
 {
-	var reThis = this; //We need to store this object, as 'this' is not usable in callbacks called in other contexts
+	var _this = this; //We need to store this object, as 'this' is not usable in callbacks called in other contexts
 	var initialDataUnit = dataUnit;
 	
 	this.dataUnitCategory = DTYPE.MACHINE;
@@ -1594,6 +1645,9 @@ function Tile_Machine(dataUnit)
 	//Retrieve and set up HTML structure of tile from a hidden definition area in the document
 	this.base = $("#tiledef_machine").clone();
 	this.base.attr("id","tile_" + this.ident);
+	
+	this.base.attr("data-dataUnitID",this.dataUnitID);
+	this.base.attr("data-dataUnitCategory", this.dataUnitCategory);
 	
 	this.title = this.base.children("h2").first();
 	this.sizeButton = this.base.find(".size-button").first();
@@ -1627,9 +1681,9 @@ function Tile_Machine(dataUnit)
 	this.onCreate = function()
 	{
 		//Create gauge
-		reThis.gauge = new JustGage(
+		_this.gauge = new JustGage(
 				{
-					id: "tile_" + reThis.ident + "_gauge",
+					id: "tile_" + _this.ident + "_gauge",
 					value: 0,
 					min: 0,
 					max: 1000,
@@ -1639,106 +1693,106 @@ function Tile_Machine(dataUnit)
 				});
 		
 		//Update new tile once
-		reThis.update(initialDataUnit);
+		_this.update(initialDataUnit);
 	};
 	
 	this.resize = function(size)
 	{
-		reThis.width = size;
+		_this.width = size;
 		
-		reThis.base.css("height",size);
+		_this.base.css("height",size);
 		
-		if(reThis.base.hasClass("tile-full"))
+		if(_this.base.hasClass("tile-full"))
 		{
-			reThis.base.css("width",size*2);
+			_this.base.css("width",size*2);
 		}else
 		{
-			reThis.base.css("width",size);
+			_this.base.css("width",size);
 		}
 		
 		
-		reThis.leftContent.css("width",size);
-		reThis.leftContent.css("height",size - 13); //Minus 13 pixel header height
-		reThis.leftContent.css("left",size);
+		_this.leftContent.css("width",size);
+		_this.leftContent.css("height",size - 13); //Minus 13 pixel header height
+		_this.leftContent.css("left",size);
 		
-		reThis.rightContent.css("width",size);
-		reThis.rightContent.css("height",size - 13); //Minus 13 pixel header height
-		reThis.rightContent.css("left",size);
+		_this.rightContent.css("width",size);
+		_this.rightContent.css("height",size - 13); //Minus 13 pixel header height
+		_this.rightContent.css("left",size);
 		
 		//Adjust size and margin for all icons
-		var icons = reThis.leftContent.children(".icon");
+		var icons = _this.leftContent.children(".icon");
 		icons.css("width",size * 0.8);
 		icons.css("height",size * 0.8);
 		icons.css("margin-left",size * 0.1); //Center icons
 		icons.css("margin-right",size * 0.1);
 		
-		reThis.gaugeBase.css("width", size);
-		reThis.gaugeBase.css("height", size);
+		_this.gaugeBase.css("width", size);
+		_this.gaugeBase.css("height", size);
 	};
 	this.resize(UI.dashboard.tileWidth); //Set up tile size
 	
 	
 	this.update = function(newDataUnit)
 	{
-		reThis.title.text("Machine '" + newDataUnit.name + "'");
+		_this.title.text("Machine '" + newDataUnit.name + "'");
 		
-		reThis.statusValue.text(UI.statusTest[newDataUnit.status] || newDataUnit.status);
-		reThis.jobValue.text(newDataUnit.job);
-		reThis.locationValue.text(newDataUnit.location);
+		_this.statusValue.text(UI.statusTest[newDataUnit.status] || newDataUnit.status);
+		_this.jobValue.text(newDataUnit.job);
+		_this.locationValue.text(newDataUnit.location);
 		
-		if(newDataUnit.status == reThis.STATUS.RUNNING)
+		if(newDataUnit.status == _this.STATUS.RUNNING)
 		{
-			reThis.base.find(".icon").hide(); //Hide all icons
+			_this.base.find(".icon").hide(); //Hide all icons
 			
 			//Gauge can only be created after it has been added to document. This, however may be calleb before that
-			if(reThis.gauge != null)
+			if(_this.gauge != null)
 			{
-				reThis.gaugeBase.show();
-				reThis.gauge.refresh(Math.round(newDataUnit.speed)); //Refresh gauge when running
+				_this.gaugeBase.show();
+				_this.gauge.refresh(Math.round(newDataUnit.speed)); //Refresh gauge when running
 			}
 				
-		}else if(newDataUnit.status == reThis.STATUS.REPAIR || newDataUnit.status == reThis.STATUS.MODIFIC)
+		}else if(newDataUnit.status == _this.STATUS.REPAIR || newDataUnit.status == _this.STATUS.MODIFIC)
 		{
-			reThis.gaugeBase.hide();
-			reThis.base.find(".icon").hide();
+			_this.gaugeBase.hide();
+			_this.base.find(".icon").hide();
 			
-			reThis.repairIcon.show();
+			_this.repairIcon.show();
 			
-		}else if(newDataUnit.status == reThis.STATUS.ERROR)
+		}else if(newDataUnit.status == _this.STATUS.ERROR)
 		{
-			reThis.gaugeBase.hide();
-			reThis.base.find(".icon").hide();
+			_this.gaugeBase.hide();
+			_this.base.find(".icon").hide();
 			
-			reThis.errorIcon.show();
+			_this.errorIcon.show();
 			
 			
-		}else if(newDataUnit.status == reThis.STATUS.CLEANING)
+		}else if(newDataUnit.status == _this.STATUS.CLEANING)
 		{
-			reThis.gaugeBase.hide();
-			reThis.base.find(".icon").hide();
+			_this.gaugeBase.hide();
+			_this.base.find(".icon").hide();
 			
-			reThis.cleaningIcon.show();
+			_this.cleaningIcon.show();
 		}
 		
 	};
 	
 	this.toggleSize = function()
 	{
-		if(reThis.base.hasClass("tile-half"))
+		if(_this.base.hasClass("tile-half"))
 		{
-			reThis.base.removeClass("tile-half");
-			reThis.base.addClass("tile-full");
+			_this.base.removeClass("tile-half");
+			_this.base.addClass("tile-full");
 			
 			//Slide tile to full size
-			reThis.base.animate({width: reThis.width * 2}, 350, "easeInOutElastic");
+			_this.base.animate({width: _this.width * 2}, 350, "easeInOutElastic");
 
 			
-		}else if(reThis.base.hasClass("tile-full"))
+		}else if(_this.base.hasClass("tile-full"))
 		{
-			reThis.base.removeClass("tile-full");
-			reThis.base.addClass("tile-half");
+			_this.base.removeClass("tile-full");
+			_this.base.addClass("tile-half");
 			
-			reThis.base.animate({width: reThis.width}, 350, "easeInOutElastic");
+			_this.base.animate({width: _this.width}, 350, "easeInOutElastic");
 		}
 	
 	};
@@ -1751,7 +1805,7 @@ function Tile_Machine(dataUnit)
  */
 function Tile_Job(dataUnit)
 {
-	var instance = this; //We need to store this object, as 'this' is not usable in callbacks
+	var _this = this; //We need to store this object, as 'this' is not usable in callbacks
 	var initialDataUnit = dataUnit;
 	
 	this.dataUnitCategory = DTYPE.JOB;
@@ -1765,7 +1819,6 @@ function Tile_Job(dataUnit)
 	this.base.css("height",UI.dashboard.tileWidth);
 	
 	this.title = this.base.children("h2").first();
-	this.sizeButton = this.base.children(".size-button").first();
 	
 	
 	this.leftContent = this.base.children(".left-content").first();
@@ -1778,45 +1831,60 @@ function Tile_Job(dataUnit)
 	this.rightContent.css("height",UI.dashboard.tileWidth - 13); //Minus 13 pixel header height
 	this.rightContent.css("left",UI.dashboard.tileWidth);
 	
+	this.targetValue = this.base.find(".target-value").first();
+	this.startValue = this.base.find(".start-value").first();
+	this.productValue = this.base.find(".product-value").first();
 	
 	//Called immediately after tile was appended to dashboard
 	this.onCreate = function()
 	{
-		
-		
 		//Update new tile once
-		instance.update(initialDataUnit);
+		_this.update(initialDataUnit);
 	};
+	
+	this.resize = function(size)
+	{
+		_this.width = size;
+		
+		_this.base.css("height",size);
+		
+		if(_this.base.hasClass("tile-full"))
+		{
+			_this.base.css("width",size*2);
+		}else
+		{
+			_this.base.css("width",size);
+		}
+		
+		
+		_this.leftContent.css("width",size);
+		_this.leftContent.css("height",size - 13); //Minus 13 pixel header height
+		_this.leftContent.css("left",size);
+		
+		_this.rightContent.css("width",size);
+		_this.rightContent.css("height",size - 13); //Minus 13 pixel header height
+		_this.rightContent.css("left",size);
+	};
+	this.resize(UI.dashboard.tileWidth); //Set up tile size
+	
 	
 	this.update = function(newDataUnit)
 	{
-		instance.title.text("Job '" + newDataUnit.id + "'");
-	
+		_this.title.text("Job '" + newDataUnit.id + "'");
 		
-	};
-	
-	this.toggleSize = function()
-	{
-		if(instance.base.hasClass("tile-half"))
+		_this.targetValue.text(newDataUnit.target);
+		_this.startValue.text(util_formatDate(new Date(newDataUnit.startTime)));
+		
+		//Try to resolve product type name
+		var product = DataPool.getSingle(DTYPE.PRODUCT, newDataUnit.productType);
+		if(product)
 		{
-			instance.base.removeClass("tile-half");
-			instance.base.addClass("tile-full");
-			
-			//Slide tile to full size
-			instance.base.animate({width: UI.dashboard.tileWidth * 2}, 350, "easeInOutElastic");
-
-			
-		}else if(instance.base.hasClass("tile-full"))
+			_this.productValue.text(product.name);
+		}else
 		{
-			instance.base.removeClass("tile-full");
-			instance.base.addClass("tile-half");
-			
-			instance.base.animate({width: UI.dashboard.tileWidth}, 350, "easeInOutElastic");
+			_this.productValue.text(newDataUnit.productType);
 		}
-	
 	};
-	//Link this function to the size button
-	this.sizeButton.click(this.toggleSize);
 }
 
 

@@ -450,6 +450,13 @@ body
 	/* width, height set by script */
 }
 
+.tile .left-content .label
+{
+	margin-left: 5px;
+	
+	/* width, height set by script */
+}
+
 .tile .right-content
 {
 	

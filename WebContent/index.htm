@@ -4,6 +4,12 @@
 
 	<head>
 	
+		<!-- 
+			       Tigris 0.4
+			  Mesopotamia Client v1
+			(C) Niklas Weissner 2014
+		 -->
+	
 		<meta charset="ISO-8859-1">
 	
 		<title>Mesopotamia Tigris</title>
@@ -11,15 +17,23 @@
 		<link rel="stylesheet" href="./css/tigris_styles.css">
 		<link rel="stylesheet" href="./css/jquery.dataTables.css">
 		
+		<!-- jQuery and jQuery UI framework from http://jquery.com/ -->
 		<script src="lib/jquery-1.11.0.js"></script>
 		<script src="lib/jquery-ui.js"></script>
+		
+		<!-- CryptoJS cryptographic library from https://code.google.com/p/crypto-js/ -->
 		<script src="lib/CryptoJS/core-min.js"></script>
 		<script src="lib/CryptoJS/format-hex.js"></script>
 		<script src="lib/CryptoJS/sha256.js"></script>
-		<script src="lib/jquery.dataTables.min.js"></script>
-		<script src="lib/raphael.js"></script>
-    	<script src="lib/justgage.1.0.1.min.js"></script>
 		
+		<script src="lib/jquery.dataTables.min.js"></script><!-- DataTables jQuery table framework from http://datatables.net/ -->
+		
+		<script src="lib/raphael.js"></script><!-- Raphael SVG library from http://raphaeljs.com/ -->
+		
+    	<script src="lib/justgage.1.0.1.min.js"></script><!-- JustGage gauge library from http://justgage.com/ -->
+		
+		
+		<!-- Tigris system script -->
 		<script src="tigris_script.js"></script>
 	
 	</head>
@@ -183,19 +197,20 @@
 			</div>
 			
 			<div id="tiledef_job" class="tile tile-half tile-job">
-				<h2>Title goes here</h2>
-				<a class="size-button"><img src="images/forward_enabled.png"></img></a><br>
+				<h2>Title goes here</h2><br>
 				
 				<div class="left-content">
 					
+					<span class="label target-label">Prodution target:&nbsp;</span><span class="value target-value"></span><br>
 					
+					<span class="label start-label">Start time:&nbsp;</span><span class="value start-value"></span><br>
+					
+					<span class="label product-label">Product type:&nbsp;</span><span class="value product-value"></span><br>
 					
 				</div>
 				
 				<div class="right-content">
-					
-					
-					
+					<!-- Empty for now -->
 				</div>
 				
 			</div>
