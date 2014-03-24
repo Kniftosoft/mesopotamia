@@ -1,6 +1,6 @@
 
 /*--------------------------
- *        Tigris 0.4
+ *     Tigris 0.4.1
  * 	Mesopotamia Client v1
  * (C) Niklas Weissner 2014
  *-------------------------- 
@@ -19,7 +19,7 @@ var MESO_ENDPOINT = "TIG_TEST_END"; //Link to Euphrates
 
 
 //Constants
-var TIGRIS_VERSION = "0.4";
+var TIGRIS_VERSION = "0.4.1";
 var TIGRIS_SESSION_COOKIE = "2324-tigris-session";
 var TIGRIS_SESSION_COOKIE_TTL = 365; //The number of days a stored session cookie will last 
 
@@ -1689,7 +1689,7 @@ function Tile_Machine(dataUnit)
 					max: 1000,
 					title: "Production speed",
 					
-					 showInnerShadow: false
+					showInnerShadow: false
 				});
 		
 		//Update new tile once
@@ -1726,8 +1726,8 @@ function Tile_Machine(dataUnit)
 		icons.css("margin-left",size * 0.1); //Center icons
 		icons.css("margin-right",size * 0.1);
 		
-		_this.gaugeBase.css("width", size);
-		_this.gaugeBase.css("height", size);
+		_this.gaugeBase.css("width", size); 
+		_this.gaugeBase.css("height", size * 0.8); //JustGage seems to need an aspect ratio of 4:5 (0.8) to draw correctly
 	};
 	this.resize(UI.dashboard.tileWidth); //Set up tile size
 	

@@ -426,12 +426,9 @@ body
 
 .tile .machine-speed-gauge
 {
-	color: #444;
-	font-size: 14px;
+	margin-top: 15px;
 	
-	margin: 0px auto 0px auto;
-	
-	overflow: visible;
+	display: inline-block;
 	
 	/* width, height set by script */
 }
