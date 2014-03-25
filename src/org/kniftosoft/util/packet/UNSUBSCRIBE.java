@@ -50,6 +50,8 @@ public class UNSUBSCRIBE extends Packet {
 					found = true;
 					final EntityManager em = Constants.factory
 							.createEntityManager();
+					Subscribe remsub = em.merge(sub);
+					em.remove(remsub);
 					em.remove(sub);
 					em.close();
 					ACK ack = new ACK();
@@ -70,7 +72,8 @@ public class UNSUBSCRIBE extends Packet {
 					found = true;
 					final EntityManager em = Constants.factory
 							.createEntityManager();
-					em.remove(sub);
+					Subscribe remsub = em.merge(sub);
+					em.remove(remsub);
 					em.close();
 					ACK ack = new ACK();
 					ack.setPeer(peer);
