@@ -1,7 +1,11 @@
 package org.kniftosoft.entity;
 
 import java.io.Serializable;
+
 import javax.persistence.*;
+
+import org.kniftosoft.update.Databaselistener;
+
 import java.sql.Timestamp;
 
 
@@ -10,6 +14,7 @@ import java.sql.Timestamp;
  * 
  */
 @Entity
+@EntityListeners(Databaselistener.class)
 @NamedQuery(name="Log.findAll", query="SELECT l FROM Log l")
 public class Log implements Serializable {
 	private static final long serialVersionUID = 1L;
