@@ -1,16 +1,35 @@
 
 /*--------------------------
- *     Tigris 0.4.1
+ *       Tigris 0.9
  * 	Mesopotamia Client v1
  * (C) Niklas Weissner 2014
  *-------------------------- 
  */
 
-//TODO: Give your sources
+/*
+ * Tigris uses the following resources:
+ * 
+ * -jQuery and jQuery UI framework from http://jquery.com/
+ * 		MIT licence
+ *  
+ * -CryptoJS cryptographic library from https://code.google.com/p/crypto-js/
+ * 		MIT licence
+ *  
+ * -DataTables jQuery table framework from http://datatables.net/
+ * 		GPL v2 licence
+ * 
+ * 
+ * -JustGage gauge library from http://justgage.com/
+ * 		MIT licence
+ * 		Uses the also included:
+ * 		-Raphael SVG library from http://raphaeljs.com/
+ * 			MIT licence
+ * 
+ * All resources are property of their respective owners.
+ */
+
 //TODO: Sort some code fragments so the source can be easier understood
-//TODO: Comment on stuff
 //TODO: Localization maybe?
-//TODO: Add polish to data fetching functions (and try to check for null everywhere)
 
 //Configure this to your Euphrates installation
 //If your endpoint is absolute, make sure you include the full URI (including protocol etc.)
@@ -19,11 +38,12 @@ var MESO_ENDPOINT = "TIG_TEST_END"; //Link to Euphrates
 
 
 //Constants
-var TIGRIS_VERSION = "0.4.1";
+var TIGRIS_VERSION = "0.9";
 var TIGRIS_SESSION_COOKIE = "2324-tigris-session";
 var TIGRIS_SESSION_COOKIE_TTL = 365; //The number of days a stored session cookie will last 
 
 var GENERAL_TIMEOUT = 3000; //Default timeout in milliseconds (may be overridden by some packets)
+
 
 /**
  * Packet type IDs
@@ -108,7 +128,7 @@ function()
 	
 	UI.init();
 	
-	Network.init();
+	Network.init(); //After connection is established, this function continues with Handshake
 	
 });
 
@@ -122,6 +142,7 @@ var UI = {};
 
 UI.currentScreen = "status"; //Status message for noscript is displayed by default through pure html
 UI.currentTab = null; 
+
 /**
  * Storage for data unit ident of table row beeing dragged
  */
@@ -136,12 +157,15 @@ UI.sidebarEnabled = true;
 
 UI.productTypes = {};
 
+/**
+ * Initializes all GUI elements.
+ */
 UI.init = function()
 {	
 	UI.dashboard = new Dashboard();
 	
 	//Set up events
-	$(document).resize(UI.dashboard.resize);
+	$(window).resize(UI.dashboard.resize);
 	
 	$("#loginform").submit(
 			function(e) 
@@ -318,6 +342,9 @@ UI.showData = function()
 
 /**
  * Displays status screen with optional error coloring for the error message.
+ * 
+ * @param msg The status message
+ * @param error Set to true to indicate an error message
  */
 UI.showStatus = function(msg, error)
 {
@@ -335,6 +362,8 @@ UI.showStatus = function(msg, error)
 
 /**
  * Displays status screen with error message and logs it to console.error for debugging.
+ * 
+ * @param msg The error message to be displayed.
  */
 UI.showError = function(msg)
 {
@@ -345,10 +374,12 @@ UI.showError = function(msg)
 	Network.clearAllTimeouts();
 };
 
-
+/**
+ * Shows sidebar using a sliding animation.
+ */
 UI.slideOutSidebar = function()
 {	
-	//FIXME: Sidebar not dissappearing if user moves cursor out of handle while sliding out
+	//FIXME: Sidebar not dissappearing if user moves cursor out of handle while still sliding out
 	
 	if(UI.sidebarEnabled)
 	{
@@ -360,6 +391,9 @@ UI.slideOutSidebar = function()
 	}
 };
 
+/**
+ * Hides sidebar using a sliding animation.
+ */
 UI.slideAwaySidebar = function()
 {	
 	$("#sidebar").hide("slide", 300,
@@ -369,6 +403,9 @@ UI.slideAwaySidebar = function()
 			});
 };
 
+/**
+ * Handler for clicked sidebar items.
+ */
 UI.sidebarItemClicked = function(eventTarget)
 {	
 	var item = $(eventTarget);
@@ -392,7 +429,11 @@ UI.sidebarItemClicked = function(eventTarget)
 	}
 };
 
-
+/**
+ * Displays an error on the login page.
+ * 
+ * @param msg The error message to be displayed.
+ */
 UI.login_showError = function(msg)
 {
 	$("#loginerror").html(msg);
@@ -402,7 +443,12 @@ UI.login_showError = function(msg)
 	$("#loginerror").effect("shake");
 };
 
-
+/**
+ * Displays a specific data viw tab.
+ * 
+ * @param name The name of the tab to be dsiplayed.
+ * @param callback An optional callback function that is called when the transition is done.
+ */
 UI.data_showTab = function(name, callback)
 {
 	if(UI.currentTab != null)
@@ -428,6 +474,9 @@ UI.data_showTab = function(name, callback)
 
 /**
  * Displays tab and activates correct sidebar button.
+ * 
+ * @param name The name of the tab to be dsiplayed.
+ * @param callback An optional callback function that is called when the transition is done.
  */
 UI.data_switchTab = function(name, callback)
 {
@@ -453,6 +502,8 @@ UI.data_switchTab = function(name, callback)
 
 /**
  * Updates the data view if displayed.
+ * 
+ * @param target The target data view tab
  */
 UI.dataUpdate = function(target)
 {
@@ -504,6 +555,9 @@ UI.data_updateTable = function(target)
 	
 };
 
+/**
+ * Called after user started dragging a table column around.
+ */
 UI.table_dragStart = function(event, ui)
 {
 	UI.tileCreator.text("Move tile here to switch to dashboard");
@@ -512,6 +566,9 @@ UI.table_dragStart = function(event, ui)
 	UI.sidebarEnabled = false;
 };
 
+/**
+ * Called when dashboard til preview is dragged around.
+ */
 UI.table_dragging = function(event, ui)
 {
 	//Check if cursor is inside tileCreator
@@ -524,6 +581,9 @@ UI.table_dragging = function(event, ui)
 	}
 };
 
+/**
+ * Called after dashboard tile preview has been dropped.
+ */
 UI.table_dragStop = function(event, ui)
 {
 	UI.sidebarEnabled = true;
@@ -585,6 +645,9 @@ UI.table_createHelper = function(event, item)
 
 //-------------Functional stuff------------
 
+/**
+ * Starts a login procedure using the data entered into the login form.
+ */
 function f_tryLogin()
 {
 	var username = $("#loginform_username").val();
@@ -628,6 +691,9 @@ function f_tryLogin()
 	Network.sendPacket(packet);
 }
 
+/**
+ * Tries to load old session ID from cookie and to restore the session if present.
+ */
 function f_tryRelog()
 {
 	var cook = util_getCookie(TIGRIS_SESSION_COOKIE);
@@ -673,6 +739,9 @@ function f_tryRelog()
 	}
 }
 
+/**
+ * Tries to log out the user. Reports an error on failure.
+ */
 function f_tryLogout()
 {
 	
@@ -694,8 +763,7 @@ function f_tryLogout()
 	packet.onTimeout =
 		function()
 		{
-			//The server did not confirm the logout. This may have unforeseen consequences, Dr. Freeman. So better not show the login page again. 
-			//And smell the ashes. Don't forget to smell the ashes.
+			//The server did not confirm the logout. This may have unforeseen consequences, so better not show the login page again. 
 			
 			//We force the user to reload the page, so if there is really a problem with the server, he will notice on the next handshake
 			UI.showError("The server did not confirm the last logout. You can start another session by reloading Tigris.");
@@ -704,6 +772,11 @@ function f_tryLogout()
 	Network.sendPacket(packet);
 }
 
+/**
+ * Called after recpetion of LOGOUT packet.
+ * 
+ * @param reason The transmitted reason code
+ */
 function f_serverSideLogout(reason)
 {
 	//TODO: Put this to central location
@@ -711,7 +784,9 @@ function f_serverSideLogout(reason)
 	msgs[LOGOUTREASON.UNKNOWN] = "of an unknown reason.";
 	msgs[LOGOUTREASON.SESSION_EXPIRED] = "your session lost it's validity.";
 	msgs[LOGOUTREASON.INTERNAL_ERROR] = "an internal server error occurred.";
-	msgs[LOGOUTREASON.REFUSED] = "you were somehow suddenly refused.";
+	
+	//These two should never occur on a properly working system
+	msgs[LOGOUTREASON.REFUSED] = "you were somehow suddenly refused."; 
 	msgs[LOGOUTREASON.CLOSED_BY_USER] = "it says the user did it. Alright, who was it then?";
 	
 	Session.clear();
@@ -720,6 +795,9 @@ function f_serverSideLogout(reason)
 	UI.login_showError("The server logged you out because " + msgs[reason]);
 }
 
+/**
+ * Preloads information stored on the server into cache.
+ */
 function f_loadServerSideConfig()
 {
 	//First fetch config, then product data
@@ -1031,6 +1109,9 @@ var Network = {};
 Network.socket = null;
 Network.sentPacketMap = {};
 
+/**
+ * Initializes the network features.
+ */
 Network.init = function()
 {
 	//Set up socket
@@ -1074,11 +1155,18 @@ Network.init = function()
 	Network.socket.onerror = Network.ws_onError;
 };
 
+/**
+ * WebSocket open handler.
+ */
 Network.ws_onOpen = function()
 {
 	Network.handshake(true); //Only start handshaking after connection has been established
 };
 
+/**
+ * WebSocket message handler.
+ * Unwraps and directs packets.
+ */
 Network.ws_onMessage = function(msg)
 {
 	console.log("I received this: " + msg.data);
@@ -1104,7 +1192,7 @@ Network.ws_onMessage = function(msg)
 	{
 		Network.serverError(ERRORCODE.BAD_PACKET, "Packet did not contain one or more of the fields: typeID, uid, data");
 		
-		UI.showError("A fatal communication error occurred: Bad packet and shit.");
+		UI.showError("A fatal communication error occurred: A bad packet was received.");
 		
 		return;
 	}
@@ -1117,7 +1205,7 @@ Network.ws_onMessage = function(msg)
 	{
 		Network.serverError(ERRORCODE.BAD_PACKET, "Unknown packet type or C->S packet only: " + packet.typeID);
 		
-		UI.showError("A fatal communication error occurred: Bad packet and shit.");
+		UI.showError("A fatal communication error occurred:  A bad packet was received.");
 		
 		return;
 	}
@@ -1136,7 +1224,7 @@ Network.ws_onMessage = function(msg)
 	{
 		Network.serverError(ERRORCODE.BAD_PACKET, "Packet of type " + packet.typeID + " was missing the following fields: " + missingFields);
 		
-		UI.showError("A fatal communication error occurred: Bad packet and shit.");
+		UI.showError("A fatal communication error occurred:  A bad packet was received.");
 		
 		return;
 	}
@@ -1199,6 +1287,9 @@ Network.ws_onMessage = function(msg)
 	}
 };
 
+/**
+ * WebSocket close handler.
+ */
 Network.ws_onClose = function()
 {
 	console.log("The connection was closed");
@@ -1206,10 +1297,14 @@ Network.ws_onClose = function()
 	UI.showStatus("The connection to the server was closed.");
 };
 
+/**
+ * WebSocket error handler.
+ */
 Network.ws_onError = function(e)
 {
-	UI.showError("A network error occurred. Please contact the system admin you do not know."); //ERR_COMM_NETWORK
+	UI.showError("A unknown network error occurred."); //ERR_COMM_NETWORK
 };
+
 
 /**
  * Reports an error to the server using an ERROR packet.
@@ -1223,6 +1318,11 @@ Network.serverError = function(code, msg)
 	Network.sendPacket(pk);
 };
 
+/**
+ * Called after connection was established or after a logout.
+ * 
+ * @param tryRelog Set to true to attempt a relog after succesful Handshake.
+ */
 Network.handshake = function(tryRelog)
 {
 
@@ -1263,6 +1363,9 @@ Network.handshake = function(tryRelog)
 	Network.sendPacket(packet);
 };
 
+/**
+ * Removes all registered packet timeouts (Other timouts remain untouched).
+ */
 Network.clearAllTimeouts = function()
 {
 	jQuery.each(Network.sentPacketMap,
@@ -1275,6 +1378,11 @@ Network.clearAllTimeouts = function()
 			});
 };
 
+/**
+ * Generates a new UID.
+ * 
+ * @return {Number}
+ */
 Network.generateUID = function()
 {
 	var uid = 0;
@@ -1409,6 +1517,8 @@ Network.request = function(pk)
 //------screen constructors----------
 
 /**
+ * Class representing the Dashboard. Created once by UI.
+ * 
  * @constructor
  */
 function Dashboard()
@@ -1611,6 +1721,9 @@ function Dashboard()
 
 /**
  * Selects right tile constructor from given category ID.
+ * 
+ * @param category The tile category
+ * @param dataUnit The data unit to link the tile to
  */
 function tileFromCategory(category, dataUnit)
 {
@@ -1629,7 +1742,10 @@ function tileFromCategory(category, dataUnit)
 
 
 /**
+ * Class for tiles representing machines.
+ * 
  * @constructor
+ * @param dataUnit The machine data unit to link the tile to
  */
 function Tile_Machine(dataUnit)
 {
@@ -1801,7 +1917,10 @@ function Tile_Machine(dataUnit)
 }
 
 /**
+ * Class for tiles representing jobs.
+ * 
  * @constructor
+ * @param dataUnit The machine data unit to link the tile to
  */
 function Tile_Job(dataUnit)
 {
@@ -1903,7 +2022,11 @@ Packet.onResponse = function(){};
 Packet.onTimeout = function(){UI.showError("The server took to long to respond to packet.");};
 
 /**
- *
+ * Sent by client to initiate a connection; should be sent right after the client has
+ * been loaded up so incompatible versions / a not reachable server can be identified.
+ * As this packet ensures incompatible protocol versions are detected, its specification
+ * should NEVER be changed.
+ * 
  * @constructor
  */
 function Packet_Handshake()
@@ -1920,8 +2043,12 @@ function Packet_Handshake()
 Packet_Handshake.prototype = Packet;
 
 /**
- *
+ * Sent by client to login on the server and to receive session information for querying data.
+ * 
  * @constructor
+ * @param usr The username to login with
+ * @param pwrdHash The hex string of the password double hash
+ * @param persist Boolean indicating whether the user wants to stay loggin in or not
  */
 function Packet_Login(usr,pwrdHash,persist)
 {
@@ -1939,8 +2066,12 @@ function Packet_Login(usr,pwrdHash,persist)
 Packet_Login.prototype = Packet;
 
 /**
+ * Sent by client when it already has a session key(from a cookie) and needs to check
+ * if it is still usable. If the server responds with a REAUTH the client is still allowed to
+ * query data without a new login.
  * 
  * @constructor
+ * @param sessionID The session ID to check
  */
 function Packet_Relog(sessionID)
 {
@@ -1956,8 +2087,11 @@ function Packet_Relog(sessionID)
 Packet_Relog.prototype = Packet;
 
 /**
+ * Sent by the client to query data. The server answers the query by sending a DATA-packet.
  * 
  * @constructor
+ * @param category The category to query
+ * @param id The id to query. May be '*'
  */
 function Packet_Query(category, id)
 {
@@ -1974,6 +2108,8 @@ function Packet_Query(category, id)
 Packet_Query.prototype = Packet;
 
 /**
+ * Sent by the client to instruct the server to inform it on any changes of the specified data unit.
+ * 
  * @constructor
  * @param category Category of data unit
  * @param id ID of data unit
@@ -1993,6 +2129,8 @@ function Packet_Subscribe(category, id)
 Packet_Subscribe.prototype = Packet;
 
 /**
+ * Sent by the client to cancel a subscription on one data unit of one category (for example if a tile is removed).
+ * 
  * @constructor
  * @param category Category of data unit
  * @param id ID of data unit
@@ -2012,6 +2150,9 @@ function Packet_Unsubscribe(category, id)
 Packet_Unsubscribe.prototype = Packet;
 
 /**
+ * Sent by the client to update/create one value in the server-side configuration. This confiugration
+ * can be read by the client by using a QUERY packet with the right category.
+ * 
  * @constructor
  * @param id The numerical ID of the config field
  * @param value The value to be stored
@@ -2031,8 +2172,13 @@ function Packet_Config(id, value)
 Packet_Config.prototype = Packet;
 
 /**
+ * Sent by server/client to close a session without terminating the connection. A reason can be included
+ * in the form of a numerical code and a human-readable message string.
  * 
  * @constructor
+ * @param session The session id to logout
+ * @param reason The numerical reason code
+ * @param msg A human-readable reason message
  */
 function Packet_Logout(session, reason, msg)
 {
@@ -2050,8 +2196,11 @@ function Packet_Logout(session, reason, msg)
 Packet_Logout.prototype = Packet;
 
 /**
+ * Sent by client/server to report an error. This special packet can be sent as a response to any packet to report an error.
  * 
  * @constructor
+ * @param code A numerical error code
+ * @param message A human-readable error message
  */
 function Packet_Error(code, message)
 {
@@ -2083,6 +2232,7 @@ packet_fields[PTYPE.DATA] = ["category","result"];
 packet_fields[PTYPE.ACK] = [];
 packet_fields[PTYPE.NACK] = [];
 packet_fields[PTYPE.ERROR] = ["errorCode","errorMessage"];
+
 
 //---------------utility stuff----------------
 

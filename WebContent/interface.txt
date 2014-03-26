@@ -1,5 +1,5 @@
 +==========================================+
-| Mesopotamia Communication Protocol 1.4.3 |
+| Mesopotamia Communication Protocol 1.4.4 |
 |        (C) Niklas Weissner 2014          |
 +==========================================+
 
@@ -59,6 +59,7 @@ Contents
 
 23.03.2014	1.4.3	Added location attribute to machines
 
+26.03.2014	1.4.4	Added missing ACK response to logout, removed "Experimental"-Tags on data acces packets
 
 
 2 - Foreword
@@ -310,7 +311,7 @@ Contents
 		string:		reasonMessage(a human-readable message that might be displayed in a message dialog/server log)
 		
 	-Possible results:
-		none (logout needs no confirmation)
+		ACK:		Logout always needs to be confirmed by both participants. Otherwise a timeout will occur.
 	
 	-Notes:
 		Possible values for the reasonCode-field are:
@@ -325,8 +326,6 @@ Contents
 	
 	QUERY
 	-----
-	!! NOTE: This packet is experimental. If it proves being usable, remove this note. !!
-	
 	Sent by the client to query data. The server answers the query by sending a DATA-packet.
 	The field ident is the identifier of the desired object. 
 	If all objects of a category are desired, the identifier may be '*'. 
@@ -351,8 +350,6 @@ Contents
 	
 	DATA
 	----
-	!! NOTE: This packet is experimental. If it proves being usable, remove this note. !!
-	
 	Sent by the server spontaneously or as a response to a QUERY-packet. This packet contains
 	data of one or more data units which is displayed by the client upon receipt. One DATA packet can only carry
 	data objects of a single category at a time. For multiple categories, multiple DATA packets have to be transfered.
@@ -374,8 +371,6 @@ Contents
 	
 	SUBSCRIBE
 	---------
-	!! NOTE: This packet is experimental. If it proves being usable, remove this note. !!
-	
 	Sent by the client to instruct the server to inform it on any changes of the specified data unit.
 	Changes are reported using a DATA packet (sent by the server without request). If the subscription
 	succeeds the server responds with an ACK, otherwise a NACK is sent (bad data unit etc.).
@@ -397,10 +392,7 @@ Contents
 	
 	UNSUBSCRIBE
 	-----------
-	!! NOTE: This packet is experimental. If it proves being usable, remove this note. !!
-	
-	Sent by the client to cancel a subscription on one or all data units of one category
-	(for example if a tile is removed).
+	Sent by the client to cancel a subscription on one data unit of one category (for example if a tile is removed).
 	
 	-Packet ID:		23
 	
