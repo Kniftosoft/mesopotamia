@@ -2,9 +2,7 @@ package org.kniftosoft.util;
 
 /**
  * @author julian
- * @deprecated rewrite for reusing uid's
  */
-@Deprecated
 public class UIDGen {
 
 	private int nextUID;
@@ -31,7 +29,7 @@ public class UIDGen {
 	 * 
 	 */
 	private UIDGen() {
-		nextUID = 1;
+		nextUID = 2;
 	}
 
 	/**

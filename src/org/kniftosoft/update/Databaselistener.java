@@ -18,6 +18,7 @@ public class Databaselistener {
 	@PostPersist
 	void onPostPersist(Log log) {
 		// works only if update is done by logGen
-		new SubscribeUpDater().updateSubscriptions(log);
+		SubscribeUpDater.updateSubscriptions(log);
+		Jobupdater.startJob(log);
 	}
 }

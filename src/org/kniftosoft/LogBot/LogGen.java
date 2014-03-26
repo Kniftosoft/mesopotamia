@@ -28,37 +28,65 @@ public class LogGen {
 	 * @param maschine
 	 */
 	private void generatelog(Maschine maschine) {
-		Log log = new Log();
-		final EntityManager ems = Constants.factory.createEntityManager();
-		ems.getTransaction().begin();
-		try {
-			final EntityManager em = Constants.factory.createEntityManager();
-			em.getTransaction().begin();
-			log = em.createQuery(
-					"Select l FROM Log l WHERE l.maschineBean =:maschine ORDER BY l.timestamp DESC ",
-					Log.class).setParameter("maschine", maschine)
-					.setMaxResults(1).getSingleResult();
-			em.getTransaction().commit();
-			em.close();
+		try{
+			//create new log
+			Log log = new Log();
+			
+			
+			
+			try {
+				//get last log as log base
+				final EntityManager em = Constants.factory.createEntityManager();
+				em.getTransaction().begin();
+				log = em.createQuery(
+						"Select l FROM Log l WHERE l.maschineBean =:maschine ORDER BY l.timestamp DESC ",
+						Log.class).setParameter("maschine", maschine)
+						.setMaxResults(1).getSingleResult();
+				em.getTransaction().commit();
+				em.close();
 
-		} catch (final NoResultException e) {
+			} catch (final NoResultException e) {
+				// create new log
+				log.setAuftragBean(jobs.get(random(jobs.size())));
+				log.setZustandBean(stats.get(random(stats.size())));
+			}
 
-			jobs = ems.createNamedQuery("Auftrag.findAll", Auftrag.class)
-					.getResultList();
-			stats = ems.createNamedQuery("Zustand.findAll", Zustand.class)
-					.getResultList();
-			log.setAuftragBean(jobs.get(random(jobs.size())));
-			log.setZustandBean(stats.get(random(stats.size())));
+			//set new values
+			//only running machines have a speed
+			log.setProduziert(random(getmax(maschine.getMaximumspeed(), log.getTimestamp(), new Date()))+1);
+			log.setIdlog(0);
+			log.setMaschineBean(maschine);
+			log.setTimestamp(new Timestamp(new Date().getTime()));
+			//change state 10% rate
+			if(random(1000)>900)
+			{
+				
+				if(random(10)>5)
+				{
+					log.setZustandBean(stats.get(random(stats.size())-1));
+				}else{
+					log.setZustandBean(stats.get(0));
+				}
+				
+			}
+			
+			if(log.getZustandBean().getBeschreibung().equals("Läuft")!=true)
+			{
+				log.setProduziert(0);
+			}
+			
+			final EntityManager ems = Constants.factory.createEntityManager();
+			ems.getTransaction().begin();
+			//store log
+			ems.persist(log);
+			System.err.print("new log");
+			ems.getTransaction().commit();
+			ems.close();
+		}catch(Exception e)
+		{
+			e.printStackTrace();
 		}
-		log.setIdlog(0);
-		log.setMaschineBean(maschine);
-		// TODO only running machines have a speed
-		log.setProduziert(random(3));
-		log.setTimestamp(new Timestamp(new Date().getTime()));
-		ems.persist(log);
-		System.err.print("new log");
-		ems.getTransaction().commit();
-		ems.close();
+		
 	}
 
 	/**
@@ -68,10 +96,27 @@ public class LogGen {
 		final EntityManager em = Constants.factory.createEntityManager();
 		maschines = em.createNamedQuery("Maschine.findAll", Maschine.class)
 				.getResultList();
+		jobs = em.createNamedQuery("Auftrag.findAll", Auftrag.class)
+				.getResultList();
+		stats = em.createNamedQuery("Zustand.findAll", Zustand.class)
+				.getResultList();
 		for (final Maschine maschine : maschines) {
 			generatelog(maschine);
 		}
 		em.close();
+	}
+	
+	/**
+	 * calculate maximal production of a machine
+	 * @param maxspeed
+	 * @param lastlog
+	 * @param aktualltime
+	 * @return maximum produced 
+	 */
+	private double getmax(double maxspeed,Date lastlog,Date aktualltime)
+	{
+		double maxproduce = (maxspeed* (aktualltime.getTime() - lastlog.getTime()) / 3600000)-1;
+		return maxproduce;	
 	}
 
 	/**
@@ -84,6 +129,18 @@ public class LogGen {
 			rand *= -1;
 		}
 		rand = rand % max;
+		return rand;
+	}
+	/**
+	 * @param max
+	 * @return rand
+	 */
+	private int random(double max) {
+		int rand = new Random().nextInt();
+		if (rand < 0) {
+			rand *= -1;
+		}
+		rand = (int) (rand % max);
 		return rand;
 	}
 }

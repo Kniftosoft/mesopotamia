@@ -141,7 +141,7 @@ UI.init = function()
 	UI.dashboard = new Dashboard();
 	
 	//Set up events
-	$(window).resize(UI.dashboard.resize);
+	$(document).resize(UI.dashboard.resize);
 	
 	$("#loginform").submit(
 			function(e) 
@@ -1401,7 +1401,7 @@ Network.request = function(pk)
 	{
 		//This packet type was not recognized. Tell the server we did not understand his message
 		
-		Network.serverError(ERRORCODE.BAD_PACKET, "Unrecognized packet. May be C->S packet only: " + packet.typeID);
+		Network.serverError(ERRORCODE.BAD_PACKET, "Unrecognized packet. May be C->S packet only: " + pk.typeID);
 	}
 	
 };

@@ -7,7 +7,7 @@ package org.kniftosoft.LogBot;
  * 
  */
 public class Logbot extends Thread {
-	int sleepTime = 10000;
+	int sleepTime = 30000;
 
 	/*
 	 * (non-Javadoc)

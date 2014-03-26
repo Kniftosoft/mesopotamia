@@ -33,14 +33,6 @@ public class ERROR extends Packet {
 	public void executerequest() {
 		System.err.print("Client error: \n  Errorcode: " + errorCode
 				+ "\n  Errormessage: " + errorMessage);
-		// log out user after error
-		final LOGOUT logout = new LOGOUT();
-		logout.setPeer(peer);
-		logout.setSessionID(-1);
-		logout.setReasonCode(3);
-		logout.setReasonMessage("Logout because of critical error");
-		logout.executerequest();
-		logout.send();
 	}
 
 	/*
@@ -53,18 +45,6 @@ public class ERROR extends Packet {
 		return PacketType.ERROR;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.kniftosoft.util.packet.Packet#send() if send to the client write
-	 * error message and logout
-	 */
-	@Override
-	public void send() {
-		peer.getSession().getAsyncRemote().sendObject(this);
-		executerequest();
-	}
-	
 	/*
 	 * (non-Javadoc)
 	 * 

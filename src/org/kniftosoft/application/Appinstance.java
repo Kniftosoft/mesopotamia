@@ -4,6 +4,7 @@ import javax.websocket.DecodeException;
 
 import org.kniftosoft.entity.Subscribe;
 import org.kniftosoft.util.EuphratisSession;
+import org.kniftosoft.util.UIDGen;
 import org.kniftosoft.util.packet.DATA;
 
 /**
@@ -59,7 +60,7 @@ public class Appinstance {
 		final DATA update = new DATA();
 		update.setResult(app.getdata(sub));
 		update.setPeer(peer);
-		update.setUID(1000);
+		update.setUID(UIDGen.instance().generateUID());
 		update.setCategory(app.getid());
 		update.send();
 	}

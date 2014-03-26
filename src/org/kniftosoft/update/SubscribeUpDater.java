@@ -17,7 +17,7 @@ public class SubscribeUpDater {
 	/**
 	 * @param log
 	 */
-	public void updateSubscriptions(Log log) {
+	public static void updateSubscriptions(Log log) {
 		final Map<String, EuphratisSession> peers = Peerholder.getpeers();
 		for (final EuphratisSession peer : peers.values()) {
 			if (peer.isLoginverified() == true) {
