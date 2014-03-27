@@ -1,12 +1,14 @@
 
 /*--------------------------
- *       Tigris 0.9
+ *       Tigris 1.0
  * 	Mesopotamia Client v1
  * (C) Niklas Weissner 2014
  *-------------------------- 
  */
 
 /*
+ * Created for the GFOS Innovation Award 2014
+ * 
  * Tigris uses the following resources:
  * 
  * -jQuery and jQuery UI framework from http://jquery.com/
@@ -38,7 +40,7 @@ var MESO_ENDPOINT = "TIG_TEST_END"; //Link to Euphrates
 
 
 //Constants
-var TIGRIS_VERSION = "0.9";
+var TIGRIS_VERSION = "1.0";
 var TIGRIS_SESSION_COOKIE = "2324-tigris-session";
 var TIGRIS_SESSION_COOKIE_TTL = 365; //The number of days a stored session cookie will last 
 
@@ -1936,6 +1938,9 @@ function Tile_Job(dataUnit)
 	this.base.attr("id","tile_" + this.ident);
 	this.base.css("width",UI.dashboard.tileWidth);
 	this.base.css("height",UI.dashboard.tileWidth);
+	
+	this.base.attr("data-dataUnitID",this.dataUnitID);
+	this.base.attr("data-dataUnitCategory", this.dataUnitCategory);
 	
 	this.title = this.base.children("h2").first();
 	
